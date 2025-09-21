@@ -12,11 +12,6 @@ import {
   FaSpinner
 } from "react-icons/fa";
 
-const generatePDF = (logoBase64, report) => {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  // ... (rest of PDF generation code)
-  return doc;
-};
 
 export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const [logoBase64, setLogoBase64] = useState('');
@@ -45,144 +40,221 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     const pageHeight = 297;
     const margin = 20;
 
-    // Couleurs modernes
-    const primaryColor = [0, 119, 182]; // Bleu professionnel moderne
-    const secondaryColor = [44, 62, 80]; // Gris foncé élégant
-    const accentColor = [52, 152, 219]; // Bleu accent
-    const successColor = [46, 204, 113]; // Vert pour les statuts positifs
-    const warningColor = [241, 196, 15]; // Jaune pour les avertissements
-    const lightGray = [245, 247, 250]; // Gris très clair pour les fonds
-    const darkGray = [108, 122, 137]; // Gris moyen pour le texte secondaire
+  // Palette: conserver uniquement la couleur pour la ligne de pied de page
+  const primaryColor = [0, 119, 182];
 
-    // --- PAGE DE GARDE ---
-    // Bannière supérieure
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 50, 'F');
+  // Helper: déduire le format d'image depuis un data URL
+  const inferImageFormat = (dataUrl) => {
+    try {
+      const head = (dataUrl || '').slice(0, 64).toLowerCase();
+      if (head.includes('image/png')) return 'PNG';
+      if (head.includes('image/jpeg') || head.includes('image/jpg')) return 'JPEG';
+    } catch {}
+    return 'JPEG';
+  };
 
-    // Logo sur fond blanc avec ombre
+  // Helper: couper un texte par longueur de caractères max (sans casser les mots si possible)
+  const wrapTextByChars = (text, maxChars = 60) => {
+    const words = (text || '').toString().split(/\s+/);
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const candidate = line ? line + ' ' + w : w;
+      if (candidate.length > maxChars) {
+        if (line) {
+          lines.push(line);
+          line = w;
+        } else {
+          // mot plus long que la limite: couper brutalement
+          lines.push(candidate.slice(0, maxChars));
+          line = candidate.slice(maxChars);
+        }
+      } else {
+        line = candidate;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  };
+
+    // Logo centré en haut de page
     if (logoBase64) {
-      // Rectangle blanc pour le logo
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(margin, 10, 70, 35, 3, 3, 'F');
-      // Logo
-      const logoW = 60;
-      const logoH = 30;
-      doc.addImage(logoBase64, 'JPEG', margin + 5, 12, logoW, logoH);
+      const coverLogoW = 40;
+      const coverLogoH = 20;
+      const coverLogoX = (pageWidth - coverLogoW) / 2;
+      doc.addImage(logoBase64, 'JPEG', coverLogoX, 12, coverLogoW, coverLogoH);
     }
 
-    // Informations entreprise (alignées à droite dans la bannière)
-    doc.setFontSize(12);
-    doc.setTextColor(255, 255, 255);
-    const companyInfoX = pageWidth - margin;
+  // Informations entreprise (en bleu à droite)
+  doc.setFontSize(12);
+  doc.setTextColor(...primaryColor);
+  const companyInfoX = pageWidth - margin;
+  doc.setFont(undefined, 'bold');
+  doc.text('SGTEC', companyInfoX, 40, { align: 'right' });
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(12);
+  doc.text('Consultant indépendant en Maîtrise d’œuvre', companyInfoX, 45, { align: 'right' });
+  doc.text('Rue premier 78005 Paris.', companyInfoX, 50, { align: 'right' });
+
+    // Titre centré de la page de garde
+    const titleY = 70;
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    doc.text('SGTEC - L\'OEIL DU BATIMENT', companyInfoX, 20, { align: 'right' });
+    const coverTitle = report.chantier || 'Rapport d’intervention';
+    doc.text(coverTitle, pageWidth / 2, titleY, { align: 'center' });
+
+    // Bloc d'informations à gauche (même interligne, sous le logo / sous infos entreprise)
+  const leftInfoX = margin;
+  let leftInfoY = 75; // descendu légèrement plus bas
+  doc.setFontSize(10);
+  doc.setTextColor(...primaryColor);
     doc.setFont(undefined, 'normal');
+    const establishedIso = report.updatedAt || report.createdAt || new Date().toISOString();
+    let establishedStr = '';
+    try {
+      establishedStr = new Date(establishedIso).toLocaleDateString('fr-FR');
+    } catch {
+      establishedStr = new Date().toLocaleDateString('fr-FR');
+    }
+
+  const valueOffset = 35; // léger décalage vers la droite
+  // N° affaire
+  doc.setFont(undefined, 'bold');
+  doc.text('N° Affaire:', leftInfoX, leftInfoY);
+  doc.setFont(undefined, 'normal');
+  doc.text(report.noAffaire || '—', leftInfoX + valueOffset, leftInfoY);
+  leftInfoY += 6;
+  // N° Rapport
+  doc.setFont(undefined, 'bold');
+  doc.text('N° Rapport:', leftInfoX, leftInfoY);
+  doc.setFont(undefined, 'normal');
+  doc.text(report.noRapport || '—', leftInfoX + valueOffset, leftInfoY);
+  leftInfoY += 6;
+  // Intervenant
+  doc.setFont(undefined, 'bold');
+  doc.text('Intervenant:', leftInfoX, leftInfoY);
+  doc.setFont(undefined, 'normal');
+  doc.text(report.intervenant || '—', leftInfoX + valueOffset, leftInfoY);
+  leftInfoY += 6;
+  // Date d'Intervention
+  doc.setFont(undefined, 'bold');
+  doc.text("Date d'Intervention:", leftInfoX, leftInfoY);
+  doc.setFont(undefined, 'normal');
+  doc.text(report.dateIntervention || '—', leftInfoX + valueOffset, leftInfoY);
+  leftInfoY += 6;
+  // Rapport établi le
+  doc.setFont(undefined, 'bold');
+  doc.text('Rapport établi le:', leftInfoX, leftInfoY);
+  doc.setFont(undefined, 'normal');
+  doc.text(establishedStr, leftInfoX + valueOffset, leftInfoY);
+  // Caption sous le bloc gauche (plus bas, en gras, bleu et centré)
+  leftInfoY += 15;
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...primaryColor);
+  const captionLines = [
+    "RAPPORT D'INVESTIGATION AUDIT DE CLOS COUVERT:",
+    "INVESTIGATION DE CHANTIER"
+  ];
+  doc.text(captionLines, pageWidth / 2, leftInfoY, { align: 'center' });
+  // Ajuster Y si la légende passe sur plusieurs lignes
+  leftInfoY += Math.max(0, (captionLines.length - 1) * 7);
+  // Phase centrée sous la légende
+  leftInfoY += 12; // descendre légèrement la position de la phase
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...primaryColor);
+  const phaseValue = (report.phase && String(report.phase).trim() !== '' ? String(report.phase) : '—');
+  doc.text(`Phase: ${phaseValue}`, pageWidth / 2, leftInfoY, { align: 'center' });
+
+    // Informations principales (texte libre, sans fonds)
+  const cardY = Math.max(95, leftInfoY + 10);
     doc.setFontSize(10);
-    doc.text('Rapport de Chantier Digital', companyInfoX, 28, { align: 'right' });
-    doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, companyInfoX, 36, { align: 'right' });
-
-    // Ligne de séparation
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(2);
-    doc.line(margin, 50, pageWidth - margin, 50);
-
-    // Titre du projet avec accent visuel
-    const titleY = 80;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(margin, titleY - 5, pageWidth - margin, titleY - 5);
-    
-    doc.setFontSize(28);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(...primaryColor);
-    doc.text(report.chantier || 'RAPPORT DE CHANTIER', pageWidth / 2, titleY, { align: 'center' });
-    
-    doc.setLineWidth(2);
-    doc.line(pageWidth / 2 - 40, titleY + 5, pageWidth / 2 + 40, titleY + 5);
-
-    // Carte d'informations principales avec style moderne
-    const cardY = 100;
-    const cardHeight = 120;
-    
-    // Fond de la carte avec ombre
-    doc.setFillColor(...lightGray);
-    doc.roundedRect(margin - 2, cardY - 2, pageWidth - (margin * 2) + 4, cardHeight + 4, 5, 5, 'F');
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(margin, cardY, pageWidth - (margin * 2), cardHeight, 5, 5, 'F');
-    
-    // Fond de carte avec ombre
-    // Contenu des informations
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(...secondaryColor);
-    
-    const cardContentX = margin + 15;
-    let cardContentY = cardY + 15;
-    
-    // Grille d'informations moderne
-    const colWidth = (pageWidth - margin * 2 - 40) / 2;
-    
-    // Fonction helper pour les champs d'info
+    doc.setTextColor(0, 0, 0);
+    const cardContentX = margin;
+    let cardContentY = cardY;
+    const colWidth = (pageWidth - margin * 2 - 20) / 2;
+    // Helper simple
     const addInfoField = (label, value, x, y) => {
-      doc.setFillColor(...lightGray);
-      doc.roundedRect(x - 2, y - 5, colWidth, 25, 2, 2, 'F');
-      
       doc.setFontSize(8);
       doc.setFont(undefined, 'bold');
-      doc.setTextColor(...darkGray);
+      doc.setTextColor(80, 80, 80);
       doc.text(label.toUpperCase(), x, y);
-      
       doc.setFontSize(11);
       doc.setFont(undefined, 'normal');
-      doc.setTextColor(...secondaryColor);
+      doc.setTextColor(0, 0, 0);
       doc.text(value || '—', x, y + 12);
     };
 
-    // Première ligne
-    addInfoField('Projet', report.chantier, cardContentX, cardContentY);
-    addInfoField('Adresse du site', report.adresseSite, cardContentX + colWidth + 20, cardContentY);
-    cardContentY += 35;
-    
-    // Deuxième ligne
-    addInfoField('Responsable', report.responsable, cardContentX, cardContentY);
-    addInfoField('Propriétaire', report.proprietaire, cardContentX + colWidth + 20, cardContentY);
-    
-    cardContentY += 35;
-    
-    // Dernière ligne avec période et statut
-    const periode = `Du ${report.dateDebut || '—'} au ${report.dateFin || '—'}`;
-    addInfoField('Période d\'exécution', periode, cardContentX, cardContentY);
-    
-    // Statut avec code couleur
-    let statusColor = successColor; // Vert par défaut
-    if (report.status === 'En cours') statusColor = accentColor;
-    if (report.status === 'En attente') statusColor = warningColor;
-    
-    doc.setFillColor(...statusColor);
-    doc.roundedRect(cardContentX + colWidth + 18, cardContentY - 5, colWidth + 4, 25, 2, 2, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'bold');
-    doc.text('STATUT', cardContentX + colWidth + 20, cardContentY);
-    doc.setFontSize(11);
-    doc.text(report.status || 'Non défini', cardContentX + colWidth + 20, cardContentY + 12);
 
-    // Le badge de statut a été déplacé vers la section Centre de travaux
 
-    // Informations du centre de travaux
-    const centreY = pageHeight - 60;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(...primaryColor);
-    doc.text('CENTRE DE TRAVAUX', margin, centreY);
-    
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(...secondaryColor);
+    // Informations (à droite) avec libellés et valeurs remplissables
+  const baseY = pageHeight - 110; // position de base
+  const centreX = pageWidth - margin;
+  const labelOffset = 45; // espace entre libellé et valeur (style similaire au bloc gauche)
+
+    // Zone image à gauche du bloc droit
+  const imgBoxW = 60;
+  const imgBoxH = 40;
+  const imgGap = 8;
+  const imgBoxX = margin; // totalement à gauche (respecte la marge)
+  const imgBoxY = baseY - 2;
+    if (report.coverImage) {
+      const format = inferImageFormat(report.coverImage);
+      try {
+        doc.addImage(report.coverImage, format, imgBoxX, imgBoxY, imgBoxW, imgBoxH);
+      } catch {
+        doc.setDrawColor(0, 0, 0);
+        doc.rect(imgBoxX, imgBoxY, imgBoxW, imgBoxH);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('Image', imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
+      }
+    } else {
+      doc.setDrawColor(0, 0, 0);
+      doc.rect(imgBoxX, imgBoxY, imgBoxW, imgBoxH);
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text('Image', imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2, { align: 'center' });
+    }
+
+    // Répartir verticalement les 4 lignes sur la hauteur de la zone image
+    const infoPad = 3; // marge interne dans la zone image
+    const linesCount = 4;
+    const infoStep = (imgBoxH - 2 * infoPad) / (linesCount - 1);
+    const y1 = imgBoxY + infoPad + 0 * infoStep;
+    const y2 = imgBoxY + infoPad + 1 * infoStep;
+    const y3 = imgBoxY + infoPad + 2 * infoStep;
+    const y4 = imgBoxY + infoPad + 3 * infoStep;
+
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
-    doc.text(report.centreTravaux || 'Centre des Travaux de Douala', margin, centreY + 8);
-    doc.text(`Chef Chantier: ${report.chefCentre || 'M. KAMGA KAMGA'}`, margin, centreY + 16);
-    
-    doc.text(`Statut: ${report.status || 'Non défini'}`, margin, centreY + 32);
+    // Centre de Travaux
+    doc.setFont(undefined, 'bold');
+    doc.text('Centre de Travaux:', centreX - labelOffset, y1, { align: 'right' });
+    doc.setFont(undefined, 'normal');
+    doc.text(report.centreTravaux || '—', centreX, y1, { align: 'right' });
+    // Maître d’ouvrage
+    doc.setFont(undefined, 'bold');
+    doc.text("Maître d’ouvrage:", centreX - labelOffset, y2, { align: 'right' });
+    doc.setFont(undefined, 'normal');
+    doc.text(report.maitreOuvrage || '—', centreX, y2, { align: 'right' });
+    // Adresse
+    doc.setFont(undefined, 'bold');
+    doc.text('Adresse:', centreX - labelOffset, y3, { align: 'right' });
+    doc.setFont(undefined, 'normal');
+    doc.text(report.adresseOuvrage || '—', centreX, y3, { align: 'right' });
+  // Propriétaire (en vert)
+  doc.setTextColor(22, 163, 74); // vert
+  doc.setFont(undefined, 'bold');
+  doc.text('Propriétaire:', centreX - labelOffset, y4, { align: 'right' });
+  doc.setTextColor(22, 163, 74); // vert
+  doc.setFont(undefined, 'normal');
+  doc.text(report.proprietaire || '—', centreX, y4, { align: 'right' });
+  // reset couleur texte
+  doc.setTextColor(0, 0, 0);
 
     // Pied de page élégant
     const footerY = pageHeight - 20;
@@ -190,72 +262,90 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     doc.setLineWidth(1);
     doc.line(margin, footerY, pageWidth - margin, footerY);
     
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text('Document confidentiel - Usage interne uniquement', margin, footerY + 8);
-    doc.text(`Version ${report.version || '1.0'}`, pageWidth - margin, footerY + 8, { align: 'right' });
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  const coverFooterText = 'Société de Gestion des Travaux et Encadrement de Chantier. 60 rue François Premier 78005 Paris Cedex';
+  const coverFooterLines = wrapTextByChars(coverFooterText, 60);
+  coverFooterLines.push('Copyright Bureau SGTEC');
+  doc.text(coverFooterLines, pageWidth / 2, footerY + 8, { align: 'center' });
 
     // --- PAGE DE CONTENU ---
     doc.addPage();
 
-    // En-tête de page
-    if (logoBase64) {
-      doc.addImage(logoBase64, 'JPEG', margin, 10, 30, 15);
-    }
+    // En-tête de page: logo retiré sur la page de contenu
     
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.setTextColor(...primaryColor);
-    doc.text(`${report.chantier || 'Projet'} - Rapport détaillé`, pageWidth - margin, 20, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+  const headerTitle = report.chantier ? `${report.chantier} - Rapport détaillé` : 'Rapport détaillé';
+  doc.text(headerTitle, pageWidth - margin, 20, { align: 'right' });
     
-    // Ligne de séparation
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(1);
-    doc.line(margin, 30, pageWidth - margin, 30);
+    // (Pas de ligne colorée en tête)
 
     let currentY = 45;
 
-    // Sections de contenu avec style moderne
-    const addModernSection = (title, icon, content, yPosition) => {
-      // Conteneur de section avec ombre
-      doc.setFillColor(...lightGray);
-      doc.roundedRect(margin - 2, yPosition - 2, pageWidth - (margin * 2) + 4, 50, 3, 3, 'F');
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(margin, yPosition, pageWidth - (margin * 2), 46, 3, 3, 'F');
-
-      // En-tête de section
-      doc.setFillColor(...primaryColor);
-      doc.roundedRect(margin, yPosition, 40, 16, 3, 3, 'F');
-      
-      // Icône et titre
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
-      doc.text(icon, margin + 6, yPosition + 11);
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(14);
-      doc.text(title, margin + 50, yPosition + 11);
-
-      // Contenu avec mise en forme
-      doc.setTextColor(...secondaryColor);
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      
-      const lines = doc.splitTextToSize(content || '—', pageWidth - (margin * 2) - 20);
-      doc.text(lines, margin + 10, yPosition + 25);
-
-      return yPosition + 60; // Retourne la position Y pour la prochaine section
+    // Helper: rendu de texte justifié (approx.)
+  const drawJustifiedText = (text, x, y, maxWidth, lineHeight = 5.5) => {
+      const paras = (text || '—').toString().split(/\n+/);
+      let cursorY = y;
+      paras.forEach((para, pIdx) => {
+        const lines = doc.splitTextToSize(para, maxWidth);
+        lines.forEach((line, idx) => {
+          const isLastLine = idx === lines.length - 1;
+          if (isLastLine) {
+            doc.text(line, x, cursorY);
+          } else {
+            // Justification: répartir l'espace restant entre les espaces
+            const words = line.split(' ');
+            if (words.length === 1) {
+              doc.text(line, x, cursorY);
+            } else {
+              const lineWidth = doc.getTextWidth(line);
+              const extra = Math.max(0, maxWidth - lineWidth);
+              const gaps = words.length - 1;
+              const extraPerGap = extra / gaps;
+              let cursorX = x;
+              for (let i = 0; i < words.length; i++) {
+                const w = words[i];
+                doc.text(w, cursorX, cursorY);
+                if (i < words.length - 1) {
+                  const spaceWidth = doc.getTextWidth(' ');
+                  cursorX += doc.getTextWidth(w) + spaceWidth + extraPerGap;
+                }
+              }
+            }
+          }
+          cursorY += lineHeight;
+        });
+        // petit écart entre paragraphes
+        if (pIdx < paras.length - 1) cursorY += lineHeight * 0.5;
+      });
+      return cursorY;
     };
 
-    // Section Avancement avec barre de progression
-    currentY = addModernSection('AVANCEMENT', '📊', report.avancement, currentY);
+    // Sections de contenu avec style moderne
+    const addModernSection = (title, icon, content, yPosition) => {
+      // Titre (noir, sans fond)
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text(icon, margin, yPosition + 10);
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, margin + 12, yPosition + 10);
+
+      // Contenu (noir) justifié
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      const afterY = drawJustifiedText(content, margin, yPosition + 24, pageWidth - (margin * 2), 5);
+
+      // espace après section
+      return afterY + 10;
+    };
+
     
-    // Section Observations avec icônes pour catégories
-    currentY = addModernSection('OBSERVATIONS', '🔍', report.observations, currentY);
-    
-    // Section Actions avec cases à cocher
-    currentY = addModernSection('ACTIONS À SUIVRE', '✓', report.prochainesEtapes, currentY);
+  // Sections Observations et Actions retirées
 
     // Section Équipe avec organigramme simplifié
     if (report.equipe) {
@@ -272,46 +362,36 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       currentY = addModernSection('PHOTOS DU CHANTIER', '�', '', currentY);
       // Grille de photos à implémenter
     }
-    
-    // Section Météo (à implémenter)
-    currentY = addModernSection('CONDITIONS MÉTÉO', '🌤️', report.meteo || 'Conditions météorologiques non spécifiées', currentY);
+    // (Section Météo retirée)
 
     // Informations complémentaires
     const addInfoBox = (title, content, x, y, width) => {
-      doc.setFillColor(...lightGray);
-      doc.roundedRect(x - 1, y - 1, width + 2, 60, 3, 3, 'F');
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(x, y, width, 58, 3, 3, 'F');
-
-      doc.setTextColor(...primaryColor);
+      // Titres et contenus simples (noir)
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
-      doc.text(title, x + 10, y + 15);
-
-      doc.setTextColor(...secondaryColor);
+      doc.text(title, x, y + 10);
       doc.setFontSize(9);
       doc.setFont(undefined, 'normal');
-      const lines = doc.splitTextToSize(content || '—', width - 20);
-      doc.text(lines, x + 10, y + 30);
+      drawJustifiedText(content || '—', x, y + 20, width, 4.5);
     };
 
     // Ajout de boîtes d'information supplémentaires
-    const boxWidth = (pageWidth - margin * 2 - 20) / 2;
-    addInfoBox('CONTRAINTES PARTICULIÈRES', report.contraintes || 'Aucune contrainte particulière signalée', 
-              margin, currentY, boxWidth);
-    addInfoBox('POINTS DE VIGILANCE', report.vigilance || 'Aucun point de vigilance signalé', 
-              margin + boxWidth + 20, currentY, boxWidth);
+  const boxWidth = (pageWidth - margin * 2 - 20) / 2;
+  // Section Contraintes particulières et Points de vigilance retirées
 
-    // Pied de page
+    // Pied de page (ligne colorée autorisée)
     const contentFooterY = pageHeight - 20;
     doc.setDrawColor(...primaryColor);
     doc.setLineWidth(0.5);
     doc.line(margin, contentFooterY, pageWidth - margin, contentFooterY);
     
-    doc.setFontSize(8);
-    doc.setTextColor(120, 120, 120);
-    const footerText = `${report.chantier || 'Rapport'} • ${report.responsable || 'SGTEC'} • ${new Date().toLocaleDateString('fr-FR')}`;
-    doc.text(footerText, pageWidth / 2, contentFooterY + 8, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  const contentFooterText = 'Sociéte de Gestion des Travaux et Encadrement de Chantier. 60 Rue François Premier 78005 Paris Cedex';
+  const contentFooterLines = wrapTextByChars(contentFooterText, 60);
+  contentFooterLines.push('Copyright Bureau SGTEC');
+  doc.text(contentFooterLines, pageWidth / 2, contentFooterY + 8, { align: 'center' });
 
     if (opts.save) {
       const filename = `Rapport_${(report.chantier || 'Chantier').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -322,33 +402,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     return doc.output('blob');
   };
 
-  // Fonction helper pour ajouter une section
-  const addSection = (doc, title, icon, content, startY, pageWidth, margin, primaryColor, secondaryColor) => {
-    let y = startY;
-    
-    // Titre de section avec icône et fond
-    doc.setFillColor(...primaryColor);
-    doc.rect(margin - 3, y - 2, pageWidth - margin * 2 + 6, 10, 'F');
-    
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${icon} ${title}`, margin, y + 6);
-    
-    y += 15;
-    
-    // Contenu sans cadre ni fond
-    const contentHeight = Math.ceil((content || 'Non renseigné').length / 100) * 6;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(...secondaryColor);
-    
-    const text = content || 'Aucune information renseignée pour cette section.';
-    const splitText = doc.splitTextToSize(text, pageWidth - margin * 2);
-    doc.text(splitText, margin, y + 3);
-    
-    return y + contentHeight + 15;
-  };
+  // (Helper addSection non utilisé supprimé)
 
   const handleAction = async (action) => {
     if (isGenerating) return;
@@ -462,14 +516,6 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       {/* Informations du rapport */}
       <div className="mt-3 p-3 bg-gray-50 rounded-md">
         <div className="text-xs text-gray-600 space-y-1">
-          <div className="flex justify-between">
-            <span>Projet:</span>
-            <span className="font-medium">{report.chantier || 'Non défini'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Responsable:</span>
-            <span className="font-medium">{report.responsable || 'Non défini'}</span>
-          </div>
           <div className="flex justify-between">
             <span>Statut:</span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${

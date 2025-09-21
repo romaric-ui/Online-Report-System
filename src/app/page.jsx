@@ -62,15 +62,13 @@ export default function Home() {
       updatedAt: now,
       version: 1,
       status: 'draft',
+  private: report.private === undefined ? false : !!report.private,
       // standardiser les clefs attendues
       chantier: report.chantier || '',
-      responsable: report.responsable || '',
-      dateDebut: report.dateDebut || '',
-      dateFin: report.dateFin || '',
-      avancement: report.avancement || '',
-      observations: report.observations || '',
+  phase: report.phase || '',
+      
      
-      localisation: report.localisation || '',
+  // localisation retirée
       entreprise: report.entreprise || '',
       attachments: report.attachments || [],
       ...report,
@@ -79,8 +77,8 @@ export default function Home() {
   };
 
   // Supprimer un rapport
-  const deleteReport = (index) => {
-    const newReports = reports.filter((_, i) => i !== index);
+  const deleteReport = (id) => {
+    const newReports = reports.filter((r) => r.id !== id);
     setReports(newReports);
     localStorage.setItem('constructionReports', JSON.stringify(newReports));
   };
@@ -107,16 +105,16 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-4">
-              {reports.length === 0 ? (
+              {reports.filter(r => !r.private).length === 0 ? (
                 <div className="text-center p-4 bg-white rounded-lg shadow">
                   <p className="text-gray-500">Aucun rapport disponible</p>
                 </div>
               ) : (
-                reports.map((report, index) => (
+                reports.filter(r => !r.private).map((report) => (
                   <ReportCard 
-                    key={report.id || index} 
+                    key={report.id} 
                     report={report} 
-                    onDelete={() => deleteReport(index)}
+                    onDelete={() => deleteReport(report.id)}
                     onUpdate={(r) => updateReport(r)}
                     onEditReport={handleEditReport}
                   />
