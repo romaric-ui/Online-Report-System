@@ -17,28 +17,134 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const [logoBase64, setLogoBase64] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    const loadLogo = async () => {
-      try {
-        const response = await fetch('/SGTEC.jpg');
-        const blob = await response.blob();
+    useEffect(() => {
+      const toDataUrl = (blob) => new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => setLogoBase64(reader.result);
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
         reader.readAsDataURL(blob);
-      } catch (err) {
-        console.warn('Logo non trouvé:', err);
-      }
-    };
-    loadLogo();
-  }, []);
+      });
+
+      // Supprimer les bordures blanches/transparents autour du logo pour un rendu propre
+      const trimLogoBorders = async (dataUrl) => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const w = img.naturalWidth || img.width;
+            const h = img.naturalHeight || img.height;
+            if (!w || !h) return resolve(dataUrl);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const { data } = ctx.getImageData(0, 0, w, h);
+            const isBg = (idx) => {
+              const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+              // Considérer quasi-blanc ou transparent comme fond
+              return (a < 10) || (r > 245 && g > 245 && b > 245);
+            };
+            let top = 0, bottom = h - 1, left = 0, right = w - 1;
+            // Trouver top
+            scanTop: for (; top < h; top++) {
+              for (let x = 0; x < w; x++) {
+                const idx = (top * w + x) * 4;
+                if (!isBg(idx)) break scanTop;
+              }
+            }
+            // Trouver bottom
+            scanBottom: for (; bottom >= 0; bottom--) {
+              for (let x = 0; x < w; x++) {
+                const idx = (bottom * w + x) * 4;
+                if (!isBg(idx)) break scanBottom;
+              }
+            }
+            // Trouver left
+            scanLeft: for (; left < w; left++) {
+              for (let y = top; y <= bottom; y++) {
+                const idx = (y * w + left) * 4;
+                if (!isBg(idx)) break scanLeft;
+              }
+            }
+            // Trouver right
+            scanRight: for (; right >= 0; right--) {
+              for (let y = top; y <= bottom; y++) {
+                const idx = (y * w + right) * 4;
+                if (!isBg(idx)) break scanRight;
+              }
+            }
+            // Garde-fous
+            if (right <= left || bottom <= top) return resolve(dataUrl);
+            const cropW = Math.max(1, right - left + 1);
+            const cropH = Math.max(1, bottom - top + 1);
+            const out = document.createElement('canvas');
+            out.width = cropW;
+            out.height = cropH;
+            const octx = out.getContext('2d');
+            octx.drawImage(img, left, top, cropW, cropH, 0, 0, cropW, cropH);
+            resolve(out.toDataURL('image/png'));
+          } catch {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+
+      const loadLogo = async () => {
+        // Image précise pour l'en-tête de page (configurable via env pour permettre le renommage)
+        // Utiliser NEXT_PUBLIC_LOGO_PATH (ex: "/logo_couleur.jpg"). Tombe par défaut sur "/logo_couleur.jpg".
+        const configuredPath = process.env.NEXT_PUBLIC_LOGO_PATH || '/logo_couleur.jpg';
+        const fixedPath = configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
+        try {
+          const res = await fetch(fixedPath);
+          if (!res.ok) {
+            console.warn('Logo non disponible à', fixedPath);
+            return;
+          }
+          const blob = await res.blob();
+          const dataUrl = await toDataUrl(blob);
+          const trimmed = await trimLogoBorders(dataUrl);
+          setLogoBase64(trimmed);
+        } catch (err) {
+          console.warn('Échec chargement logo en-tête:', err);
+        }
+      };
+      loadLogo();
+    }, []);
 
   const generatePDF = (opts = { save: true }) => {
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    // Dimensions A4 (mm)
+    const a4Width = 210;
+    const a4Height = 297;
+    const pageWidth = a4Width;
+  const margin = 20;
+  // Interligne 2.0
+  const PAR_LINE_H = 11; // paragraphe (≈ 2x 5.5)
+  const INFO_LINE_H = 9; // lignes info (≈ 2x 4.5)
 
-    // Page dimensions A4 (mm)
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 20;
+    // Estimation préalable de la hauteur nécessaire pour la page de garde
+    // Reproduit la logique de placement jusqu'à la "Phase" pour obtenir le Y final
+    let estimatedLeftInfoY = 75;
+    // 5 lignes (Affaire, Rapport, Intervenant, Date, Établi le)
+    estimatedLeftInfoY += 6 * 4; // après 4 incréments, la 5e ligne est au même Y
+    estimatedLeftInfoY += 15; // espace avant légende
+    const estCaptionLines = [
+      "RAPPORT D'INVESTIGATION AUDIT DE CLOS COUVERT:",
+      "INVESTIGATION DE CHANTIER"
+    ];
+    estimatedLeftInfoY += Math.max(0, (estCaptionLines.length - 1) * 7);
+    estimatedLeftInfoY += 12; // Phase
+    const topEndAfterPhase = estimatedLeftInfoY; // Y où la Phase est dessinée
+
+    // Bloc bas (zone image + infos) commence ~ à (pageHeight - 112)
+    // On garantit un écart minimal de 10mm entre le haut et ce bloc
+    const minGap = 10;
+    const coverRequiredHeight = Math.max(a4Height, Math.ceil(topEndAfterPhase + minGap + 112));
+
+    // Créer le document avec une page de garde à hauteur calculée
+    const doc = new jsPDF({ unit: 'mm', format: [a4Width, coverRequiredHeight] });
+    let pageHeight = coverRequiredHeight;
 
   // Palette: conserver uniquement la couleur pour la ligne de pied de page
   const primaryColor = [0, 119, 182];
@@ -79,10 +185,16 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Logo centré en haut de page
     if (logoBase64) {
-      const coverLogoW = 40;
-      const coverLogoH = 20;
+      const coverLogoW = 50; // légèrement plus grand
+      const coverLogoH = 25;
       const coverLogoX = (pageWidth - coverLogoW) / 2;
-      doc.addImage(logoBase64, 'JPEG', coverLogoX, 12, coverLogoW, coverLogoH);
+      const fmt = inferImageFormat(logoBase64);
+      try {
+        doc.addImage(logoBase64, fmt, coverLogoX, 12, coverLogoW, coverLogoH);
+      } catch (e) {
+        // Fallback silencieux en cas de format non supporté
+        try { doc.addImage(logoBase64, 'JPEG', coverLogoX, 12, coverLogoW, coverLogoH); } catch {}
+      }
     }
 
   // Informations entreprise (en bleu à droite)
@@ -101,14 +213,15 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    const coverTitle = report.chantier || 'Rapport d’intervention';
+  const coverTitle = report.proprietaire || report.entreprise || 'Rapport d’intervention';
     doc.text(coverTitle, pageWidth / 2, titleY, { align: 'center' });
 
     // Bloc d'informations à gauche (même interligne, sous le logo / sous infos entreprise)
   const leftInfoX = margin;
   let leftInfoY = 75; // descendu légèrement plus bas
-  doc.setFontSize(10);
-  doc.setTextColor(...primaryColor);
+  doc.setFontSize(12);
+  // Champs à gauche (Affaire/Rapport/Intervenant/Date/Établi le) en noir
+  doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'normal');
     const establishedIso = report.updatedAt || report.createdAt || new Date().toISOString();
     let establishedStr = '';
@@ -118,31 +231,31 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       establishedStr = new Date().toLocaleDateString('fr-FR');
     }
 
-  const valueOffset = 35; // léger décalage vers la droite
+  const valueOffset = 42; // décalage un peu plus large
   // N° affaire
   doc.setFont(undefined, 'bold');
   doc.text('N° Affaire:', leftInfoX, leftInfoY);
   doc.setFont(undefined, 'normal');
   doc.text(report.noAffaire || '—', leftInfoX + valueOffset, leftInfoY);
-  leftInfoY += 6;
+  leftInfoY += 9;
   // N° Rapport
   doc.setFont(undefined, 'bold');
   doc.text('N° Rapport:', leftInfoX, leftInfoY);
   doc.setFont(undefined, 'normal');
   doc.text(report.noRapport || '—', leftInfoX + valueOffset, leftInfoY);
-  leftInfoY += 6;
+  leftInfoY += 9;
   // Intervenant
   doc.setFont(undefined, 'bold');
   doc.text('Intervenant:', leftInfoX, leftInfoY);
   doc.setFont(undefined, 'normal');
   doc.text(report.intervenant || '—', leftInfoX + valueOffset, leftInfoY);
-  leftInfoY += 6;
+  leftInfoY += 9;
   // Date d'Intervention
   doc.setFont(undefined, 'bold');
   doc.text("Date d'Intervention:", leftInfoX, leftInfoY);
   doc.setFont(undefined, 'normal');
   doc.text(report.dateIntervention || '—', leftInfoX + valueOffset, leftInfoY);
-  leftInfoY += 6;
+  leftInfoY += 9;
   // Rapport établi le
   doc.setFont(undefined, 'bold');
   doc.text('Rapport établi le:', leftInfoX, leftInfoY);
@@ -204,7 +317,18 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     if (report.coverImage) {
       const format = inferImageFormat(report.coverImage);
       try {
-        doc.addImage(report.coverImage, format, imgBoxX, imgBoxY, imgBoxW, imgBoxH);
+        const srcW = Number(report.coverImageWidth) || null;
+        const srcH = Number(report.coverImageHeight) || null;
+        const ratio = srcW && srcH && srcW > 0 && srcH > 0 ? (srcW / srcH) : (4 / 3);
+        let drawW = imgBoxW;
+        let drawH = drawW / ratio;
+        if (drawH > imgBoxH) {
+          drawH = imgBoxH;
+          drawW = drawH * ratio;
+        }
+        const offsetX = imgBoxX + (imgBoxW - drawW) / 2;
+        const offsetY = imgBoxY + (imgBoxH - drawH) / 2;
+        doc.addImage(report.coverImage, format, offsetX, offsetY, drawW, drawH);
       } catch {
         doc.setDrawColor(0, 0, 0);
         doc.rect(imgBoxX, imgBoxY, imgBoxW, imgBoxH);
@@ -269,28 +393,44 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   coverFooterLines.push('Copyright Bureau SGTEC');
   doc.text(coverFooterLines, pageWidth / 2, footerY + 8, { align: 'center' });
 
-    // --- PAGE DE CONTENU ---
-    doc.addPage();
+  // --- PAGE DE CONTENU ---
+  // Forcer les pages suivantes en A4 portrait
+  doc.addPage('a4', 'p');
+  pageHeight = a4Height;
 
-    // En-tête de page: logo retiré sur la page de contenu
-    
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(0, 0, 0);
-  const headerTitle = report.chantier ? `${report.chantier} - Rapport détaillé` : 'Rapport détaillé';
-  doc.text(headerTitle, pageWidth - margin, 20, { align: 'right' });
+    // Pas d'en-tête répété sur les pages suivantes (page 2+)
     
     // (Pas de ligne colorée en tête)
 
-    let currentY = 45;
+  let currentY = 45;
 
-    // Helper: rendu de texte justifié (approx.)
-  const drawJustifiedText = (text, x, y, maxWidth, lineHeight = 5.5) => {
+    // Sécurité: s'assurer que le contenu commence bien à partir de la page 2
+    if (doc.getNumberOfPages() < 2) {
+      doc.addPage('a4', 'p');
+      pageHeight = a4Height;
+      currentY = 45;
+    }
+
+    // Helper: rendu de texte justifié (avec saut de page automatique)
+    const drawJustifiedText = (text, x, y, maxWidth, lineHeight = 5.5, options = {}) => {
+      const { startYForNewPage = 45, addHeaderOnNewPage = null } = options;
       const paras = (text || '—').toString().split(/\n+/);
       let cursorY = y;
+
+      const ensureSpace = () => {
+        const currentPageHeight = doc.internal.pageSize.getHeight();
+        const maxUsableY = currentPageHeight - 30; // garder de la place pour le pied de page
+        if (cursorY + lineHeight > maxUsableY) {
+          doc.addPage();
+          if (typeof addHeaderOnNewPage === 'function') addHeaderOnNewPage();
+          cursorY = startYForNewPage;
+        }
+      };
+
       paras.forEach((para, pIdx) => {
         const lines = doc.splitTextToSize(para, maxWidth);
         lines.forEach((line, idx) => {
+          ensureSpace();
           const isLastLine = idx === lines.length - 1;
           if (isLastLine) {
             doc.text(line, x, cursorY);
@@ -318,27 +458,39 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
           cursorY += lineHeight;
         });
         // petit écart entre paragraphes
-        if (pIdx < paras.length - 1) cursorY += lineHeight * 0.5;
+        if (pIdx < paras.length - 1) {
+          cursorY += lineHeight * 0.5;
+        }
       });
       return cursorY;
     };
 
     // Sections de contenu avec style moderne
-    const addModernSection = (title, icon, content, yPosition) => {
-      // Titre (noir, sans fond)
-      doc.setTextColor(0, 0, 0);
+    const addModernSection = (title, icon, content, yPosition, titleColor = null) => {
+      // Titre (couleur configurable, sinon noir)
+      if (titleColor && Array.isArray(titleColor)) {
+        doc.setTextColor(...titleColor);
+      } else {
+        doc.setTextColor(0, 0, 0);
+      }
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
-      doc.text(icon, margin, yPosition + 10);
       doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
-      doc.text(title, margin + 12, yPosition + 10);
+  doc.text(title, margin, yPosition + 10);
 
       // Contenu (noir) justifié
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(10);
       doc.setFont(undefined, 'normal');
-      const afterY = drawJustifiedText(content, margin, yPosition + 24, pageWidth - (margin * 2), 5);
+      const afterY = drawJustifiedText(
+        content,
+        margin,
+        yPosition + 24,
+        pageWidth - (margin * 2),
+        PAR_LINE_H,
+        { startYForNewPage: 45 }
+      );
 
       // espace après section
       return afterY + 10;
@@ -347,19 +499,104 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     
   // Sections Observations et Actions retirées
 
+    // Section OBJECTIF ET LIMITE DE LA PRESTATION (toujours afficher le titre)
+    if (report.objectifLimites) {
+      currentY = addModernSection("OBJECTIF ET LIMITE DE LA PRESTATION", "", report.objectifLimites, currentY, primaryColor);
+    } else {
+      // Titre seul en bleu
+      doc.setTextColor(...primaryColor);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+  doc.text("OBJECTIF ET LIMITE DE LA PRESTATION", margin, currentY + 10);
+      currentY += 24; // espace titre
+    }
+
+    // Section OUVRAGE CONCERNÉ (toujours affichée, lignes vides si non renseignées)
+    if (report.ouvrageConcerne) {
+      currentY = addModernSection("OUVRAGE CONCERNÉ", "", report.ouvrageConcerne, currentY, primaryColor);
+    } else {
+      // Titre de section même sans paragraphe libre
+      doc.setTextColor(...primaryColor);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+  doc.text('OUVRAGE CONCERNÉ', margin, currentY + 10);
+      currentY += 24;
+    }
+
+    // Détails structurés (affichés même vides)
+    {
+      const kv = [
+        ["Il s'agit de", report.typeOuvrage ?? ''],
+        ["Adresse de l'ouvrage", report.adresseOuvrage ?? ''],
+        ["Modèle de maison", report.modeleMaison ?? ''],
+        ["Nombre de niveaux", report.nombreNiveaux != null && String(report.nombreNiveaux) !== '' ? String(report.nombreNiveaux) : ''],
+        ["Conducteur de travaux du projet", report.conducteurTravaux ?? ''],
+        ["N° chantier/dossier", report.noChantierDossier ?? ''],
+        ["Entreprise", report.entrepriseProjet ?? ''],
+        ["N° plan LSA STANDARD", report.noPlanLSAStandard ?? ''],
+      ];
+
+  const minLabelW = 70; // largeur minimale du libellé en mm (légèrement augmentée)
+  const lineH = INFO_LINE_H;
+      const maxY = pageHeight - 25; // garder espace pour pied
+      doc.setFontSize(12); // police augmentée pour les infos sous Ouvrage concerné
+      doc.setTextColor(0, 0, 0);
+      kv.forEach(([label, value]) => {
+  const rowPad = 4; // espacement vertical légèrement augmenté
+        if (currentY + lineH + rowPad > maxY) {
+          doc.addPage('a4', 'p');
+          pageHeight = a4Height;
+          currentY = 45;
+        }
+        // Dessiner le libellé et calculer sa largeur
+        doc.setFont(undefined, 'bold');
+        const labelText = `${label}:`;
+        doc.text(labelText, margin, currentY);
+        const labelDrawnW = doc.getTextWidth(labelText);
+        doc.setFont(undefined, 'normal');
+        const textX = margin + Math.max(minLabelW, labelDrawnW + 3);
+        const availableW = pageWidth - margin - textX;
+        const textVal = value == null ? '' : String(value);
+        const lines = textVal ? doc.splitTextToSize(textVal, availableW) : [];
+        if (lines.length) {
+          doc.text(lines, textX, currentY);
+        }
+        currentY += Math.max(lineH, lines.length * INFO_LINE_H) + rowPad;
+      });
+      currentY += 5;
+    }
+
+    // Section DÉROULEMENT DE LA VISITE (toujours afficher le titre)
+    if (report.deroulementVisite) {
+      currentY = addModernSection("DÉROULEMENT DE LA VISITE", "", report.deroulementVisite, currentY, primaryColor);
+    } else {
+      // Titre seul en bleu
+      doc.setTextColor(...primaryColor);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+  doc.text("DÉROULEMENT DE LA VISITE", margin, currentY + 10);
+      currentY += 24;
+    }
+
     // Section Équipe avec organigramme simplifié
     if (report.equipe) {
-      currentY = addModernSection('ÉQUIPE', '👥', report.equipe, currentY);
+      currentY = addModernSection('ÉQUIPE', '', report.equipe, currentY);
     }
 
     // Section Matériel avec catégories
     if (report.materiel) {
-      currentY = addModernSection('MATÉRIEL', '🔧', report.materiel, currentY);
+      currentY = addModernSection('MATÉRIEL', '', report.materiel, currentY);
     }
 
     // Section Photos du chantier (si disponible)
     if (report.photos && report.photos.length > 0) {
-      currentY = addModernSection('PHOTOS DU CHANTIER', '�', '', currentY);
+      currentY = addModernSection('PHOTOS', '', '', currentY);
       // Grille de photos à implémenter
     }
     // (Section Météo retirée)
@@ -373,28 +610,51 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       doc.text(title, x, y + 10);
       doc.setFontSize(9);
       doc.setFont(undefined, 'normal');
-      drawJustifiedText(content || '—', x, y + 20, width, 4.5);
+      drawJustifiedText(
+        content || '—',
+        x,
+        y + 20,
+        width,
+        4.5,
+        { startYForNewPage: 45 }
+      );
     };
 
     // Ajout de boîtes d'information supplémentaires
   const boxWidth = (pageWidth - margin * 2 - 20) / 2;
   // Section Contraintes particulières et Points de vigilance retirées
 
-    // Pied de page (ligne colorée autorisée)
+    // Pied de page pour pages de contenu dessiné par page dans la boucle suivante
     const contentFooterY = pageHeight - 20;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(margin, contentFooterY, pageWidth - margin, contentFooterY);
-    
-  doc.setFontSize(8);
-  doc.setTextColor(120, 120, 120);
-  const contentFooterText = 'Sociéte de Gestion des Travaux et Encadrement de Chantier. 60 Rue François Premier 78005 Paris Cedex';
-  const contentFooterLines = wrapTextByChars(contentFooterText, 60);
-  contentFooterLines.push('Copyright Bureau SGTEC');
-  doc.text(contentFooterLines, pageWidth / 2, contentFooterY + 8, { align: 'center' });
+    const contentFooterText = 'Sociéte de Gestion des Travaux et Encadrement de Chantier. 60 Rue François Premier 78005 Paris Cedex';
+    const contentFooterLines = wrapTextByChars(contentFooterText, 60);
+    contentFooterLines.push('Copyright Bureau SGTEC');
+
+    // Numérotation des pages (après avoir dessiné tous les pieds de page)
+    const totalPages = doc.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      // Dessiner le pied de page pour les pages de contenu (éviter de dupliquer la page de garde si déjà dessinée)
+      if (i > 1) {
+        doc.setDrawColor(...primaryColor);
+        doc.setLineWidth(0.5);
+        doc.line(margin, contentFooterY, pageWidth - margin, contentFooterY);
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(contentFooterLines, pageWidth / 2, contentFooterY + 8, { align: 'center' });
+      }
+
+      // Numéro de page en bas à droite
+      const numLabel = `${i} / ${totalPages}`;
+      const numY = pageHeight - 20 + 8; // même Y que le texte du pied de page
+      doc.text(numLabel, pageWidth - margin, numY, { align: 'right' });
+    }
 
     if (opts.save) {
-      const filename = `Rapport_${(report.chantier || 'Chantier').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const baseName = (report.proprietaire || report.entreprise || 'Rapport').replace(/\s+/g, '_');
+  const filename = `Rapport_${baseName}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
       return;
     }

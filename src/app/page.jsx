@@ -8,6 +8,7 @@ import Header from "./components/Header";
 export default function Home() {
   const [reports, setReports] = useState([]);
   const [reportToEdit, setReportToEdit] = useState(null);
+  const [formKey, setFormKey] = useState(0);
 
   // Charger les rapports depuis localStorage au démarrage
   useEffect(() => {
@@ -38,6 +39,14 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNewReport = () => {
+    // Quitter le mode édition et forcer un remontage du formulaire
+    setReportToEdit(null);
+    setFormKey((k) => k + 1);
+    // Remonter en haut de la page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Sauvegarder les rapports dans l'état (enrichi)
   const addReport = (report) => {
     const now = new Date().toISOString();
@@ -61,11 +70,11 @@ export default function Home() {
       createdAt: now,
       updatedAt: now,
       version: 1,
-      status: 'draft',
+      // Conserver le statut choisi dans le formulaire (par défaut 'En cours')
+      status: report.status || 'En cours',
   private: report.private === undefined ? false : !!report.private,
-      // standardiser les clefs attendues
-      chantier: report.chantier || '',
-  phase: report.phase || '',
+    // standardiser les clefs attendues
+    phase: report.phase || '',
       
      
   // localisation retirée
@@ -92,12 +101,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="app-container">
-        <Header />
+  <Header onNewReport={handleNewReport} />
         <main>
           <h2 className="text-2xl font-semibold mb-4">Tableau de bord</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="card">
               <ReportForm 
+                key={formKey}
                 addReport={addReport} 
                 reportToEdit={reportToEdit}
                 onCancel={() => setReportToEdit(null)}

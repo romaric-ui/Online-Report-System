@@ -1,7 +1,7 @@
 "use client";
 import Image from 'next/image';
 
-export default function Header() {
+export default function Header({ onNewReport }) {
   return (
     <header className="app-header">
       <div className="flex items-center gap-3">
@@ -13,7 +13,7 @@ export default function Header() {
       </div>
       <div>
         <nav className="flex items-center gap-3">
-          <button className="btn-primary">Nouveau rapport</button>
+          <button className="btn-primary" onClick={onNewReport}>Nouveau rapport</button>
           <button className="px-3 py-1 border rounded">Export</button>
         </nav>
       </div>
