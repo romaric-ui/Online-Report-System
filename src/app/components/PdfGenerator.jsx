@@ -1,7 +1,7 @@
 "use client";
 // components/PdfGenerator.jsx
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { useEffect, useState, useCallback } from "react";
 import { 
   FaFileDownload, 
@@ -119,6 +119,8 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     const a4Height = 297;
     const pageWidth = a4Width;
   const margin = 20;
+    // Position de départ du contenu sur les pages de contenu (page 2+)
+    const CONTENT_TOP_Y = 35; // remonter un peu le contenu
   // Interligne 2.0
   const PAR_LINE_H = 11; // paragraphe (≈ 2x 5.5)
   const INFO_LINE_H = 9; // lignes info (≈ 2x 4.5)
@@ -402,18 +404,32 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     
     // (Pas de ligne colorée en tête)
 
-  let currentY = 45;
+  let currentY = CONTENT_TOP_Y;
+
+    // Helper: assure un espace suffisant avant d'imprimer un titre/section.
+    // needed = hauteur minimale (mm) que l'on souhaite réserver (titre + première ligne ou marge).
+    const ensureSpace = (needed = 30) => {
+      const currentPageHeight = doc.internal.pageSize.getHeight();
+      const bottomGuard = 25; // marge basse utilisée ailleurs
+      if (currentY + needed > currentPageHeight - bottomGuard) {
+        doc.addPage('a4', 'p');
+        pageHeight = a4Height;
+        currentY = CONTENT_TOP_Y;
+        return true; // nouvelle page créée
+      }
+      return false;
+    };
 
     // Sécurité: s'assurer que le contenu commence bien à partir de la page 2
     if (doc.getNumberOfPages() < 2) {
       doc.addPage('a4', 'p');
       pageHeight = a4Height;
-      currentY = 45;
+      currentY = CONTENT_TOP_Y;
     }
 
     // Helper: rendu de texte justifié (avec saut de page automatique)
     const drawJustifiedText = (text, x, y, maxWidth, lineHeight = 5.5, options = {}) => {
-      const { startYForNewPage = 45, addHeaderOnNewPage = null } = options;
+      const { startYForNewPage = CONTENT_TOP_Y, addHeaderOnNewPage = null } = options;
       const paras = (text || '—').toString().split(/\n+/);
       let cursorY = y;
 
@@ -421,7 +437,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         const currentPageHeight = doc.internal.pageSize.getHeight();
         const maxUsableY = currentPageHeight - 30; // garder de la place pour le pied de page
         if (cursorY + lineHeight > maxUsableY) {
-          doc.addPage();
+            doc.addPage();
           if (typeof addHeaderOnNewPage === 'function') addHeaderOnNewPage();
           cursorY = startYForNewPage;
         }
@@ -467,6 +483,12 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Sections de contenu avec style moderne
     const addModernSection = (title, icon, content, yPosition, titleColor = null) => {
+      // Réserver au moins 24mm (titre + espacement) avant de dessiner la section
+      ensureSpace(24);
+      // Si un saut de page a eu lieu, réaligner yPosition sur currentY
+      if (yPosition !== currentY) {
+        yPosition = currentY;
+      }
       // Titre (couleur configurable, sinon noir)
       if (titleColor && Array.isArray(titleColor)) {
         doc.setTextColor(...titleColor);
@@ -489,7 +511,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         yPosition + 24,
         pageWidth - (margin * 2),
         PAR_LINE_H,
-        { startYForNewPage: 45 }
+        { startYForNewPage: CONTENT_TOP_Y }
       );
 
       // espace après section
@@ -501,9 +523,11 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Section OBJECTIF ET LIMITE DE LA PRESTATION (toujours afficher le titre)
     if (report.objectifLimites) {
+      ensureSpace(24);
       currentY = addModernSection("OBJECTIF ET LIMITE DE LA PRESTATION", "", report.objectifLimites, currentY, primaryColor);
     } else {
       // Titre seul en bleu
+      ensureSpace(24);
       doc.setTextColor(...primaryColor);
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
@@ -515,9 +539,11 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Section OUVRAGE CONCERNÉ (toujours affichée, lignes vides si non renseignées)
     if (report.ouvrageConcerne) {
+      ensureSpace(24);
       currentY = addModernSection("OUVRAGE CONCERNÉ", "", report.ouvrageConcerne, currentY, primaryColor);
     } else {
       // Titre de section même sans paragraphe libre
+      ensureSpace(24);
       doc.setTextColor(...primaryColor);
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
@@ -550,7 +576,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         if (currentY + lineH + rowPad > maxY) {
           doc.addPage('a4', 'p');
           pageHeight = a4Height;
-          currentY = 45;
+          currentY = CONTENT_TOP_Y;
         }
         // Dessiner le libellé et calculer sa largeur
         doc.setFont(undefined, 'bold');
@@ -570,18 +596,91 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       currentY += 5;
     }
 
-    // Section DÉROULEMENT DE LA VISITE (toujours afficher le titre)
-    if (report.deroulementVisite) {
-      currentY = addModernSection("DÉROULEMENT DE LA VISITE", "", report.deroulementVisite, currentY, primaryColor);
-    } else {
-      // Titre seul en bleu
+    // Section DÉROULEMENT DE LA VISITE (titre + infos phase/date/personne + texte éventuel)
+    // Titre
+  ensureSpace(24);
+  doc.setTextColor(...primaryColor);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text("DÉROULEMENT DE LA VISITE", margin, currentY + 10);
+    currentY += 24;
+
+    // Deux lignes d'information
+    {
+      const maxY = pageHeight - 25;
+      const lineH = INFO_LINE_H;
+      const rowPad = 4;
+      const minLabelW = 85;
+
+      // Phase et date
+      //deroulement de la visite
+      let visitDateStr = '—';
+      try {
+        visitDateStr = report.dateIntervention ? new Date(report.dateIntervention).toLocaleDateString('fr-FR') : '—';
+      } catch { visitDateStr = report.dateIntervention || '—'; }
+      const phaseStr = (report.phase && String(report.phase).trim() !== '') ? String(report.phase) : '—';
+      const personne = (report.personneRencontree && String(report.personneRencontree).trim() !== '') ? String(report.personneRencontree) : 'absence de personne';
+
+      const representant = (report.representantSgtec && String(report.representantSgtec).trim() !== '') ? String(report.representantSgtec) : '—';
+      const infoRows = [
+        ["La visite Phase " + phaseStr + " s'est déroulée le", visitDateStr],
+        ["La personne rencontrée sur le site était", personne],
+        ["Le représentant du bureau SGTEC était", representant],
+      ];
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      infoRows.forEach(([label, value]) => {
+        if (currentY + lineH + rowPad > maxY) {
+          doc.addPage('a4', 'p');
+          pageHeight = a4Height;
+          currentY = CONTENT_TOP_Y;
+        }
+        doc.setFont(undefined, 'bold');
+        const labelText = label + ':';
+        doc.text(labelText, margin, currentY);
+        const labelW = doc.getTextWidth(labelText);
+        const textX = margin + Math.max(minLabelW, labelW + 3);
+        doc.setFont(undefined, 'normal');
+        const availableW = pageWidth - textX - margin;
+        const lines = value ? doc.splitTextToSize(String(value), availableW) : [];
+        if (lines.length) doc.text(lines, textX, currentY);
+        currentY += Math.max(lineH, lines.length * INFO_LINE_H) + rowPad;
+      });
+      currentY += 4;
+    }
+
+    // Sous-titre en bleu: Rapport d'investigation -PHASE (no phase)-
+    {
+      const maxY = pageHeight - 25;
+      const lineH = INFO_LINE_H;
+      if (currentY + lineH > maxY) {
+        doc.addPage('a4', 'p');
+        pageHeight = a4Height;
+        currentY = CONTENT_TOP_Y;
+      }
+      const phaseStrBlue = (report.phase && String(report.phase).trim() !== '') ? String(report.phase) : '—';
+      const blueSubtitle = `RAPPORT D'INVESTIGATION -PHASE ${phaseStrBlue}-`;
       doc.setTextColor(...primaryColor);
-      doc.setFontSize(10);
+      doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
-      doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
-  doc.text("DÉROULEMENT DE LA VISITE", margin, currentY + 10);
-      currentY += 24;
+  doc.text(blueSubtitle, margin, currentY);
+      currentY += 10;
+      doc.setTextColor(0, 0, 0);
+    }
+
+    // Texte libre (si présent)
+    if (report.deroulementVisite) {
+      currentY = drawJustifiedText(
+        report.deroulementVisite,
+        margin,
+        currentY,
+        pageWidth - (margin * 2),
+        PAR_LINE_H,
+        { startYForNewPage: CONTENT_TOP_Y }
+      ) + 10;
     }
 
     // Section Équipe avec organigramme simplifié
@@ -601,6 +700,150 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     }
     // (Section Météo retirée)
 
+    // Section AUTRES POINTS (affiche uniquement les lignes remplies; si aucune, ne rien afficher)
+    {
+      // Normaliser et filtrer les lignes avec contenu
+      const rawRows = Array.isArray(report.autresPoints) ? report.autresPoints : [];
+      const normalized = rawRows.map((r) => ({
+        chapitre: (r?.chapitre || '').toString().toUpperCase(),
+        element: r?.element || r?.elementObserve || '',
+        moyen: r?.moyen || r?.moyenDeControle || '',
+        avis: r?.avis || '',
+        commentaire: r?.commentaire || '',
+        photo: r?.photo || '',
+        photoWidth: r?.photoWidth || 0,
+        photoHeight: r?.photoHeight || 0,
+      }));
+      const hasContent = (row) => {
+        return [row.chapitre, row.element, row.moyen, row.avis, row.commentaire, row.photo]
+          .some(v => v != null && String(v).trim() !== '');
+      };
+      const rows = normalized.filter(hasContent);
+
+      if (rows.length > 0) {
+        const maxY = pageHeight - 25;
+        // Vérifie l'espace avant le titre du tableau
+        ensureSpace(26);
+        // Titre en bleu
+        doc.setTextColor(...primaryColor);
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('AUTRES POINTS', margin, currentY + 10);
+        currentY += 16;
+        doc.setTextColor(0, 0, 0);
+
+        // Colonnes et styles du tableau
+        const columns = [
+          { header: 'Chapitre', dataKey: 'chapitre' },
+          { header: 'Élément observé', dataKey: 'element' },
+          { header: 'Moyen de\ncontrôle', dataKey: 'moyen' },
+          { header: 'Avis', dataKey: 'avis' },
+          { header: 'Commentaire', dataKey: 'commentaire' },
+          { header: 'Photo', dataKey: 'photo' },
+        ];
+
+        // Construire le corps sans la base64 dans la colonne Photo
+        const tableBody = rows.map(r => columns.map(c => (c.dataKey === 'photo' ? '' : (r[c.dataKey] ?? ''))));
+
+        const atState = autoTable(doc, {
+          startY: currentY,
+          head: [columns.map(c => c.header)],
+          body: tableBody,
+          theme: 'grid',
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            minCellHeight: 16,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.1,
+            halign: 'left',
+            valign: 'middle',
+          },
+          headStyles: {
+            fillColor: primaryColor,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+          columnStyles: {
+            0: { cellWidth: 19 },
+            1: { cellWidth: 42 },
+            2: { cellWidth: 26 },
+            3: { cellWidth: 22 },
+            4: { cellWidth: 47 },
+            5: { cellWidth: 20, halign: 'center' },
+          },
+          margin: { left: margin, right: margin },
+          willDrawCell: (data) => {
+            // Coloriser le texte de la colonne Avis selon la valeur
+            if (data.section === 'body' && data.column.index === 3) {
+              const rowIdx = data.row.index;
+              const avis = (rows[rowIdx]?.avis || '').toLowerCase();
+              if (avis === 'conforme' || avis === 'très satisfait' || avis === 'satisfait') {
+                doc.setTextColor(22, 163, 74); // vert
+              } else if (avis === 'non conforme' || avis === 'insatisfait' || avis === 'très insatisfait') {
+                doc.setTextColor(220, 38, 38); // rouge
+              } else if (avis === 'avec observations') {
+                doc.setTextColor(217, 119, 6); // ambre/orange
+              } else if (avis === 'neutre') {
+                doc.setTextColor(82, 82, 82); // gris
+              } else {
+                doc.setTextColor(0, 0, 0);
+              }
+            }
+          },
+          didDrawCell: (data) => {
+            // Insérer la photo en miniature si présente dans la cellule Photo
+            const colIdx = data.column.index;
+            const rowIdx = data.row.index;
+            if (colIdx === 5) {
+              try {
+                const row = rows[rowIdx] || {};
+                const val = row.photo;
+                if (val) {
+                  const cell = data.cell;
+                  const maxW = Math.min(18, cell.width - 2);
+                  const maxH = Math.min(18, cell.height - 2);
+                  let imgW = maxW;
+                  let imgH = maxH;
+                  const pw = Number(row.photoWidth) || 0;
+                  const ph = Number(row.photoHeight) || 0;
+                  if (pw > 0 && ph > 0) {
+                    const ratio = pw / ph;
+                    if (ratio >= 1) {
+                      imgW = maxW;
+                      imgH = Math.min(maxH, maxW / ratio);
+                    } else {
+                      imgH = maxH;
+                      imgW = Math.min(maxW, maxH * ratio);
+                    }
+                  } else {
+                    imgW = imgH = Math.min(maxW, maxH, 16);
+                  }
+                  const x = cell.x + (cell.width - imgW) / 2;
+                  const y = cell.y + (cell.height - imgH) / 2;
+                  const fmt = (val.startsWith('data:image/png')) ? 'PNG' : 'JPEG';
+                  doc.addImage(val, fmt, x, y, imgW, imgH);
+                }
+              } catch {}
+            }
+          },
+          didDrawPage: () => {},
+        });
+
+        // Mise à jour du curseur Y après le tableau
+        const lastY = atState && atState.finalY ? atState.finalY : (doc.lastAutoTable && doc.lastAutoTable.finalY);
+        if (lastY) {
+          currentY = lastY + 10;
+        } else {
+          currentY += 10;
+        }
+      }
+    }
+
     // Informations complémentaires
     const addInfoBox = (title, content, x, y, width) => {
       // Titres et contenus simples (noir)
@@ -616,7 +859,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         y + 20,
         width,
         4.5,
-        { startYForNewPage: 45 }
+        { startYForNewPage: CONTENT_TOP_Y }
       );
     };
 
@@ -624,9 +867,31 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const boxWidth = (pageWidth - margin * 2 - 20) / 2;
   // Section Contraintes particulières et Points de vigilance retirées
 
-    // Pied de page pour pages de contenu dessiné par page dans la boucle suivante
-    const contentFooterY = pageHeight - 20;
-    const contentFooterText = 'Sociéte de Gestion des Travaux et Encadrement de Chantier. 60 Rue François Premier 78005 Paris Cedex';
+    // CONCLUSION (toujours afficher le titre; placeholder si vide)
+    {
+      const raw = report.conclusion;
+      const text = raw == null ? '' : String(raw).trim();
+      // Vérifier espace disponible avant d'imprimer le titre
+      ensureSpace(24);
+      if (text.length > 0) {
+        currentY = addModernSection('CONCLUSION', '', text, currentY, primaryColor);
+      } else {
+        doc.setTextColor(...primaryColor);
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('CONCLUSION', margin, currentY + 10);
+        doc.setTextColor(120,120,120);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text('—', margin, currentY + 18);
+        currentY += 24;
+        doc.setTextColor(0,0,0);
+      }
+    }
+
+
+  // Préparer le texte de pied de page
+  const contentFooterText = 'Sociéte de Gestion des Travaux et Encadrement de Chantier. 60 Rue François Premier 78005 Paris Cedex';
     const contentFooterLines = wrapTextByChars(contentFooterText, 60);
     contentFooterLines.push('Copyright Bureau SGTEC');
 
@@ -636,19 +901,21 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     doc.setTextColor(120, 120, 120);
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
+      const ph = doc.internal.pageSize.getHeight();
+      const footerYPerPage = ph - 20;
       // Dessiner le pied de page pour les pages de contenu (éviter de dupliquer la page de garde si déjà dessinée)
       if (i > 1) {
         doc.setDrawColor(...primaryColor);
         doc.setLineWidth(0.5);
-        doc.line(margin, contentFooterY, pageWidth - margin, contentFooterY);
+        doc.line(margin, footerYPerPage, pageWidth - margin, footerYPerPage);
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(contentFooterLines, pageWidth / 2, contentFooterY + 8, { align: 'center' });
+        doc.text(contentFooterLines, pageWidth / 2, footerYPerPage + 8, { align: 'center' });
       }
 
       // Numéro de page en bas à droite
       const numLabel = `${i} / ${totalPages}`;
-      const numY = pageHeight - 20 + 8; // même Y que le texte du pied de page
+      const numY = footerYPerPage + 8; // même Y que le texte du pied de page
       doc.text(numLabel, pageWidth - margin, numY, { align: 'right' });
     }
 
