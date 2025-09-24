@@ -12,6 +12,7 @@ Application Next.js permettant la saisie structurée d’un rapport chantier et 
 7. Limitations connues
 8. Roadmap potentielle
 9. Licence / Auteurs
+10. Déploiement Netlify
 
 ---
 ## 1. Fonctionnalités principales
@@ -144,3 +145,37 @@ Projet interne SGTEC (adapter selon statut juridique). Ajouter une licence (MIT 
 Pour toute amélioration, ouvrir une issue ou proposer un patch.
 
 Bonne génération de rapports !
+
+## 10. Déploiement Netlify
+
+### Configuration
+Un fichier `netlify.toml` est fourni. Il utilise la commande:
+```
+npm run build
+```
+et publie le dossier `.next` avec le plugin officiel `@netlify/plugin-nextjs`.
+
+Assurez-vous que la version de Node sur Netlify est 20+. (Définie via `NODE_VERSION=20`).
+
+### Étapes de déploiement
+1. Pousser le repo sur GitHub.
+2. Sur Netlify: New Site → Import from Git → choisir le repo.
+3. Build command: `npm run build` (déjà pris depuis le `netlify.toml`).
+4. Publish directory: `.next` (géré aussi par le plugin, ne pas mettre `out`).
+5. Lancer le déploiement.
+
+### Erreurs fréquentes & Solutions
+| Problème | Cause | Solution |
+|----------|-------|----------|
+| "Directory not found: out" | Tentative d'export statique (`next export`) non configurée | Ne pas utiliser `npm run export`; laisser SSR (App Router). |
+| "Module not found" pendant build | Cache ou lock incohérent | Activer option Netlify "clear cache and deploy" ou régénérer `package-lock.json`. |
+| Erreur Node version | Netlify utilise une version plus ancienne | Forcer `NODE_VERSION=20` dans `netlify.toml`. |
+| 404 sur routes dynamiques | Mauvaise config de redirection | Garder le plugin Next; ne pas surcharger avec un `_redirects` incompatible. |
+
+### Export statique ?
+L’application dépend du localStorage et d’interactions client; un export statique complet n’est pas nécessaire. Garder le mode par défaut (SSR/Edge) est plus simple.
+
+### Débogage
+Consulter les logs Netlify: onglet Deploy → logs build. Rechercher les lignes `@netlify/plugin-nextjs` pour vérifier l’injection des fonctions.
+
+Si besoin d’optimisation: activer bundling stand‑alone dans `next.config.ts` plus tard.

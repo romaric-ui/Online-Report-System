@@ -1,0 +1,14 @@
+# Netlify configuration for Next.js App Router project
+# Basic build using Next.js 15 standalone output handled by the Next runtime
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Note: No custom redirects needed; plugin handles routing & functions
