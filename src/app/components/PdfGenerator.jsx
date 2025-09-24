@@ -3,6 +3,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useEffect, useState, useCallback } from "react";
+import { useToast } from './ToastProvider';
 import { 
   FaFileDownload, 
   FaEye, 
@@ -1022,26 +1023,31 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Numérotation des pages (après avoir dessiné tous les pieds de page)
     const totalPages = doc.getNumberOfPages();
+    const contentPages = Math.max(0, totalPages - 1); // pages après la page de garde
     doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       const ph = doc.internal.pageSize.getHeight();
       const footerYPerPage = ph - 20;
-      // Dessiner le pied de page pour les pages de contenu (éviter de dupliquer la page de garde si déjà dessinée)
-      if (i > 1) {
-        doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(0.5);
-        doc.line(margin, footerYPerPage, pageWidth - margin, footerYPerPage);
-        doc.setFontSize(8);
-        doc.setTextColor(120, 120, 120);
-        doc.text(contentFooterLines, pageWidth / 2, footerYPerPage + 8, { align: 'center' });
+      if (i === 1) {
+        // Pas de pagination ni footer détaillé sur la page de garde (déjà gérée plus haut éventuellement)
+        continue;
       }
-
-      // Numéro de page en bas à droite
-      const numLabel = `${i} / ${totalPages}`;
-      const numY = footerYPerPage + 8; // même Y que le texte du pied de page
-      doc.text(numLabel, pageWidth - margin, numY, { align: 'right' });
+      // Footer ligne + texte
+      doc.setDrawColor(...primaryColor);
+      doc.setLineWidth(0.5);
+      doc.line(margin, footerYPerPage, pageWidth - margin, footerYPerPage);
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(contentFooterLines, pageWidth / 2, footerYPerPage + 8, { align: 'center' });
+      // Numérotation: seconde page physique = 1
+      if (contentPages > 0) {
+        const logicalPage = i - 1; // commence à 1 pour la deuxième page
+        const numLabel = `${logicalPage} / ${contentPages}`;
+        const numY = footerYPerPage + 8;
+        doc.text(numLabel, pageWidth - margin, numY, { align: 'right' });
+      }
     }
 
     if (opts.save) {
@@ -1055,6 +1061,8 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   };
 
   // (Helper addSection non utilisé supprimé)
+
+  const toast = useToast();
 
   const handleAction = async (action) => {
     if (isGenerating) return;
@@ -1075,19 +1083,19 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
           const saveBlob = await generatePDF({ save: false });
           const dataUrl = await blobToDataURL(saveBlob);
           if (onSavePdf) onSavePdf(dataUrl);
-          alert('PDF enregistré avec succès !');
+          toast.success('PDF enregistré dans le rapport');
           break;
         case 'edit':
           if (onEditReport) {
             onEditReport(report);
           } else {
-            alert('Fonction d\'édition non disponible');
+            toast.info('Fonction d\'édition non disponible');
           }
           break;
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Une erreur s\'est produite lors de l\'opération');
+      toast.error('Erreur lors de la génération');
     } finally {
       setIsGenerating(false);
     }
@@ -1107,7 +1115,8 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         <h3 className="font-semibold text-gray-800">Génération PDF</h3>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {/* Boutons d'action (desktop & >=640px) */}
+      <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-2">
         {/* Télécharger */}
         <button
           onClick={() => handleAction('download')}
@@ -1164,6 +1173,49 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
           <span className="hidden sm:inline">Enregistrer</span>
         </button>
       </div>
+
+      {/* Barre d'action sticky mobile (<640px) */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-gray-200 px-3 py-2 flex justify-around items-center shadow-lg">
+        <button
+          onClick={() => handleAction('download')}
+          disabled={isGenerating}
+          className="flex flex-col items-center text-xs font-medium text-blue-600 disabled:opacity-50"
+          aria-label="Télécharger le PDF"
+        >
+          {isGenerating ? <FaSpinner className="animate-spin text-base" /> : <FaFileDownload className="text-base" />}
+          <span>Téléch.</span>
+        </button>
+        <button
+          onClick={() => handleAction('preview')}
+          disabled={isGenerating}
+          className="flex flex-col items-center text-xs font-medium text-indigo-600 disabled:opacity-50"
+          aria-label="Aperçu du PDF"
+        >
+          {isGenerating ? <FaSpinner className="animate-spin text-base" /> : <FaEye className="text-base" />}
+          <span>Aperçu</span>
+        </button>
+        <button
+          onClick={() => handleAction('edit')}
+          disabled={isGenerating}
+          className="flex flex-col items-center text-xs font-medium text-amber-600 disabled:opacity-50"
+          aria-label="Modifier le rapport"
+        >
+          <FaEdit className="text-base" />
+          <span>Éditer</span>
+        </button>
+        <button
+          onClick={() => handleAction('save')}
+          disabled={isGenerating}
+          className="flex flex-col items-center text-xs font-medium text-green-600 disabled:opacity-50"
+          aria-label="Enregistrer dans le rapport"
+        >
+          {isGenerating ? <FaSpinner className="animate-spin text-base" /> : <FaSave className="text-base" />}
+          <span>Save</span>
+        </button>
+      </div>
+
+      {/* Espace pour éviter que le contenu soit masqué par la barre sticky */}
+      <div className="h-20 sm:hidden" />
 
       {/* Informations du rapport */}
       <div className="mt-3 p-3 bg-gray-50 rounded-md">

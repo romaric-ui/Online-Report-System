@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿# Online Report System (SGTEC)
 
-## Getting Started
+Application Next.js permettant la saisie structurée d’un rapport chantier et la génération d’un PDF professionnel (page de garde, sections dynamiques, tableaux avec photos, pagination avancée).
 
-First, run the development server:
+## Sommaire
+1. Fonctionnalités principales
+2. Démarrage rapide
+3. Saisie des données
+4. Génération PDF (détails techniques)
+5. Modèle de données (structure `report`)
+6. Personnalisation / Extension
+7. Limitations connues
+8. Roadmap potentielle
+9. Licence / Auteurs
 
+---
+## 1. Fonctionnalités principales
+✔ Formulaire multi-sections (informations générales, déroulement, équipe, matériel, tableaux structurés).
+✔ Deux tableaux distincts :
+	 - Tableau d’investigation (investigationPoints)
+	 - Autres points (autresPoints)
+✔ Upload et redimensionnement automatique des photos (contrôle de dimension max, conversion base64).
+✔ Génération PDF avec jsPDF + autotable :
+	 - Page de garde (logo / badge phase / méta-infos)
+	 - Sections dynamiques (texte justifié, titres stylés)
+	 - Tableaux avec coloration AVIS (logique conforme / non conforme / neutre / observations, etc.)
+	 - Images intégrées dans les cellules Photo / Cliché
+	 - Pagination commençant à la page 2 (page de garde non numérotée)
+✔ Filtrage : seules les lignes ayant un contenu sont incluses.
+✔ Couleurs configurées dans le composant PDF.
+
+## 2. Démarrage rapide
+Installer les dépendances :
+```bash
+npm install
+```
+Lancer le serveur de dev :
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Accéder à l’interface : http://localhost:3000
+
+Générer un rapport :
+1. Remplir le formulaire (ajouter des lignes dans “TABLEAU D'INVESTIGATION” et/ou “AUTRES POINTS”).
+2. Ajouter si besoin un logo et un badge de phase (si l’interface le prévoit dans ta version locale).
+3. Cliquer sur “Générer / Télécharger” (selon les boutons exposés dans `PdfGenerator.jsx`).
+
+## 3. Saisie des données
+Sections clés :
+- Informations administratives (propriétaire, adresse, phase, numéro affaire / rapport, etc.)
+- Déroulement de la visite (texte libre justifié dans le PDF)
+- Équipe, Matériel (texte ou listes)
+- Tableau d’investigation (investigationPoints)
+- Autres points (autresPoints) — plus général / additionnel
+
+Chaque ligne de tableau peut contenir :
+- Chapitre (uppercase forcé)
+- Moyen de contrôle (texte multi-ligne)
+- Avis (liste déroulante normalisée)
+- Commentaire
+- Photo (PNG/JPEG redimensionnée)
+
+## 4. Génération PDF (détails)
+Localisation du code : `src/app/components/PdfGenerator.jsx`.
+Principales étapes :
+1. Initialisation doc A4 portrait.
+2. Page de garde avec logo + titre + métadonnées.
+3. Sous-titre “RAPPORT D'INVESTIGATION -PHASE X-”.
+4. Insertion du tableau d’investigation (si données) avec phrase d’introduction.
+5. Sections diverses (déroulement, équipe, matériel, autres points, conclusion...).
+6. Coloration dynamique de la colonne Avis (fond + texte) selon la valeur.
+7. Pagination appliquée en post-traitement : pages 2..N numérotées “1 / (N-1) …”.
+
+Librairies :
+- `jspdf`
+- `jspdf-autotable`
+- `html2canvas` (potentiellement utilisée pour snapshots ou logos complexes)
+
+## 5. Modèle de données (exemple simplifié)
+```ts
+type InvestigationRow = {
+	chapitre: string;
+	moyen?: string; // ou moyenDeControle
+	avis?: string;  // Conforme | Non conforme | ...
+	commentaire?: string;
+	photo?: string;       // dataURL
+	photoWidth?: number;
+	photoHeight?: number;
+};
+
+type AutrePointRow = {
+	chapitre?: string;
+	element?: string;     // Élément observé
+	moyen?: string;       // Moyen de contrôle
+	avis?: string;
+	commentaire?: string;
+	photo?: string;
+	photoWidth?: number;
+	photoHeight?: number;
+};
+
+interface Report {
+	entreprise?: string;
+	phase?: string | number;
+	noAffaire?: string;
+	noRapport?: string;
+	proprietaire?: string;
+	adresseOuvrage?: string;
+	personneRencontree?: string;
+	representantSgtec?: string;
+	deroulementVisite?: string;
+	equipe?: string;
+	materiel?: string;
+	conclusion?: string;
+	investigationPoints?: InvestigationRow[];
+	autresPoints?: AutrePointRow[];
+	// + champs annexes (badge phase, intervenants, etc.)
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 6. Personnalisation / Extension
+Idées faciles :
+- Extraire les couleurs AVIS dans un module `constants/avis.js`.
+- Ajouter une table des matières (collecter titres puis générer page dédiée avant pagination finale).
+- Ajouter une option “Inclure / exclure images” lors de la génération.
+- Internationalisation : encapsuler les libellés dans un dictionnaire.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 7. Limitations connues
+- Pas de compression d’image avancée (base64 direct après redimension basique).
+- Pas de persistance hors navigateur (pas encore de backend / DB intégrée).
+- Pas de test unitaire sur la sortie PDF (visuel manuel requis).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 8. Roadmap potentielle
+- Légende des couleurs AVIS dans le PDF.
+- Export / import JSON de rapport.
+- Signature électronique (image + horodatage).
+- Sauvegarde auto localStorage.
+- Mode lecture seule.
 
-## Learn More
+## 9. Licence / Auteurs
+Projet interne SGTEC (adapter selon statut juridique). Ajouter une licence (MIT / Proprietary) si nécessaire.
 
-To learn more about Next.js, take a look at the following resources:
+---
+Pour toute amélioration, ouvrir une issue ou proposer un patch.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Bonne génération de rapports !

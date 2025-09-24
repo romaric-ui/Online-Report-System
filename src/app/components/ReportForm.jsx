@@ -1,8 +1,10 @@
 // components/ReportForm.jsx
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from './ToastProvider';
 
-export default function ReportForm({ addReport, reportToEdit, onCancel }) {
+export default function ReportForm({ addReport, reportToEdit, onCancel, onFormStateChange }) {
+  const toast = useToast();
   const [form, setForm] = useState(
     reportToEdit || {
       entreprise: "SGTEC L'OEIL DU BATIMENT",
@@ -45,8 +47,6 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
     }
   );
   const [errors, setErrors] = useState([]);
-  const [showStep2, setShowStep2] = useState(false);
-  const step2Ref = useRef(null);
   const [newIntervenant, setNewIntervenant] = useState("");
 
   // Couleurs pour AVIS (formulaire)
@@ -69,6 +69,13 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+
+  // Propager l'état du formulaire vers le parent (autosave / dirty tracking)
+  useEffect(() => {
+    if (typeof onFormStateChange === 'function') {
+      onFormStateChange(form);
+    }
+  }, [form, onFormStateChange]);
 
   const validateAll = (data, includeStep2 = false) => {
     const missing = [];
@@ -100,7 +107,8 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-  const missing = validateAll(form, showStep2);
+    // On valide tous les champs d'emblée (plus de 2ème étape)
+    const missing = validateAll(form, true);
     if (missing.length) {
       setErrors(missing);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -123,33 +131,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
       return;
     }
 
-    // Si la deuxième partie n'est pas encore affichée, on l'affiche maintenant (sans enregistrer)
-    if (!showStep2) {
-      setErrors([]);
-      setShowStep2(true);
-      // Préremplir 3 lignes vides pour AUTRES POINTS afin d'encourager la saisie
-      setForm(prev => {
-        const exists = Array.isArray(prev.autresPoints) && prev.autresPoints.length > 0;
-        if (exists) return prev;
-        return {
-          ...prev,
-          autresPoints: [
-            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
-            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
-            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
-          ]
-        };
-      });
-      // scroll vers la deuxième partie
-      setTimeout(() => {
-        if (step2Ref.current && typeof step2Ref.current.scrollIntoView === 'function') {
-          step2Ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 0);
-      return;
-    }
-
-    // Deuxième soumission: on enregistre réellement
+    // Soumission directe
     setErrors([]);
     // Préparer la valeur "intervenant" pour le PDF à partir des tags "intervenants"
     const joinedIntervenants = Array.isArray(form.intervenants) && form.intervenants.length
@@ -191,7 +173,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
   status: 'En cours',
       
     });
-    setShowStep2(false);
+    // Préparer quelques lignes vides pour un nouvel enregistrement ultérieur
     setNewIntervenant("");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -221,16 +203,42 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
     'objectifLimites', 'ouvrageConcerne', 'deroulementVisite'
   ];
 
-  // Regroupement visuel: les 3 champs de la "deuxième partie" après la page de garde
-  // Les champs longs de la deuxième partie (Conclusion sera déplacée après le tableau AUTRES POINTS)
+  // Regroupement visuel (anciennement "deuxième partie" maintenant intégré directement)
   const step2Fields = ['objectifLimites', 'ouvrageConcerne', 'deroulementVisite'];
   const mainFields = allFields.filter((k) => !step2Fields.includes(k));
+
+  // Initialiser quelques lignes vides AUTRES POINTS si vide (pour encourager la saisie)
+  useEffect(() => {
+    if (!reportToEdit) {
+      setForm(prev => {
+        if (prev.autresPoints && prev.autresPoints.length) return prev;
+        return {
+          ...prev,
+          autresPoints: [
+            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
+            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
+            { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
+          ]
+        };
+      });
+    }
+  }, [reportToEdit]);
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-xl shadow-lg grid gap-6"
+      className="form-data-entry bg-white p-6 rounded-xl shadow-lg max-w-7xl mx-auto grid gap-8"
     >
+      {/* Navigation ancrée rapide */}
+      <div className="sticky top-0 z-30 -mx-6 px-6 py-2 bg-white/90 backdrop-blur border-b flex gap-3 flex-wrap text-[0.65rem] tracking-wide uppercase">
+        <a href="#general" className="hover:text-blue-600 font-semibold">Général</a>
+        <a href="#descriptions" className="hover:text-blue-600 font-semibold">Descriptions</a>
+        <a href="#visite" className="hover:text-blue-600 font-semibold">Visite</a>
+        <a href="#details-ouvrage" className="hover:text-blue-600 font-semibold">Détails Ouvrage</a>
+        <a href="#investigation" className="hover:text-blue-600 font-semibold">Investigation</a>
+        <a href="#autres-points" className="hover:text-blue-600 font-semibold">Autres points</a>
+        <a href="#conclusion" className="hover:text-blue-600 font-semibold">Conclusion</a>
+      </div>
       {errors.length > 0 && (
         <div className="p-2 bg-red-50 border border-red-100 text-red-700 rounded">
           Champs obligatoires manquants: {errors.join(', ')}
@@ -239,7 +247,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
 
 
       {/* Partie 1: Champs principaux */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+  <div id="general" className="section-anchor form-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-5 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
         {mainFields.map((key) => {
           const longFields = step2Fields; // aucun champ long dans la partie 1
           const isLongField = longFields.includes(key);
@@ -258,7 +266,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
           );
           return (
             <div key={key} className={`flex flex-col min-w-0 ${isFullWidth ? "lg:col-span-3 md:col-span-2" : ""}`}>
-              <label className="font-semibold capitalize mb-1 break-words">{labelText}</label>
+              <label className="capitalize mb-1 break-words">{labelText}</label>
               {isLongField ? (
                 <></>
               ) : key === 'intervenants' ? (
@@ -283,11 +291,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                           setNewIntervenant('');
                         }
                       }}
-                      className="p-2 border rounded w-full"
+                      className="input-sm w-full"
                     />
                     <button
                       type="button"
-                      className="px-3 py-2 bg-blue-600 text-white rounded"
+                      className="px-3 py-2 bg-blue-600 text-white rounded text-xs"
                       onClick={() => {
                         const raw = newIntervenant;
                         if (!raw) return;
@@ -306,11 +314,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                   {(form.intervenants && form.intervenants.length > 0) && (
                     <div className="flex flex-wrap gap-2">
                       {form.intervenants.map((name, idx) => (
-                        <span key={`${name}-${idx}`} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm">
+                        <span key={`${name}-${idx}`} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-[0.65rem] tracking-wide">
                           <span>{name}</span>
                           <button
                             type="button"
-                            className="text-gray-600 hover:text-red-600"
+                            className="text-gray-500 hover:text-red-600"
                             onClick={() => {
                               setForm((prev) => ({
                                 ...prev,
@@ -325,7 +333,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                       ))}
                       <button
                         type="button"
-                        className="text-xs text-red-600 hover:underline"
+                        className="text-[0.6rem] text-red-600 hover:underline"
                         onClick={() => setForm((prev) => ({ ...prev, intervenants: [] }))}
                       >
                         Tout effacer
@@ -359,7 +367,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                       };
                       reader.readAsDataURL(file);
                     }}
-                    className="p-2 border rounded w-full"
+                    className="input-sm w-full"
                   />
                   <div className="text-xs text-gray-500">Formats acceptés: PNG, JPG, JPEG</div>
                   {form.coverImage && (
@@ -383,7 +391,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             : ''
                       }));
                     }}
-                    className="p-2 border rounded w-full bg-white"
+                    className="input-sm w-full bg-white"
                   >
                     <option value="">Sélectionner...</option>
                     <option value="reserve">Réservé</option>
@@ -398,7 +406,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                   name={key}
                   value={form[key] ?? ''}
                   onChange={handleChange}
-                  className="p-2 border rounded w-full"
+                  className="input-sm w-full"
                   placeholder="Numéro de phase"
                 />
               ) : (
@@ -407,7 +415,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                   name={key}
                   value={form[key] ?? ''}
                   onChange={handleChange}
-                  className="p-2 border rounded w-full"
+                  className="input-sm w-full"
                 />
               )}
             </div>
@@ -415,16 +423,15 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
         })}
       </div>
 
-      {/* Séparateur visuel de la deuxième partie */}
-      {showStep2 && (
-        <div ref={step2Ref}>
-          <div className="mt-6 mb-2">
+      {/* Ancienne deuxième partie (affichée directement) */}
+      <div id="descriptions" className="section-anchor">
+          <div className="mt-2 mb-2">
             <hr className="border-gray-200" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Deuxième partie</h3>
-          <p className="text-sm text-gray-500 mb-4">Ces champs apparaîtront uniquement après la page de garde (page 2) du PDF.</p>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Descriptions générales</h3>
+          <p className="text-sm text-gray-500 mb-4">Ces blocs décrivent le contexte et apparaîtront après la page de garde.</p>
 
-          {/* Partie 2: Champs longue description */}
+          {/* Champs longue description */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                 {step2Fields.map((key) => {
                   const labelText = (
@@ -440,7 +447,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                         name={key}
                         value={form[key] ?? ''}
                         onChange={handleChange}
-                        className="p-2 border rounded min-h-[120px] resize-y w-full"
+                        className="textarea-sm w-full"
                         placeholder={`Saisissez ${
                           key === 'objectifLimites' ? "l'objectif et les limites de la prestation" :
                           key === 'ouvrageConcerne' ? "les éléments d'ouvrage concernés" :
@@ -455,7 +462,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
               </div>
 
           {/* Infos de visite */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+          <div id="visite" className="section-anchor mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
             <div className="flex flex-col lg:col-span-3 md:col-span-2">
               <label className="font-semibold mb-1">Personne rencontrée sur le site</label>
               <input
@@ -463,7 +470,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="personneRencontree"
                 value={form.personneRencontree || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
                 placeholder="Nom de la personne rencontrée"
               />
               <span className="text-xs text-gray-500 mt-1">Si ce champ est vide, le PDF affichera « absence de personne ».</span>
@@ -475,14 +482,14 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="representantSgtec"
                 value={form.representantSgtec || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
                 placeholder="Nom du représentant du bureau SGTEC"
               />
             </div>
           </div>
 
-          {/* Détails à afficher sous "Ouvrage concerné" */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+          {/* Détails affichés sous "Ouvrage concerné" */}
+          <div id="details-ouvrage" className="section-anchor mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
             <div className="flex flex-col">
               <label className="font-semibold mb-1">Il s'agit de</label>
               <input
@@ -490,7 +497,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="typeOuvrage"
                 value={form.typeOuvrage || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
                 placeholder="Ex: Maison individuelle, Appartement..."
               />
             </div>
@@ -501,7 +508,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="adresseOuvrage"
                 value={form.adresseOuvrage || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -511,7 +518,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="modeleMaison"
                 value={form.modeleMaison || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -522,7 +529,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="nombreNiveaux"
                 value={form.nombreNiveaux || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -532,7 +539,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="conducteurTravaux"
                 value={form.conducteurTravaux || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -542,7 +549,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="noChantierDossier"
                 value={form.noChantierDossier || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -552,7 +559,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="entrepriseProjet"
                 value={form.entrepriseProjet || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
             <div className="flex flex-col">
@@ -562,13 +569,13 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 name="noPlanLSAStandard"
                 value={form.noPlanLSAStandard || ''}
                 onChange={handleChange}
-                className="p-2 border rounded w-full"
+                className="input-sm w-full"
               />
             </div>
           </div>
 
           {/* INVESTIGATION (tableau sous RAPPORT D'INVESTIGATION) */}
-          <div className="mt-8">
+          <div id="investigation" className="section-anchor mt-10">
             <h4 className="text-base font-semibold text-blue-600 mb-2">TABLEAU D'INVESTIGATION</h4>
             <p className="text-xs text-gray-600 mb-2">Saisir ici les constats principaux de l'investigation (distincts des "AUTRES POINTS").</p>
             <div className="overflow-x-auto border rounded-lg mb-3">
@@ -579,7 +586,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                     <th className="px-3 py-2 text-left">Moyen de contrôle</th>
                     <th className="px-3 py-2 text-left">Avis</th>
                     <th className="px-3 py-2 text-left">Commentaire</th>
-                    <th className="px-3 py-2 text-left">Photo / Cliché</th>
+                    <th className="px-3 py-2 text-left table-photo-col">Photo</th>
                     <th className="px-2 py-2 text-center w-12">Actions</th>
                   </tr>
                 </thead>
@@ -595,7 +602,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             next[idx] = { ...(next[idx]||{}), chapitre: (e.target.value||'').toUpperCase() };
                             return { ...prev, investigationPoints: next };
                           })}
-                          className="p-2 border rounded w-full uppercase"
+                          className="table-input w-full uppercase"
                           placeholder="Ex: 1, A..."
                         />
                       </td>
@@ -608,7 +615,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             return { ...prev, investigationPoints: next };
                           })}
                           onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
-                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          className="table-textarea w-full"
                           placeholder="Moyen de contrôle"
                         />
                       </td>
@@ -620,7 +627,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             next[idx] = { ...(next[idx]||{}), avis: e.target.value };
                             return { ...prev, investigationPoints: next };
                           })}
-                          className={`p-2 border rounded w-full bg-white ${getAvisColorClass(row.avis)}`}
+                          className={`table-select w-full bg-white ${getAvisColorClass(row.avis)}`}
                         >
                           <option value="">-- Sélectionner --</option>
                           <option value="Conforme">Conforme</option>
@@ -642,15 +649,15 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             return { ...prev, investigationPoints: next };
                           })}
                           onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
-                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          className="table-textarea comment w-full"
                           placeholder="Commentaire"
                         />
                       </td>
-                      <td className="px-2 py-2 align-top">
-                        <div className="flex flex-col gap-2">
+                      <td className="px-2 py-2 align-top table-photo-col">
+                        <div className="flex flex-col gap-1 table-photo-wrapper">
                           {row.photo ? (
                             <div className="flex items-center gap-2">
-                              <img src={row.photo} alt="aperçu" className="h-12 w-12 object-cover rounded border" />
+                              <img src={row.photo} alt="aperçu" className="object-cover rounded border" />
                               <button
                                 type="button"
                                 className="text-xs text-red-600 hover:underline"
@@ -670,7 +677,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                                 if (!file) return;
                                 const type = (file.type || '').toLowerCase();
                                 const ok = type === 'image/png' || type === 'image/jpeg';
-                                if (!ok) { alert('Formats acceptés: PNG, JPG'); e.target.value=''; return; }
+                                if (!ok) { toast.error('Formats acceptés: PNG, JPG'); e.target.value=''; return; }
                                 const maxDim = 600;
                                 async function process(f) {
                                   try {
@@ -718,7 +725,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                                   return res;
                                 }
                                 const processed = await process(file);
-                                if (!processed) { alert('Erreur lors du traitement de l\'image'); return; }
+                                if (!processed) { toast.error('Erreur lors du traitement de l\'image'); return; }
                                 setForm(prev => {
                                   const next = [...(prev.investigationPoints || [])];
                                   next[idx] = { ...(next[idx]||{}), photo: processed.dataUrl, photoWidth: processed.width, photoHeight: processed.height };
@@ -759,7 +766,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
           </div>
 
           {/* AUTRES POINTS */}
-          <div className="mt-6">
+          <div id="autres-points" className="section-anchor mt-10">
             <h4 className="text-base font-semibold text-blue-600 mb-2">AUTRES POINTS</h4>
             <div className="overflow-x-auto border rounded-lg">
               <table className="min-w-full text-sm">
@@ -770,7 +777,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                     <th className="px-3 py-2 text-left">Moyen de contrôle</th>
                     <th className="px-3 py-2 text-left">Avis</th>
                     <th className="px-3 py-2 text-left">Commentaire</th>
-                    <th className="px-3 py-2 text-left">Photo</th>
+                    <th className="px-3 py-2 text-left table-photo-col">Photo</th>
                     <th className="px-2 py-2 text-center w-12">Actions</th>
                   </tr>
                 </thead>
@@ -786,7 +793,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             next[idx] = { ...(next[idx] || {}), chapitre: (e.target.value || '').toUpperCase() };
                             return { ...prev, autresPoints: next };
                           })}
-                          className="p-2 border rounded w-full uppercase"
+                          className="table-input w-full uppercase"
                           placeholder="Ex: 1, A, etc."
                         />
                       </td>
@@ -799,7 +806,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             return { ...prev, autresPoints: next };
                           })}
                           onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          className="table-textarea w-full"
                           placeholder="Élément observé"
                         />
                       </td>
@@ -812,7 +819,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             return { ...prev, autresPoints: next };
                           })}
                           onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          className="table-textarea w-full"
                           placeholder="Moyen de contrôle"
                         />
                       </td>
@@ -824,7 +831,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             next[idx] = { ...(next[idx] || {}), avis: e.target.value };
                             return { ...prev, autresPoints: next };
                           })}
-                          className={`p-2 border rounded w-full bg-white ${getAvisColorClass(row.avis)}`}
+                          className={`table-select w-full bg-white ${getAvisColorClass(row.avis)}`}
                         >
                           <option value="">-- Sélectionner --</option>
                           <option value="Conforme">Conforme</option>
@@ -847,15 +854,15 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                             return { ...prev, autresPoints: next };
                           })}
                           onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          className="table-textarea comment w-full"
                           placeholder="Commentaire"
                         />
                       </td>
-                      <td className="px-2 py-2 align-top">
-                        <div className="flex flex-col gap-2">
+                      <td className="px-2 py-2 align-top table-photo-col">
+                        <div className="flex flex-col gap-1 table-photo-wrapper">
                           {row.photo ? (
                             <div className="flex items-center gap-2">
-                              <img src={row.photo} alt="aperçu" className="h-12 w-12 object-cover rounded border" />
+                              <img src={row.photo} alt="aperçu" className="object-cover rounded border" />
                               <button
                                 type="button"
                                 className="text-xs text-red-600 hover:underline"
@@ -875,7 +882,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                                 if (!file) return;
                                 const type = (file.type || '').toLowerCase();
                                 const ok = type === 'image/png' || type === 'image/jpeg';
-                                if (!ok) { alert('Formats acceptés: PNG, JPG'); e.target.value=''; return; }
+                                if (!ok) { toast.error('Formats acceptés: PNG, JPG'); e.target.value=''; return; }
                                 const maxDim = 600;
                                 async function process(f) {
                                   try {
@@ -980,21 +987,20 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
             </div>
           </div>
 
-          {/* CONCLUSION (placée après le tableau AUTRES POINTS) */}
-          <div className="mt-6">
+          {/* CONCLUSION */}
+          <div id="conclusion" className="section-anchor mt-10">
             <h4 className="text-base font-semibold text-blue-600 mb-2">Conclusion</h4>
             <textarea
               name="conclusion"
               value={form.conclusion || ''}
               onChange={handleChange}
-              className="p-2 border rounded min-h-[140px] resize-y w-full"
+              className="textarea-sm w-full"
               placeholder="Saisissez la conclusion..."
               maxLength={2000}
             />
             <div className="text-xs text-gray-500 mt-1"></div>
           </div>
-        </div>
-      )}
+      </div>
       {/* Visibilité (public/privé) retirée de l'UI; par défaut, visible */}
       {/* Section Pièces jointes, Checklist QA, Problèmes/Solutions retirées */}
 
@@ -1003,7 +1009,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
           type="submit"
           className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
         >
-          {showStep2 ? 'Ajouter Rapport' : 'Continuer'}
+          Ajouter Rapport
         </button>
         <button
           type="button"
@@ -1027,10 +1033,16 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
             deroulementVisite: "",
             personneRencontree: "",
             representantSgtec: "",
+            autresPoints: [
+              { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
+              { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' },
+              { chapitre: '', element: '', moyen: '', avis: '', commentaire: '' }
+            ],
+            investigationPoints: [],
             adresseOuvrage: "",
             private: false,
             status: 'En cours',
-          }); setShowStep2(false); setNewIntervenant(''); }}
+          }); setNewIntervenant(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           className="bg-gray-200 text-gray-800 px-4 py-2 rounded"
         >
           Réinitialiser
