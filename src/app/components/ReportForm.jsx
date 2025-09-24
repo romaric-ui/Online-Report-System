@@ -16,6 +16,9 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
       maitreOuvrage: "",
       centreTravaux: "",
       coverImage: "",
+  
+  phaseBadge: "", // indicateur visuel de phase (réservé / observation)
+  phaseBadgeImage: "", // dataURL logo personnalisé éventuel
 
       objectifLimites: "",
       ouvrageConcerne: "",
@@ -24,6 +27,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
   personneRencontree: "",
   representantSgtec: "",
   autresPoints: [],
+  investigationPoints: [],
 
     // Détails sous "Ouvrage concerné"
     typeOuvrage: "", // Il s'agit de
@@ -165,6 +169,9 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
       maitreOuvrage: "",
       centreTravaux: "",
       coverImage: "",
+    headerLogo: "",
+  phaseBadge: "",
+  phaseBadgeImage: "",
       objectifLimites: "",
       ouvrageConcerne: "",
       deroulementVisite: "",
@@ -172,7 +179,6 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
   personneRencontree: "",
   representantSgtec: "",
     autresPoints: [],
-      // reset des détails ouvrage
       typeOuvrage: "",
       modeleMaison: "",
       nombreNiveaux: "",
@@ -210,13 +216,14 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
   }, [reportToEdit]);
 
   const allFields = [
-    'entreprise', 'phase', 'noAffaire', 'noRapport', 'intervenants', 'dateIntervention', 'coverImage',
+    'entreprise', 'phase', 'phaseBadge', 'noAffaire', 'noRapport', 'intervenants', 'dateIntervention', 'coverImage',
     'centreTravaux', 'maitreOuvrage', 'adresseOuvrage', 'proprietaire', 'status',
     'objectifLimites', 'ouvrageConcerne', 'deroulementVisite'
   ];
 
   // Regroupement visuel: les 3 champs de la "deuxième partie" après la page de garde
-  const step2Fields = ['objectifLimites', 'ouvrageConcerne', 'deroulementVisite', 'conclusion'];
+  // Les champs longs de la deuxième partie (Conclusion sera déplacée après le tableau AUTRES POINTS)
+  const step2Fields = ['objectifLimites', 'ouvrageConcerne', 'deroulementVisite'];
   const mainFields = allFields.filter((k) => !step2Fields.includes(k));
 
   return (
@@ -230,7 +237,6 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
         </div>
       )}
 
-      {/* Barre de progression supprimée */}
 
       {/* Partie 1: Champs principaux */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
@@ -247,6 +253,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
             key === 'maitreOuvrage' ? "Maître d'ouvrage" :
             key === 'centreTravaux' ? "Centre de Travaux" :
             key === 'coverImage' ? "Image de couverture" :
+            key === 'phaseBadge' ? "Indicateur Phase" :
             key.replace(/([A-Z])/g, " $1")
           );
           return (
@@ -333,120 +340,57 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                     accept="image/png, image/jpeg"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file) {
-                        setForm({ ...form, coverImage: '', coverImageWidth: undefined, coverImageHeight: undefined });
-                        return;
-                      }
-                      const type = (file.type || '').toLowerCase();
-                      const name = (file.name || '').toLowerCase();
-                      const allowed = type === 'image/png' || type === 'image/jpeg' || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg');
-                      if (!allowed) {
-                        alert('Format non pris en charge. Formats autorisés: PNG, JPG, JPEG.');
-                        e.target.value = '';
-                        setForm({ ...form, coverImage: '', coverImageWidth: undefined, coverImageHeight: undefined });
-                        return;
-                      }
-
-                      async function processImage(f) {
-                        const isPng = (f.type || '').toLowerCase().includes('png') || (f.name || '').toLowerCase().endsWith('.png');
-                        const maxDim = 2000;
-                        try {
-                          if ('createImageBitmap' in window) {
-                            const bitmap = await createImageBitmap(f, { imageOrientation: 'from-image' });
-                            let { width, height } = bitmap;
-                            const ratio = width / height;
-                            let targetW = width;
-                            let targetH = height;
-                            if (Math.max(width, height) > maxDim) {
-                              if (width >= height) {
-                                targetW = maxDim;
-                                targetH = Math.round(maxDim / ratio);
-                              } else {
-                                targetH = maxDim;
-                                targetW = Math.round(maxDim * ratio);
-                              }
-                            }
-                            const canvas = document.createElement('canvas');
-                            canvas.width = targetW;
-                            canvas.height = targetH;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(bitmap, 0, 0, targetW, targetH);
-                            const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.95);
-                            try { bitmap.close && bitmap.close(); } catch {}
-                            return { dataUrl, width: targetW, height: targetH };
-                          }
-                        } catch {}
-
-                        // Fallback sans EXIF
-                        const objectUrl = URL.createObjectURL(f);
-                        const img = new Image();
-                        const result = await new Promise((resolve, reject) => {
+                      if (!file) { setForm(prev => ({ ...prev, coverImage: '' })); return; }
+                      // Lecture simple + dimensions
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        if (typeof reader.result === 'string') {
+                          const img = new Image();
                           img.onload = () => {
-                            try {
-                              const width = img.naturalWidth;
-                              const height = img.naturalHeight;
-                              const ratio = width / height;
-                              let targetW = width;
-                              let targetH = height;
-                              if (Math.max(width, height) > maxDim) {
-                                if (width >= height) {
-                                  targetW = maxDim;
-                                  targetH = Math.round(maxDim / ratio);
-                                } else {
-                                  targetH = maxDim;
-                                  targetW = Math.round(maxDim * ratio);
-                                }
-                              }
-                              const canvas = document.createElement('canvas');
-                              canvas.width = targetW;
-                              canvas.height = targetH;
-                              const ctx = canvas.getContext('2d');
-                              ctx.drawImage(img, 0, 0, targetW, targetH);
-                              const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.95);
-                              resolve({ dataUrl, width: targetW, height: targetH });
-                            } catch (err) {
-                              reject(err);
-                            } finally {
-                              URL.revokeObjectURL(objectUrl);
-                            }
+                            setForm(prev => ({
+                              ...prev,
+                              coverImage: reader.result,
+                              coverImageWidth: img.naturalWidth,
+                              coverImageHeight: img.naturalHeight
+                            }));
                           };
-                          img.onerror = (err) => {
-                            URL.revokeObjectURL(objectUrl);
-                            reject(err);
-                          };
-                          img.src = objectUrl;
-                        });
-                        return result;
-                      }
-
-                      try {
-                        const processed = await processImage(file);
-                        setForm({ ...form, coverImage: processed.dataUrl, coverImageWidth: processed.width, coverImageHeight: processed.height });
-                      } catch (err) {
-                        console.error('Erreur traitement image:', err);
-                        const reader = new FileReader();
-                        reader.onloadend = () => setForm({ ...form, coverImage: reader.result, coverImageWidth: undefined, coverImageHeight: undefined });
-                        reader.readAsDataURL(file);
-                      }
+                          img.src = reader.result;
+                        }
+                      };
+                      reader.readAsDataURL(file);
                     }}
                     className="p-2 border rounded w-full"
                   />
                   <div className="text-xs text-gray-500">Formats acceptés: PNG, JPG, JPEG</div>
                   {form.coverImage && (
-                    <img src={form.coverImage} alt="aperçu" className="h-24 w-auto rounded border" />
+                    <img src={form.coverImage} alt="aperçu" className="h-24 w-auto rounded border bg-white" />
                   )}
                 </div>
-              ) : key === 'status' ? (
-                <select
-                  name={key}
-                  value={form[key] ?? 'En cours'}
-                  onChange={handleChange}
-                  className="p-2 border rounded w-full"
-                >
-                  <option value="En cours">En cours</option>
-                  <option value="En attente">En attente</option>
-                  <option value="Terminé">Terminé</option>
-                </select>
+              ) : key === 'phaseBadge' ? (
+                <div className="space-y-1">
+                  <select
+                    name={key}
+                    value={form[key] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm(prev => ({
+                        ...prev,
+                        phaseBadge: val,
+                        phaseBadgeImage: val === 'reserve'
+                          ? '/reserve-removebg.png'
+                          : val === 'observation'
+                            ? '/observation-removebg.png'
+                            : ''
+                      }));
+                    }}
+                    className="p-2 border rounded w-full bg-white"
+                  >
+                    <option value="">Sélectionner...</option>
+                    <option value="reserve">Réservé</option>
+                    <option value="observation">Avec observation</option>
+                  </select>
+                  <p className="text-xs text-gray-500">Le logo correspondant sera ajouté automatiquement à la page de garde du PDF.</p>
+                </div>
               ) : key === 'phase' ? (
                 <input
                   type="number"
@@ -481,40 +425,34 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
           <p className="text-sm text-gray-500 mb-4">Ces champs apparaîtront uniquement après la page de garde (page 2) du PDF.</p>
 
           {/* Partie 2: Champs longue description */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-            {step2Fields.map((key) => {
-              const isLongField = true;
-              const isFullWidth = true; // ces champs doivent occuper toute la largeur
-              const labelText = (
-                key === 'objectifLimites' ? "Objectif et limites de la prestation" :
-                key === 'ouvrageConcerne' ? "Ouvrage concerné" :
-                key === 'deroulementVisite' ? "Déroulement de la visite" :
-                key === 'conclusion' ? "Conclusion" :
-                key.replace(/([A-Z])/g, " $1")
-              );
-              return (
-                <div key={key} className={`flex flex-col min-w-0 ${isFullWidth ? "lg:col-span-3 md:col-span-2" : ""}`}>
-                  <label className="font-semibold capitalize mb-1 break-words">{labelText}</label>
-                  {isLongField && (
-                    <textarea
-                      name={key}
-                      value={form[key] ?? ''}
-                      onChange={handleChange}
-                      className="p-2 border rounded min-h-[120px] resize-y w-full"
-                      placeholder={`Saisissez ${
-                        key === 'objectifLimites' ? "l'objectif et les limites de la prestation" :
-                        key === 'ouvrageConcerne' ? "les éléments d'ouvrage concernés" :
-                        key === 'deroulementVisite' ? "le déroulement de la visite" :
-                        key === 'conclusion' ? "la conclusion" :
-                        key.replace(/([A-Z])/g, ' $1').toLowerCase()
-                      }...`}
-                      maxLength={2000}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                {step2Fields.map((key) => {
+                  const labelText = (
+                    key === 'objectifLimites' ? "Objectif et limites de la prestation" :
+                    key === 'ouvrageConcerne' ? "Ouvrage concerné" :
+                    key === 'deroulementVisite' ? "Déroulement de la visite" :
+                    key.replace(/([A-Z])/g, ' $1')
+                  );
+                  return (
+                    <div key={key} className="flex flex-col min-w-0 lg:col-span-3 md:col-span-2">
+                      <label className="font-semibold capitalize mb-1 break-words">{labelText}</label>
+                      <textarea
+                        name={key}
+                        value={form[key] ?? ''}
+                        onChange={handleChange}
+                        className="p-2 border rounded min-h-[120px] resize-y w-full"
+                        placeholder={`Saisissez ${
+                          key === 'objectifLimites' ? "l'objectif et les limites de la prestation" :
+                          key === 'ouvrageConcerne' ? "les éléments d'ouvrage concernés" :
+                          key === 'deroulementVisite' ? "le déroulement de la visite" :
+                          key.replace(/([A-Z])/g, ' $1').toLowerCase()
+                        }...`}
+                        maxLength={2000}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
 
           {/* Infos de visite */}
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
@@ -526,7 +464,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 value={form.personneRencontree || ''}
                 onChange={handleChange}
                 className="p-2 border rounded w-full"
-                placeholder="Nom de la personne rencontrée (laisser vide si absence de personne)"
+                placeholder="Nom de la personne rencontrée"
               />
               <span className="text-xs text-gray-500 mt-1">Si ce champ est vide, le PDF affichera « absence de personne ».</span>
             </div>
@@ -627,6 +565,197 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
                 className="p-2 border rounded w-full"
               />
             </div>
+          </div>
+
+          {/* INVESTIGATION (tableau sous RAPPORT D'INVESTIGATION) */}
+          <div className="mt-8">
+            <h4 className="text-base font-semibold text-blue-600 mb-2">TABLEAU D'INVESTIGATION</h4>
+            <p className="text-xs text-gray-600 mb-2">Saisir ici les constats principaux de l'investigation (distincts des "AUTRES POINTS").</p>
+            <div className="overflow-x-auto border rounded-lg mb-3">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-blue-600 text-white">
+                    <th className="px-3 py-2 text-left">Chapitre</th>
+                    <th className="px-3 py-2 text-left">Moyen de contrôle</th>
+                    <th className="px-3 py-2 text-left">Avis</th>
+                    <th className="px-3 py-2 text-left">Commentaire</th>
+                    <th className="px-3 py-2 text-left">Photo / Cliché</th>
+                    <th className="px-2 py-2 text-center w-12">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(form.investigationPoints || []).map((row, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-2 py-2 align-top">
+                        <input
+                          type="text"
+                          value={row.chapitre || ''}
+                          onChange={(e) => setForm(prev => {
+                            const next = [...(prev.investigationPoints || [])];
+                            next[idx] = { ...(next[idx]||{}), chapitre: (e.target.value||'').toUpperCase() };
+                            return { ...prev, investigationPoints: next };
+                          })}
+                          className="p-2 border rounded w-full uppercase"
+                          placeholder="Ex: 1, A..."
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-top">
+                        <textarea
+                          value={row.moyen || row.moyenDeControle || ''}
+                          onChange={(e) => setForm(prev => {
+                            const next = [...(prev.investigationPoints || [])];
+                            next[idx] = { ...(next[idx]||{}), moyen: e.target.value };
+                            return { ...prev, investigationPoints: next };
+                          })}
+                          onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
+                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          placeholder="Moyen de contrôle"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-top">
+                        <select
+                          value={row.avis || ''}
+                          onChange={(e) => setForm(prev => {
+                            const next = [...(prev.investigationPoints || [])];
+                            next[idx] = { ...(next[idx]||{}), avis: e.target.value };
+                            return { ...prev, investigationPoints: next };
+                          })}
+                          className={`p-2 border rounded w-full bg-white ${getAvisColorClass(row.avis)}`}
+                        >
+                          <option value="">-- Sélectionner --</option>
+                          <option value="Conforme">Conforme</option>
+                          <option value="Non conforme">Non conforme</option>
+                          <option value="Très satisfait">Très satisfait</option>
+                          <option value="Satisfait">Satisfait</option>
+                          <option value="Insatisfait">Insatisfait</option>
+                          <option value="Très insatisfait">Très insatisfait</option>
+                          <option value="Neutre">Neutre</option>
+                          <option value="Avec observations">Avec observations</option>
+                        </select>
+                      </td>
+                      <td className="px-2 py-2 align-top">
+                        <textarea
+                          value={row.commentaire || ''}
+                          onChange={(e) => setForm(prev => {
+                            const next = [...(prev.investigationPoints || [])];
+                            next[idx] = { ...(next[idx]||{}), commentaire: e.target.value };
+                            return { ...prev, investigationPoints: next };
+                          })}
+                          onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
+                          className="p-2 border rounded w-full min-h-[40px] resize-none overflow-hidden"
+                          placeholder="Commentaire"
+                        />
+                      </td>
+                      <td className="px-2 py-2 align-top">
+                        <div className="flex flex-col gap-2">
+                          {row.photo ? (
+                            <div className="flex items-center gap-2">
+                              <img src={row.photo} alt="aperçu" className="h-12 w-12 object-cover rounded border" />
+                              <button
+                                type="button"
+                                className="text-xs text-red-600 hover:underline"
+                                onClick={() => setForm(prev => {
+                                  const next = [...(prev.investigationPoints || [])];
+                                  next[idx] = { ...(next[idx]||{}), photo: '', photoWidth: undefined, photoHeight: undefined };
+                                  return { ...prev, investigationPoints: next };
+                                })}
+                              >Supprimer</button>
+                            </div>
+                          ) : (
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const type = (file.type || '').toLowerCase();
+                                const ok = type === 'image/png' || type === 'image/jpeg';
+                                if (!ok) { alert('Formats acceptés: PNG, JPG'); e.target.value=''; return; }
+                                const maxDim = 600;
+                                async function process(f) {
+                                  try {
+                                    if ('createImageBitmap' in window) {
+                                      const bmp = await createImageBitmap(f);
+                                      let { width, height } = bmp;
+                                      const ratio = width / height;
+                                      let targetW = width, targetH = height;
+                                      if (Math.max(width, height) > maxDim) {
+                                        if (width >= height) { targetW = maxDim; targetH = Math.round(maxDim / ratio); }
+                                        else { targetH = maxDim; targetW = Math.round(maxDim * ratio); }
+                                      }
+                                      const canvas = document.createElement('canvas');
+                                      canvas.width = targetW; canvas.height = targetH;
+                                      const ctx = canvas.getContext('2d');
+                                      ctx.drawImage(bmp, 0, 0, targetW, targetH);
+                                      const dataUrl = canvas.toDataURL(type.includes('png') ? 'image/png' : 'image/jpeg', 0.9);
+                                      try { bmp.close && bmp.close(); } catch {}
+                                      return { dataUrl, width: targetW, height: targetH };
+                                    }
+                                  } catch {}
+                                  // fallback
+                                  const objUrl = URL.createObjectURL(f);
+                                  const img = new Image();
+                                  const res = await new Promise((resolve, reject) => {
+                                    img.onload = () => {
+                                      try {
+                                        let width = img.naturalWidth, height = img.naturalHeight;
+                                        const ratio = width/height;
+                                        let targetW = width, targetH = height;
+                                        if (Math.max(width, height) > maxDim) {
+                                          if (width >= height) { targetW = maxDim; targetH = Math.round(maxDim/ratio);} else { targetH = maxDim; targetW = Math.round(maxDim*ratio);} }
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = targetW; canvas.height = targetH;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, targetW, targetH);
+                                        const dataUrl = canvas.toDataURL(type.includes('png') ? 'image/png' : 'image/jpeg', 0.9);
+                                        resolve({ dataUrl, width: targetW, height: targetH });
+                                      } catch (err) { resolve(null); }
+                                    };
+                                    img.onerror = () => resolve(null);
+                                    img.src = objUrl;
+                                  });
+                                  try { URL.revokeObjectURL(objUrl); } catch {}
+                                  return res;
+                                }
+                                const processed = await process(file);
+                                if (!processed) { alert('Erreur lors du traitement de l\'image'); return; }
+                                setForm(prev => {
+                                  const next = [...(prev.investigationPoints || [])];
+                                  next[idx] = { ...(next[idx]||{}), photo: processed.dataUrl, photoWidth: processed.width, photoHeight: processed.height };
+                                  return { ...prev, investigationPoints: next };
+                                });
+                              }}
+                            />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 align-top text-center">
+                        <button
+                          type="button"
+                          onClick={() => setForm(prev => {
+                            const next = [...(prev.investigationPoints || [])];
+                            next.splice(idx,1);
+                            return { ...prev, investigationPoints: next };
+                          })}
+                          className="text-xs text-red-600 hover:underline"
+                        >Supprimer</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(prev => ({
+                ...prev,
+                investigationPoints: [
+                  ...(prev.investigationPoints || []),
+                  { chapitre: '', moyen: '', avis: '', commentaire: '', photo: '', photoWidth: undefined, photoHeight: undefined }
+                ]
+              }))}
+              className="px-3 py-2 bg-blue-600 text-white rounded text-xs"
+            >Ajouter une ligne INVESTIGATION</button>
           </div>
 
           {/* AUTRES POINTS */}
@@ -850,6 +979,20 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
               )}
             </div>
           </div>
+
+          {/* CONCLUSION (placée après le tableau AUTRES POINTS) */}
+          <div className="mt-6">
+            <h4 className="text-base font-semibold text-blue-600 mb-2">Conclusion</h4>
+            <textarea
+              name="conclusion"
+              value={form.conclusion || ''}
+              onChange={handleChange}
+              className="p-2 border rounded min-h-[140px] resize-y w-full"
+              placeholder="Saisissez la conclusion..."
+              maxLength={2000}
+            />
+            <div className="text-xs text-gray-500 mt-1"></div>
+          </div>
         </div>
       )}
       {/* Visibilité (public/privé) retirée de l'UI; par défaut, visible */}
@@ -876,6 +1019,9 @@ export default function ReportForm({ addReport, reportToEdit, onCancel }) {
             maitreOuvrage: "",
             centreTravaux: "",
             coverImage: "",
+            phaseBadge: '',
+            phaseBadgeImage: '',
+            headerLogo: "",
             objectifLimites: "",
             ouvrageConcerne: "",
             deroulementVisite: "",

@@ -15,110 +15,135 @@ import {
 
 export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const [logoBase64, setLogoBase64] = useState('');
+  const [logoDims, setLogoDims] = useState(null); // {w,h} dimensions de l'image chargée
   const [isGenerating, setIsGenerating] = useState(false);
+  // Image (logo) associée au badge de phase (reserve / observation / custom)
+  const [phaseBadgeImg, setPhaseBadgeImg] = useState('');
 
-    useEffect(() => {
-      const toDataUrl = (blob) => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+  // Chargement du logo d'en-tête (optionnel)
+  useEffect(() => {
+    const toDataUrl = (blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
 
-      // Supprimer les bordures blanches/transparents autour du logo pour un rendu propre
-      const trimLogoBorders = async (dataUrl) => new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          try {
-            const w = img.naturalWidth || img.width;
-            const h = img.naturalHeight || img.height;
-            if (!w || !h) return resolve(dataUrl);
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const { data } = ctx.getImageData(0, 0, w, h);
-            const isBg = (idx) => {
-              const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
-              // Considérer quasi-blanc ou transparent comme fond
-              return (a < 10) || (r > 245 && g > 245 && b > 245);
-            };
-            let top = 0, bottom = h - 1, left = 0, right = w - 1;
-            // Trouver top
-            scanTop: for (; top < h; top++) {
-              for (let x = 0; x < w; x++) {
-                const idx = (top * w + x) * 4;
-                if (!isBg(idx)) break scanTop;
-              }
-            }
-            // Trouver bottom
-            scanBottom: for (; bottom >= 0; bottom--) {
-              for (let x = 0; x < w; x++) {
-                const idx = (bottom * w + x) * 4;
-                if (!isBg(idx)) break scanBottom;
-              }
-            }
-            // Trouver left
-            scanLeft: for (; left < w; left++) {
-              for (let y = top; y <= bottom; y++) {
-                const idx = (y * w + left) * 4;
-                if (!isBg(idx)) break scanLeft;
-              }
-            }
-            // Trouver right
-            scanRight: for (; right >= 0; right--) {
-              for (let y = top; y <= bottom; y++) {
-                const idx = (y * w + right) * 4;
-                if (!isBg(idx)) break scanRight;
-              }
-            }
-            // Garde-fous
-            if (right <= left || bottom <= top) return resolve(dataUrl);
-            const cropW = Math.max(1, right - left + 1);
-            const cropH = Math.max(1, bottom - top + 1);
-            const out = document.createElement('canvas');
-            out.width = cropW;
-            out.height = cropH;
-            const octx = out.getContext('2d');
-            octx.drawImage(img, left, top, cropW, cropH, 0, 0, cropW, cropH);
-            resolve(out.toDataURL('image/png'));
-          } catch {
-            resolve(dataUrl);
-          }
-        };
-        img.onerror = () => resolve(dataUrl);
-        img.src = dataUrl;
-      });
-
-      const loadLogo = async () => {
-        // Image précise pour l'en-tête de page (configurable via env pour permettre le renommage)
-        // Utiliser NEXT_PUBLIC_LOGO_PATH (ex: "/logo_couleur.jpg"). Tombe par défaut sur "/logo_couleur.jpg".
-        const configuredPath = process.env.NEXT_PUBLIC_LOGO_PATH || '/logo_couleur.jpg';
-        const fixedPath = configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
+  const trimLogoBorders = async (dataUrl) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
         try {
-          const res = await fetch(fixedPath);
-          if (!res.ok) {
-            console.warn('Logo non disponible à', fixedPath);
-            return;
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) return resolve(dataUrl);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const { data } = ctx.getImageData(0, 0, w, h);
+          const isBg = (idx) => {
+            const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+            return (a < 15) || (r > 235 && g > 235 && b > 235);
+          };
+          let top = 0, bottom = h - 1, left = 0, right = w - 1;
+          scanTop: for (; top < h; top++) {
+            for (let x = 0; x < w; x++) {
+              const idx = (top * w + x) * 4;
+              if (!isBg(idx)) break scanTop;
+            }
           }
-          const blob = await res.blob();
-          const dataUrl = await toDataUrl(blob);
-          const trimmed = await trimLogoBorders(dataUrl);
-          setLogoBase64(trimmed);
-        } catch (err) {
-          console.warn('Échec chargement logo en-tête:', err);
+          scanBottom: for (; bottom >= 0; bottom--) {
+            for (let x = 0; x < w; x++) {
+              const idx = (bottom * w + x) * 4;
+              if (!isBg(idx)) break scanBottom;
+            }
+          }
+          scanLeft: for (; left < w; left++) {
+            for (let y = top; y <= bottom; y++) {
+              const idx = (y * w + left) * 4;
+              if (!isBg(idx)) break scanLeft;
+            }
+          }
+          scanRight: for (; right >= 0; right--) {
+            for (let y = top; y <= bottom; y++) {
+              const idx = (y * w + right) * 4;
+              if (!isBg(idx)) break scanRight;
+            }
+          }
+          if (right <= left || bottom <= top) return resolve(dataUrl);
+          const inward = 2;
+          left = Math.min(Math.max(0, left + inward), w - 1);
+          top = Math.min(Math.max(0, top + inward), h - 1);
+          right = Math.max(0, Math.min(w - 1, right - inward));
+          bottom = Math.max(0, Math.min(h - 1, bottom - inward));
+          if (right <= left || bottom <= top) return resolve(dataUrl);
+          const cropW = Math.max(1, right - left + 1);
+          const cropH = Math.max(1, bottom - top + 1);
+          const out = document.createElement('canvas');
+          out.width = cropW;
+          out.height = cropH;
+          const octx = out.getContext('2d');
+          octx.drawImage(img, left, top, cropW, cropH, 0, 0, cropW, cropH);
+          resolve(out.toDataURL('image/png'));
+        } catch {
+          resolve(dataUrl);
         }
       };
-      loadLogo();
-    }, []);
+      img.src = dataUrl;
+    });
+
+    const loadLogo = async () => {
+      // Logo fixe de l'application
+      const source = '/logo_couleur.png';
+      try {
+        if (typeof source === 'string' && source.startsWith('data:image')) {
+          const trimmed = await trimLogoBorders(source);
+          setLogoBase64(trimmed);
+          const img = new Image();
+          img.onload = () => setLogoDims({ w: img.naturalWidth, h: img.naturalHeight });
+          img.src = trimmed;
+          return;
+        }
+        // fetch du fichier statique
+        const res = await fetch(source);
+        const blob = await res.blob();
+        const dataUrl = await toDataUrl(blob);
+        const trimmed = await trimLogoBorders(dataUrl);
+        setLogoBase64(trimmed);
+        const img = new Image();
+        img.onload = () => setLogoDims({ w: img.naturalWidth, h: img.naturalHeight });
+        img.src = trimmed;
+      } catch {
+        setLogoBase64('');
+        setLogoDims(null);
+      }
+    };
+    loadLogo();
+  }, []);
+
+  // Chargement image du badge phase (reserve / observation)
+  useEffect(() => {
+    const loadPhaseBadgeImage = async () => {
+      if (!report?.phaseBadgeImage) { setPhaseBadgeImg(''); return; }
+      try {
+        if (report.phaseBadgeImage.startsWith('data:image') || report.phaseBadgeImage.startsWith('/')) {
+          setPhaseBadgeImg(report.phaseBadgeImage);
+        } else {
+          setPhaseBadgeImg('');
+        }
+      } catch { setPhaseBadgeImg(''); }
+    };
+    loadPhaseBadgeImage();
+  }, [report?.phaseBadgeImage]);
 
   const generatePDF = (opts = { save: true }) => {
     // Dimensions A4 (mm)
-    const a4Width = 210;
-    const a4Height = 297;
+  const a4Width = 210;
+  const a4Height = 297;
+  const primaryColor = [14, 78, 173];
     const pageWidth = a4Width;
-  const margin = 20;
+    const margin = 20;
     // Position de départ du contenu sur les pages de contenu (page 2+)
     const CONTENT_TOP_Y = 35; // remonter un peu le contenu
   // Interligne 2.0
@@ -127,7 +152,9 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
 
     // Estimation préalable de la hauteur nécessaire pour la page de garde
     // Reproduit la logique de placement jusqu'à la "Phase" pour obtenir le Y final
-    let estimatedLeftInfoY = 75;
+  // Point de départ vertical des informations (décalé plus bas)
+  const INFO_BASE_Y = 80; // Ajuster ici pour descendre / monter le bloc d'infos
+  let estimatedLeftInfoY = INFO_BASE_Y;
     // 5 lignes (Affaire, Rapport, Intervenant, Date, Établi le)
     estimatedLeftInfoY += 6 * 4; // après 4 incréments, la 5e ligne est au même Y
     estimatedLeftInfoY += 15; // espace avant légende
@@ -142,26 +169,21 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     // Bloc bas (zone image + infos) commence ~ à (pageHeight - 112)
     // On garantit un écart minimal de 10mm entre le haut et ce bloc
     const minGap = 10;
-    const coverRequiredHeight = Math.max(a4Height, Math.ceil(topEndAfterPhase + minGap + 112));
+  const coverRequiredHeight = Math.max(a4Height, Math.ceil(topEndAfterPhase + minGap + 112));
 
     // Créer le document avec une page de garde à hauteur calculée
     const doc = new jsPDF({ unit: 'mm', format: [a4Width, coverRequiredHeight] });
     let pageHeight = coverRequiredHeight;
-
-  // Palette: conserver uniquement la couleur pour la ligne de pied de page
-  const primaryColor = [0, 119, 182];
-
-  // Helper: déduire le format d'image depuis un data URL
-  const inferImageFormat = (dataUrl) => {
-    try {
-      const head = (dataUrl || '').slice(0, 64).toLowerCase();
-      if (head.includes('image/png')) return 'PNG';
-      if (head.includes('image/jpeg') || head.includes('image/jpg')) return 'JPEG';
-    } catch {}
-    return 'JPEG';
-  };
+    // ... le reste de la génération PDF continuera ici (code intact plus bas)
+  // (Ne pas fermer generatePDF ici; la fonction se poursuit plus loin)
 
   // Helper: couper un texte par longueur de caractères max (sans casser les mots si possible)
+  const inferImageFormat = (dataUrl) => {
+    if (!dataUrl || typeof dataUrl !== 'string') return 'PNG';
+    if (dataUrl.startsWith('data:image/png')) return 'PNG';
+    if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+    return 'PNG';
+  };
   const wrapTextByChars = (text, maxChars = 60) => {
     const words = (text || '').toString().split(/\s+/);
     const lines = [];
@@ -185,42 +207,51 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     return lines;
   };
 
-    // Logo centré en haut de page
+    // Logo centré en haut de la page de garde (position restaurée)
     if (logoBase64) {
-      const coverLogoW = 50; // légèrement plus grand
-      const coverLogoH = 25;
-      const coverLogoX = (pageWidth - coverLogoW) / 2;
+      const maxW = 50;
+      const maxH = 25;
+      let drawW = maxW;
+      let drawH = maxH;
+      if (logoDims && logoDims.w > 0 && logoDims.h > 0) {
+        const ratio = logoDims.w / logoDims.h;
+        // Fit dans le rectangle max en conservant le ratio
+        if (drawW / drawH > ratio) {
+          // trop large: ajuster largeur selon la hauteur
+          drawW = drawH * ratio;
+        } else {
+          // trop haut: ajuster hauteur selon la largeur
+          drawH = drawW / ratio;
+        }
+      }
+      const coverLogoY = 12;
+      const coverLogoX = (pageWidth - drawW) / 2;
       const fmt = inferImageFormat(logoBase64);
       try {
-        doc.addImage(logoBase64, fmt, coverLogoX, 12, coverLogoW, coverLogoH);
+        doc.addImage(logoBase64, fmt, coverLogoX, coverLogoY, drawW, drawH);
       } catch (e) {
-        // Fallback silencieux en cas de format non supporté
-        try { doc.addImage(logoBase64, 'JPEG', coverLogoX, 12, coverLogoW, coverLogoH); } catch {}
+        try { doc.addImage(logoBase64, 'JPEG', coverLogoX, coverLogoY, drawW, drawH); } catch {}
       }
     }
 
-  // Informations entreprise (en bleu à droite)
+  // Informations entreprise (droite, descendu, en noir)
+  const companyBlockY = 55; // point de départ vertical ajusté
   doc.setFontSize(12);
-  doc.setTextColor(...primaryColor);
+  doc.setTextColor(0,0,0);
   const companyInfoX = pageWidth - margin;
   doc.setFont(undefined, 'bold');
-  doc.text('SGTEC', companyInfoX, 40, { align: 'right' });
+  doc.text('SGTEC', companyInfoX, companyBlockY, { align: 'right' });
   doc.setFont(undefined, 'normal');
-  doc.setFontSize(12);
-  doc.text('Consultant indépendant en Maîtrise d’œuvre', companyInfoX, 45, { align: 'right' });
-  doc.text('Rue premier 78005 Paris.', companyInfoX, 50, { align: 'right' });
+  doc.setFontSize(11);
+  doc.text('Consultant indépendant en Maîtrise d’œuvre', companyInfoX, companyBlockY + 5, { align: 'right' });
+  doc.text('Rue premier 78005 Paris.', companyInfoX, companyBlockY + 10, { align: 'right' });
 
-    // Titre centré de la page de garde
-    const titleY = 70;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-  const coverTitle = report.proprietaire || report.entreprise || 'Rapport d’intervention';
-    doc.text(coverTitle, pageWidth / 2, titleY, { align: 'center' });
+  
+    const titleY = 70; // conservé pour ne pas perturber le reste de la mise en page
 
     // Bloc d'informations à gauche (même interligne, sous le logo / sous infos entreprise)
   const leftInfoX = margin;
-  let leftInfoY = 75; // descendu légèrement plus bas
+  let leftInfoY = INFO_BASE_Y; // position de départ ajustée
   doc.setFontSize(12);
   // Champs à gauche (Affaire/Rapport/Intervenant/Date/Établi le) en noir
   doc.setTextColor(0, 0, 0);
@@ -281,7 +312,55 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   doc.setFont(undefined, 'bold');
   doc.setTextColor(...primaryColor);
   const phaseValue = (report.phase && String(report.phase).trim() !== '' ? String(report.phase) : '—');
-  doc.text(`Phase: ${phaseValue}`, pageWidth / 2, leftInfoY, { align: 'center' });
+  // Affichage de la phase + éventuel badge (phaseBadge choisi dans le formulaire)
+  const phaseCenterX = pageWidth / 2;
+  const phaseLabel = `Phase: ${phaseValue}`;
+  doc.text(phaseLabel, phaseCenterX, leftInfoY, { align: 'center' });
+  // Nouveau rendu: badge de phase agrandi et aligné complètement à droite
+  if (report.phaseBadge) {
+    const imgSize = 20; // taille agrandie
+    const rightPadding = 4; // petit espace avec la marge
+    const badgeX = pageWidth - margin - imgSize - rightPadding;
+    // Affichage image si disponible
+    if (phaseBadgeImg) {
+      try {
+        const badgeYImg = leftInfoY - imgSize + 8; // ajustement vertical (baseline du texte)
+        const fmt = phaseBadgeImg.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(phaseBadgeImg, fmt, badgeX, badgeYImg, imgSize, imgSize);
+      } catch {
+        // en cas d'erreur image → fallback texte stylisé
+        doc.setTextColor(0,0,0);
+        doc.setFontSize(10);
+        doc.text(String(report.phaseBadge).toUpperCase(), badgeX, leftInfoY);
+      }
+    } else {
+      // Fallback texte (pastille stylisée) si aucune image pré‑chargée
+      const badgePaddingH = 3;
+      const badgePaddingW = 4;
+      const badgeText = report.phaseBadge === 'reserve' ? 'RÉSERVÉ' : (report.phaseBadge === 'observation' ? 'AVEC OBSERVATION' : String(report.phaseBadge));
+      let fill = [240,240,240];
+      let stroke = [200,200,200];
+      let textCol = [60,60,60];
+      if (report.phaseBadge === 'reserve') {
+        fill = [255, 243, 205]; stroke = [234, 179, 8]; textCol = [161, 98, 7];
+      } else if (report.phaseBadge === 'observation') {
+        fill = [219, 234, 254]; stroke = [59, 130, 246]; textCol = [30, 64, 175];
+      }
+      doc.setFontSize(10);
+      const badgeTextWidth = doc.getTextWidth(badgeText);
+      const rectW = badgeTextWidth + badgePaddingW * 2;
+      const rectH = 8;
+      const badgeY = leftInfoY - rectH + 5; // aligner verticalement avec le texte Phase
+      // Si la largeur calculée dépasse l'espace réservé à droite, on la recale (rare)
+      const adjustedBadgeX = Math.max(margin, badgeX - Math.max(0, rectW - imgSize));
+      doc.setDrawColor(...stroke);
+      doc.setFillColor(...fill);
+      doc.roundedRect(adjustedBadgeX, badgeY, rectW, rectH, 1.5, 1.5, 'FD');
+      doc.setTextColor(...textCol);
+      doc.text(badgeText, adjustedBadgeX + rectW / 2, badgeY + rectH - 2.2, { align: 'center' });
+      doc.setTextColor(0,0,0);
+    }
+  }
 
     // Informations principales (texte libre, sans fonds)
   const cardY = Math.max(95, leftInfoY + 10);
@@ -356,7 +435,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     const y4 = imgBoxY + infoPad + 3 * infoStep;
 
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     // Centre de Travaux
     doc.setFont(undefined, 'bold');
     doc.text('Centre de Travaux:', centreX - labelOffset, y1, { align: 'right' });
@@ -537,67 +616,9 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       currentY += 24; // espace titre
     }
 
-    // Section OUVRAGE CONCERNÉ (toujours affichée, lignes vides si non renseignées)
-    if (report.ouvrageConcerne) {
-      ensureSpace(24);
-      currentY = addModernSection("OUVRAGE CONCERNÉ", "", report.ouvrageConcerne, currentY, primaryColor);
-    } else {
-      // Titre de section même sans paragraphe libre
-      ensureSpace(24);
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
-      doc.setFontSize(14);
-      doc.setFont(undefined, 'bold');
-  doc.text('OUVRAGE CONCERNÉ', margin, currentY + 10);
-      currentY += 24;
-    }
-
-    // Détails structurés (affichés même vides)
-    {
-      const kv = [
-        ["Il s'agit de", report.typeOuvrage ?? ''],
-        ["Adresse de l'ouvrage", report.adresseOuvrage ?? ''],
-        ["Modèle de maison", report.modeleMaison ?? ''],
-        ["Nombre de niveaux", report.nombreNiveaux != null && String(report.nombreNiveaux) !== '' ? String(report.nombreNiveaux) : ''],
-        ["Conducteur de travaux du projet", report.conducteurTravaux ?? ''],
-        ["N° chantier/dossier", report.noChantierDossier ?? ''],
-        ["Entreprise", report.entrepriseProjet ?? ''],
-        ["N° plan LSA STANDARD", report.noPlanLSAStandard ?? ''],
-      ];
-
-  const minLabelW = 70; // largeur minimale du libellé en mm (légèrement augmentée)
-  const lineH = INFO_LINE_H;
-      const maxY = pageHeight - 25; // garder espace pour pied
-      doc.setFontSize(12); // police augmentée pour les infos sous Ouvrage concerné
-      doc.setTextColor(0, 0, 0);
-      kv.forEach(([label, value]) => {
-  const rowPad = 4; // espacement vertical légèrement augmenté
-        if (currentY + lineH + rowPad > maxY) {
-          doc.addPage('a4', 'p');
-          pageHeight = a4Height;
-          currentY = CONTENT_TOP_Y;
-        }
-        // Dessiner le libellé et calculer sa largeur
-        doc.setFont(undefined, 'bold');
-        const labelText = `${label}:`;
-        doc.text(labelText, margin, currentY);
-        const labelDrawnW = doc.getTextWidth(labelText);
-        doc.setFont(undefined, 'normal');
-        const textX = margin + Math.max(minLabelW, labelDrawnW + 3);
-        const availableW = pageWidth - margin - textX;
-        const textVal = value == null ? '' : String(value);
-        const lines = textVal ? doc.splitTextToSize(textVal, availableW) : [];
-        if (lines.length) {
-          doc.text(lines, textX, currentY);
-        }
-        currentY += Math.max(lineH, lines.length * INFO_LINE_H) + rowPad;
-      });
-      currentY += 5;
-    }
-
-    // Section DÉROULEMENT DE LA VISITE (titre + infos phase/date/personne + texte éventuel)
-    // Titre
+  // Section OUVRAGE CONCERNÉ (toujours affichée, lignes vides si non renseignées)
+  // Section DÉROULEMENT DE LA VISITE (titre + infos phase/date/personne + texte éventuel)
+  // Titre
   ensureSpace(24);
   doc.setTextColor(...primaryColor);
     doc.setFontSize(10);
@@ -671,6 +692,88 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       doc.setTextColor(0, 0, 0);
     }
 
+    // Tableau INVESTIGATION (données distinctes) juste après RAPPORT D'INVESTIGATION
+    {
+      const rawRows = Array.isArray(report.investigationPoints) ? report.investigationPoints : [];
+      const normalized = rawRows.map(r => ({
+        chapitre: (r?.chapitre || '').toString().toUpperCase(),
+        moyen: r?.moyen || r?.moyenDeControle || '',
+        avis: r?.avis || '',
+        commentaire: r?.commentaire || '',
+        photo: r?.photo || '',
+        photoWidth: r?.photoWidth || 0,
+        photoHeight: r?.photoHeight || 0,
+      }));
+      const hasContent = (row) => [row.chapitre, row.moyen, row.avis, row.commentaire, row.photo]
+        .some(v => v != null && String(v).trim() !== '');
+      const rows = normalized.filter(hasContent);
+      if (rows.length > 0) {
+        // Espace disponible ? sinon nouvelle page
+        if (currentY + 40 > pageHeight - 25) {
+          doc.addPage('a4','p'); pageHeight = a4Height; currentY = CONTENT_TOP_Y;
+        }
+        // Phrase d'introduction
+        doc.setFontSize(9);
+        doc.setTextColor(60,60,60);
+        const intro = "Le tableau ci-dessous synthétise les constats relevés lors de l'investigation.";
+        const introLines = doc.splitTextToSize(intro, pageWidth - (margin*2));
+        doc.text(introLines, margin, currentY + 4);
+        currentY += (introLines.length * 5) + 6;
+        doc.setTextColor(0,0,0);
+        const columns = [
+          { header: 'Chapitre', key: 'chapitre', w: 30 },
+          { header: 'Moyen de\ncontrôle', key: 'moyen', w: 32 },
+          { header: 'Avis', key: 'avis', w: 22 },
+          { header: 'Commentaire', key: 'commentaire', w: 70 },
+          { header: 'Photo / Cliché', key: 'photo', w: 40 },
+        ];
+        const body = rows.map(r => columns.map(c => (c.key === 'photo' ? '' : (r[c.key] || ''))));
+        autoTable(doc, {
+          startY: currentY,
+          head: [columns.map(c => c.header)],
+          body,
+          theme: 'grid',
+          styles: { fontSize: 9, cellPadding: 3, minCellHeight: 16, lineColor: [200,200,200], lineWidth: 0.1, valign: 'middle' },
+          headStyles: { fillColor: primaryColor, textColor: [255,255,255], fontStyle: 'bold', halign: 'center' },
+          alternateRowStyles: { fillColor: [245,245,245] },
+          columnStyles: columns.reduce((o,c,i)=>{o[i]={cellWidth:c.w, halign: (i===3?'left':'center')}; return o;},{}),
+          margin: { left: margin, right: margin },
+          willDrawCell: (data) => {
+            if (data.section==='body' && data.column.index===2) {
+              const rowIdx = data.row.index;
+              const avis = (rows[rowIdx]?.avis || '').toLowerCase();
+              let txtColor=[0,0,0]; let fill=null;
+              if (['conforme','très satisfait','satisfait'].includes(avis)) { txtColor=[22,163,74]; fill=[220,255,228]; }
+              else if (['non conforme','insatisfait','très insatisfait'].includes(avis)) { txtColor=[220,38,38]; fill=[255,228,230]; }
+              else if (avis==='avec observations') { txtColor=[217,119,6]; fill=[255,243,219]; }
+              else if (avis==='neutre') { txtColor=[82,82,82]; fill=[233,233,233]; }
+              doc.setTextColor(...txtColor);
+              if (fill) {
+                const {x,y,width,height}=data.cell; const r=2;
+                doc.setFillColor(...fill);
+                try { doc.roundedRect(x+0.5,y+0.5,width-1,height-1,r,r,'F'); }
+                catch { doc.setDrawColor(...fill); doc.rect(x+0.5,y+0.5,width-1,height-1,'F'); }
+              }
+            }
+          },
+          didDrawCell: (data) => {
+            if (data.section!=='body') return; if (data.column.index!==4) return;
+            const rowIdx = data.row.index; const row = rows[rowIdx] || {}; const val=row.photo;
+            try {
+              if (val && typeof val==='string' && val.startsWith('data:image')) {
+                const cell=data.cell; const maxW=Math.min(20, cell.width-2); const maxH=Math.min(18, cell.height-2);
+                let imgW=maxW, imgH=maxH; const pw=Number(row.photoWidth)||0; const ph=Number(row.photoHeight)||0;
+                if (pw>0 && ph>0) { const ratio=pw/ph; if (ratio>=1){ imgW=maxW; imgH=Math.min(maxH, maxW/ratio);} else { imgH=maxH; imgW=Math.min(maxW, maxH*ratio);} } else { imgW=imgH=Math.min(maxW,maxH,16); }
+                const x=cell.x+(cell.width-imgW)/2; const y=cell.y+(cell.height-imgH)/2; const fmt= val.startsWith('data:image/png')?'PNG':'JPEG';
+                doc.addImage(val, fmt, x, y, imgW, imgH);
+              }
+            } catch {}
+          }
+        });
+        currentY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 10 : currentY + 10;
+      }
+    }
+
     // Texte libre (si présent)
     if (report.deroulementVisite) {
       currentY = drawJustifiedText(
@@ -732,6 +835,20 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         currentY += 16;
         doc.setTextColor(0, 0, 0);
 
+        // Phrases de transition (affichées uniquement si contenu)
+        const transitionLines = [
+          "La section suivante présente les autres points relevés durant l'intervention.",
+          
+        ];
+        doc.setFontSize(9);
+        doc.setTextColor(60,60,60);
+        transitionLines.forEach(line => {
+          doc.text(line, margin, currentY + 4);
+          currentY += 5;
+        });
+        currentY += 2;
+        doc.setTextColor(0,0,0);
+
         // Colonnes et styles du tableau
         const columns = [
           { header: 'Chapitre', dataKey: 'chapitre' },
@@ -769,66 +886,74 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
             fillColor: [245, 245, 245],
           },
           columnStyles: {
-            0: { cellWidth: 19 },
-            1: { cellWidth: 42 },
-            2: { cellWidth: 26 },
-            3: { cellWidth: 22 },
-            4: { cellWidth: 47 },
-            5: { cellWidth: 20, halign: 'center' },
+            0: { cellWidth: 28 },         // Chapitre (augmenté)
+            1: { cellWidth: 24 },         // Élément observé (réajusté)
+            2: { cellWidth: 23 },         // Moyen de contrôle (réduit légèrement)
+            3: { cellWidth: 21 },         // Avis (réduit)
+            4: { cellWidth: 48, halign: 'center' },         // Commentaire (réduit pour équilibrer)
+            5: { cellWidth: 26, halign: 'center' }, // Photo (réduit)
           },
           margin: { left: margin, right: margin },
           willDrawCell: (data) => {
-            // Coloriser le texte de la colonne Avis selon la valeur
+            // Coloriser le texte + fond de la colonne Avis
             if (data.section === 'body' && data.column.index === 3) {
               const rowIdx = data.row.index;
               const avis = (rows[rowIdx]?.avis || '').toLowerCase();
-              if (avis === 'conforme' || avis === 'très satisfait' || avis === 'satisfait') {
-                doc.setTextColor(22, 163, 74); // vert
-              } else if (avis === 'non conforme' || avis === 'insatisfait' || avis === 'très insatisfait') {
-                doc.setTextColor(220, 38, 38); // rouge
-              } else if (avis === 'avec observations') {
-                doc.setTextColor(217, 119, 6); // ambre/orange
-              } else if (avis === 'neutre') {
-                doc.setTextColor(82, 82, 82); // gris
-              } else {
-                doc.setTextColor(0, 0, 0);
+              let txtColor = [0,0,0];
+              let fill = null;
+              if (['conforme','très satisfait','satisfait'].includes(avis)) { txtColor=[22,163,74]; fill=[220,255,228]; }
+              else if (['non conforme','insatisfait','très insatisfait'].includes(avis)) { txtColor=[220,38,38]; fill=[255,228,230]; }
+              else if (avis === 'avec observations') { txtColor=[217,119,6]; fill=[255,243,219]; }
+              else if (avis === 'neutre') { txtColor=[82,82,82]; fill=[233,233,233]; }
+              doc.setTextColor(...txtColor);
+              if (fill) {
+                const { x, y, width, height } = data.cell;
+                const r = 2;
+                doc.setFillColor(...fill);
+                try {
+                  doc.roundedRect(x+0.5, y+0.5, width-1, height-1, r, r, 'F');
+                } catch {
+                  doc.setDrawColor(...fill); doc.rect(x+0.5, y+0.5, width-1, height-1, 'F');
+                }
               }
             }
           },
           didDrawCell: (data) => {
-            // Insérer la photo en miniature si présente dans la cellule Photo
+            // N'insérer l'image que dans les cellules du corps (pas l'en-tête) de la colonne Photo
+            if (data.section !== 'body') return;
             const colIdx = data.column.index;
+            if (colIdx !== 5) return; // uniquement colonne Photo
             const rowIdx = data.row.index;
-            if (colIdx === 5) {
-              try {
-                const row = rows[rowIdx] || {};
-                const val = row.photo;
-                if (val) {
-                  const cell = data.cell;
-                  const maxW = Math.min(18, cell.width - 2);
-                  const maxH = Math.min(18, cell.height - 2);
-                  let imgW = maxW;
-                  let imgH = maxH;
-                  const pw = Number(row.photoWidth) || 0;
-                  const ph = Number(row.photoHeight) || 0;
-                  if (pw > 0 && ph > 0) {
-                    const ratio = pw / ph;
-                    if (ratio >= 1) {
-                      imgW = maxW;
-                      imgH = Math.min(maxH, maxW / ratio);
-                    } else {
-                      imgH = maxH;
-                      imgW = Math.min(maxW, maxH * ratio);
-                    }
+            try {
+              const row = rows[rowIdx] || {};
+              const val = row.photo;
+              if (val && typeof val === 'string' && val.startsWith('data:image')) {
+                const cell = data.cell;
+                const maxW = Math.min(18, cell.width - 2);
+                const maxH = Math.min(18, cell.height - 2);
+                let imgW = maxW;
+                let imgH = maxH;
+                const pw = Number(row.photoWidth) || 0;
+                const ph = Number(row.photoHeight) || 0;
+                if (pw > 0 && ph > 0) {
+                  const ratio = pw / ph;
+                  if (ratio >= 1) {
+                    imgW = maxW;
+                    imgH = Math.min(maxH, maxW / ratio);
                   } else {
-                    imgW = imgH = Math.min(maxW, maxH, 16);
+                    imgH = maxH;
+                    imgW = Math.min(maxW, maxH * ratio);
                   }
-                  const x = cell.x + (cell.width - imgW) / 2;
-                  const y = cell.y + (cell.height - imgH) / 2;
-                  const fmt = (val.startsWith('data:image/png')) ? 'PNG' : 'JPEG';
-                  doc.addImage(val, fmt, x, y, imgW, imgH);
+                } else {
+                  imgW = imgH = Math.min(maxW, maxH, 16);
                 }
-              } catch {}
+                const x = cell.x + (cell.width - imgW) / 2;
+                const y = cell.y + (cell.height - imgH) / 2;
+                const fmt = val.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                doc.addImage(val, fmt, x, y, imgW, imgH);
+              }
+            } catch {
+              
             }
           },
           didDrawPage: () => {},

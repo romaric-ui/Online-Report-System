@@ -1,11 +1,10 @@
 "use client";
-import Image from 'next/image';
 
 export default function Header({ onNewReport }) {
   return (
     <header className="app-header">
       <div className="flex items-center gap-3">
-        <img src="/SGTEC.jpg" alt="Logo" className="logo rounded-md" />
+        <img src="/logo_couleur.png" alt="Logo" className="logo rounded-md" />
         <div>
           <h1 className="text-2xl font-bold">Suivi Chantier</h1>
           <div className="text-sm muted">Gestion des rapports et contrôles</div>
