@@ -49,16 +49,16 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
   const [errors, setErrors] = useState([]);
   const [newIntervenant, setNewIntervenant] = useState("");
 
-  // Couleurs pour AVIS (formulaire)
+  // Couleurs pour AVIS (formulaire) - 4 avis uniquement
   const getAvisColorClass = (avis) => {
     const v = (avis || '').toLowerCase();
-    if (v === 'conforme' || v === 'très satisfait' || v === 'satisfait') {
+    if (v === 'satisfaisant') {
       return 'bg-green-100 text-green-800 border-green-200';
     }
-    if (v === 'non conforme' || v === 'insatisfait' || v === 'très insatisfait') {
+    if (v === 'avec réserve') {
       return 'bg-red-100 text-red-800 border-red-200';
     }
-    if (v === 'avec observations') {
+    if (v === 'avec observation') {
       return 'bg-amber-100 text-amber-800 border-amber-200';
     }
     if (v === 'neutre') {
@@ -260,7 +260,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
             key === 'intervenants' ? "Intervenants" :
             key === 'maitreOuvrage' ? "Maître d'ouvrage" :
             key === 'centreTravaux' ? "Centre de Travaux" :
-            key === 'coverImage' ? "Image de couverture" :
+            key === 'coverImage' ? "Image du panneau de chantier" :
             key === 'phaseBadge' ? "Indicateur Phase" :
             key.replace(/([A-Z])/g, " $1")
           );
@@ -492,14 +492,17 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
           <div id="details-ouvrage" className="section-anchor mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
             <div className="flex flex-col">
               <label className="font-semibold mb-1">Il s'agit de</label>
-              <input
-                type="text"
+              <select
                 name="typeOuvrage"
                 value={form.typeOuvrage || ''}
                 onChange={handleChange}
-                className="input-sm w-full"
-                placeholder="Ex: Maison individuelle, Appartement..."
-              />
+                className="input-sm w-full bg-white"
+              >
+                <option value="">-- Sélectionner --</option>
+                <option value="Maison individuelle">Maison individuelle</option>
+                <option value="Appartement">Appartement</option>
+                <option value="Copropriété">Copropriété</option>
+              </select>
             </div>
             <div className="flex flex-col">
               <label className="font-semibold mb-1">Adresse de l'ouvrage</label>
@@ -607,17 +610,19 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                         />
                       </td>
                       <td className="px-2 py-2 align-top">
-                        <textarea
+                        <select
                           value={row.moyen || row.moyenDeControle || ''}
                           onChange={(e) => setForm(prev => {
                             const next = [...(prev.investigationPoints || [])];
                             next[idx] = { ...(next[idx]||{}), moyen: e.target.value };
                             return { ...prev, investigationPoints: next };
                           })}
-                          onInput={(e)=>{e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px';}}
-                          className="table-textarea w-full"
-                          placeholder="Moyen de contrôle"
-                        />
+                          className="table-select w-full bg-white"
+                        >
+                          <option value="">-- Sélectionner --</option>
+                          <option value="Visuel">Visuel</option>
+                          <option value="Ferroscan">Ferroscan</option>
+                        </select>
                       </td>
                       <td className="px-2 py-2 align-top">
                         <select
@@ -630,14 +635,10 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                           className={`table-select w-full bg-white ${getAvisColorClass(row.avis)}`}
                         >
                           <option value="">-- Sélectionner --</option>
-                          <option value="Conforme">Conforme</option>
-                          <option value="Non conforme">Non conforme</option>
-                          <option value="Très satisfait">Très satisfait</option>
-                          <option value="Satisfait">Satisfait</option>
-                          <option value="Insatisfait">Insatisfait</option>
-                          <option value="Très insatisfait">Très insatisfait</option>
                           <option value="Neutre">Neutre</option>
-                          <option value="Avec observations">Avec observations</option>
+                          <option value="Satisfaisant">Satisfaisant</option>
+                          <option value="Avec observation">Avec observation</option>
+                          <option value="Avec réserve">Avec réserve</option>
                         </select>
                       </td>
                       <td className="px-2 py-2 align-top">
@@ -811,17 +812,19 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                         />
                       </td>
                       <td className="px-2 py-2 align-top">
-                        <textarea
+                        <select
                           value={row.moyen || row.moyenDeControle || ''}
                           onChange={(e) => setForm(prev => {
                             const next = [...(prev.autresPoints || [])];
                             next[idx] = { ...(next[idx] || {}), moyen: e.target.value };
                             return { ...prev, autresPoints: next };
                           })}
-                          onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                          className="table-textarea w-full"
-                          placeholder="Moyen de contrôle"
-                        />
+                          className="table-select w-full bg-white"
+                        >
+                          <option value="">-- Sélectionner --</option>
+                          <option value="Visuel">Visuel</option>
+                          <option value="Ferroscan">Ferroscan</option>
+                        </select>
                       </td>
                       <td className="px-2 py-2 align-top">
                         <select
@@ -834,14 +837,10 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                           className={`table-select w-full bg-white ${getAvisColorClass(row.avis)}`}
                         >
                           <option value="">-- Sélectionner --</option>
-                          <option value="Conforme">Conforme</option>
-                          <option value="Non conforme">Non conforme</option>
-                          <option value="Très satisfait">Très satisfait</option>
-                          <option value="Satisfait">Satisfait</option>
-                          <option value="Insatisfait">Insatisfait</option>                        
-                          <option value="Très insatisfait">Très insatisfait</option>
                           <option value="Neutre">Neutre</option>
-                          <option value="Avec observations">Avec observations</option>
+                          <option value="Satisfaisant">Satisfaisant</option>
+                          <option value="Avec observation">Avec observation</option>
+                          <option value="Avec réserve">Avec réserve</option>
 
                         </select>
                       </td>

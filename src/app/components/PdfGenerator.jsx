@@ -143,6 +143,8 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const a4Width = 210;
   const a4Height = 297;
   const primaryColor = [14, 78, 173];
+  // Garde basse réservée au futur pied de page (évite chevauchements)
+  const FOOTER_GUARD = 32; // mm (ligne footer à ~20mm du bas + marge visuelle)
     const pageWidth = a4Width;
     const margin = 20;
     // Position de départ du contenu sur les pages de contenu (page 2+)
@@ -160,7 +162,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     estimatedLeftInfoY += 6 * 4; // après 4 incréments, la 5e ligne est au même Y
     estimatedLeftInfoY += 15; // espace avant légende
     const estCaptionLines = [
-      "RAPPORT D'INVESTIGATION AUDIT DE CLOS COUVERT:",
+      " AUDIT DE CLOS COUVERT:",
       "INVESTIGATION DE CHANTIER"
     ];
     estimatedLeftInfoY += Math.max(0, (estCaptionLines.length - 1) * 7);
@@ -239,13 +241,13 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const companyBlockY = 55; // point de départ vertical ajusté
   doc.setFontSize(12);
   doc.setTextColor(0,0,0);
-  const companyInfoX = pageWidth - margin;
+  const companyInfoX = pageWidth / 2;
   doc.setFont(undefined, 'bold');
-  doc.text('SGTEC', companyInfoX, companyBlockY, { align: 'right' });
+  doc.text('SOCIÉTÉ DE GESTION DES TRAVAUX ET ENCADREMENT DE CHANTIER', companyInfoX, companyBlockY, { align: 'center' });
   doc.setFont(undefined, 'normal');
-  doc.setFontSize(11);
-  doc.text('Consultant indépendant en Maîtrise d’œuvre', companyInfoX, companyBlockY + 5, { align: 'right' });
-  doc.text('Rue premier 78005 Paris.', companyInfoX, companyBlockY + 10, { align: 'right' });
+  doc.setFontSize(12);
+  doc.text('Consultant indépendant en Maîtrise d’œuvre', companyInfoX, companyBlockY + 5, { align: 'center' });
+  doc.text('RUE PREMIER 78005 PARIS.', companyInfoX, companyBlockY + 10, { align: 'center' });
 
   
     const titleY = 70; // conservé pour ne pas perturber le reste de la mise en page
@@ -390,9 +392,10 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
   const centreX = pageWidth - margin;
   const labelOffset = 45; // espace entre libellé et valeur (style similaire au bloc gauche)
 
-    // Zone image à gauche du bloc droit
-  const imgBoxW = 60;
-  const imgBoxH = 40;
+    // Zone image à gauche du bloc droit(Photo de couverture)
+  
+  const imgBoxH = 48; 
+  const imgBoxW = 72; 
   const imgGap = 8;
   const imgBoxX = margin; // totalement à gauche (respecte la marge)
   const imgBoxY = baseY - 2;
@@ -490,8 +493,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     // needed = hauteur minimale (mm) que l'on souhaite réserver (titre + première ligne ou marge).
     const ensureSpace = (needed = 30) => {
       const currentPageHeight = doc.internal.pageSize.getHeight();
-      const bottomGuard = 25; // marge basse utilisée ailleurs
-      if (currentY + needed > currentPageHeight - bottomGuard) {
+      if (currentY + needed > currentPageHeight - FOOTER_GUARD) {
         doc.addPage('a4', 'p');
         pageHeight = a4Height;
         currentY = CONTENT_TOP_Y;
@@ -601,7 +603,6 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
     
   // Sections Observations et Actions retirées
 
-    // Section OBJECTIF ET LIMITE DE LA PRESTATION (toujours afficher le titre)
     if (report.objectifLimites) {
       ensureSpace(24);
       currentY = addModernSection("OBJECTIF ET LIMITE DE LA PRESTATION", "", report.objectifLimites, currentY, primaryColor);
@@ -648,7 +649,7 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
       const representant = (report.representantSgtec && String(report.representantSgtec).trim() !== '') ? String(report.representantSgtec) : '—';
       const infoRows = [
         ["La visite Phase " + phaseStr + " s'est déroulée le", visitDateStr],
-        ["La personne rencontrée sur le site était", personne],
+        ["Personne rencontrée lors de la visite", personne],
         ["Le représentant du bureau SGTEC était", representant],
       ];
 
@@ -721,12 +722,14 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
         doc.text(introLines, margin, currentY + 4);
         currentY += (introLines.length * 5) + 6;
         doc.setTextColor(0,0,0);
+        // Harmoniser les largeurs avec le tableau "AUTRES POINTS"
+        // (Chapitre 28 / Moyen 23 / Avis 21 / Commentaire 48 / Photo 26)
         const columns = [
-          { header: 'Chapitre', key: 'chapitre', w: 30 },
-          { header: 'Moyen de\ncontrôle', key: 'moyen', w: 32 },
-          { header: 'Avis', key: 'avis', w: 22 },
-          { header: 'Commentaire', key: 'commentaire', w: 70 },
-          { header: 'Photo / Cliché', key: 'photo', w: 40 },
+          { header: 'Chapitre', key: 'chapitre', w: 28 },
+          { header: 'Moyen de\ncontrôle', key: 'moyen', w: 25 },
+          { header: 'Avis', key: 'avis', w: 24 },
+          { header: 'Commentaire', key: 'commentaire', w: 54 },
+          { header: 'Photo/Cliché', key: 'photo', w: 28 },
         ];
         const body = rows.map(r => columns.map(c => (c.key === 'photo' ? '' : (r[c.key] || ''))));
         autoTable(doc, {
@@ -738,15 +741,15 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
           headStyles: { fillColor: primaryColor, textColor: [255,255,255], fontStyle: 'bold', halign: 'center' },
           alternateRowStyles: { fillColor: [245,245,245] },
           columnStyles: columns.reduce((o,c,i)=>{o[i]={cellWidth:c.w, halign: (i===3?'left':'center')}; return o;},{}),
-          margin: { left: margin, right: margin },
+          margin: { left: margin, right: margin, bottom: FOOTER_GUARD },
           willDrawCell: (data) => {
             if (data.section==='body' && data.column.index===2) {
               const rowIdx = data.row.index;
               const avis = (rows[rowIdx]?.avis || '').toLowerCase();
               let txtColor=[0,0,0]; let fill=null;
-              if (['conforme','très satisfait','satisfait'].includes(avis)) { txtColor=[22,163,74]; fill=[220,255,228]; }
-              else if (['non conforme','insatisfait','très insatisfait'].includes(avis)) { txtColor=[220,38,38]; fill=[255,228,230]; }
-              else if (avis==='avec observations') { txtColor=[217,119,6]; fill=[255,243,219]; }
+              if (avis==='satisfaisant') { txtColor=[22,163,74]; fill=[220,255,228]; }
+              else if (avis==='avec réserve') { txtColor=[220,38,38]; fill=[255,228,230]; }
+              else if (avis==='avec observation') { txtColor=[217,119,6]; fill=[255,243,219]; }
               else if (avis==='neutre') { txtColor=[82,82,82]; fill=[233,233,233]; }
               doc.setTextColor(...txtColor);
               if (fill) {
@@ -887,14 +890,14 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
             fillColor: [245, 245, 245],
           },
           columnStyles: {
-            0: { cellWidth: 28 },         // Chapitre (augmenté)
-            1: { cellWidth: 24 },         // Élément observé (réajusté)
-            2: { cellWidth: 23 },         // Moyen de contrôle (réduit légèrement)
-            3: { cellWidth: 21 },         // Avis (réduit)
-            4: { cellWidth: 48, halign: 'center' },         // Commentaire (réduit pour équilibrer)
-            5: { cellWidth: 26, halign: 'center' }, // Photo (réduit)
+            0: { cellWidth: 28 },         // Chapitre
+            1: { cellWidth: 23 },         // Élément observé 
+            2: { cellWidth: 21 },         // Moyen de contrôle 
+            3: { cellWidth: 21 },         // Avis (même largeur que tableau 1)
+            4: { cellWidth: 50, halign: 'center' },         // Commentaire (identique)
+            5: { cellWidth: 30, halign: 'center' }, // Photo 
           },
-          margin: { left: margin, right: margin },
+          margin: { left: margin, right: margin, bottom: FOOTER_GUARD },
           willDrawCell: (data) => {
             // Coloriser le texte + fond de la colonne Avis
             if (data.section === 'body' && data.column.index === 3) {
@@ -902,9 +905,9 @@ export default function PdfGenerator({ report, onSavePdf, onEditReport }) {
               const avis = (rows[rowIdx]?.avis || '').toLowerCase();
               let txtColor = [0,0,0];
               let fill = null;
-              if (['conforme','très satisfait','satisfait'].includes(avis)) { txtColor=[22,163,74]; fill=[220,255,228]; }
-              else if (['non conforme','insatisfait','très insatisfait'].includes(avis)) { txtColor=[220,38,38]; fill=[255,228,230]; }
-              else if (avis === 'avec observations') { txtColor=[217,119,6]; fill=[255,243,219]; }
+              if (avis === 'satisfaisant') { txtColor=[22,163,74]; fill=[220,255,228]; }
+              else if (avis === 'avec réserve') { txtColor=[220,38,38]; fill=[255,228,230]; }
+              else if (avis === 'avec observation') { txtColor=[217,119,6]; fill=[255,243,219]; }
               else if (avis === 'neutre') { txtColor=[82,82,82]; fill=[233,233,233]; }
               doc.setTextColor(...txtColor);
               if (fill) {
