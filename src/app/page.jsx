@@ -1,13 +1,17 @@
 "use client";
 import "./globals.css";
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import ReportForm from "./components/ReportForm";
 import ReportTable from "./components/ReportTable";
 import PdfGenerator from "./components/PdfGenerator";
 import Header from "./components/Header";
 import StatsBar from "./components/StatsBar";
+import AuthModal from "./components/AuthModal";
+import Toast from "./components/Toast";
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [reports, setReports] = useState([]);
   const [reportToEdit, setReportToEdit] = useState(null);
   const [showForm, setShowForm] = useState(false); // formulaire masqué par défaut
@@ -19,13 +23,58 @@ export default function Home() {
   const [isDirty, setIsDirty] = useState(false);
   const autosaveTimer = useRef(null);
 
-  // Charger les rapports + préférences depuis localStorage au démarrage
-  useEffect(() => {
+  // États d'authentification
+  const [user, setUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // Action en attente après connexion
+  const [toast, setToast] = useState(null); // Notification toast
+
+  // Charger les rapports depuis MySQL + préférences localStorage
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Charger rapports depuis API MySQL
+  const fetchReports = async () => {
     try {
-      const savedReports = localStorage.getItem('constructionReports');
-      if (savedReports) {
-        setReports(JSON.parse(savedReports));
+      setLoading(true);
+      const response = await fetch('/api/reports');
+      if (!response.ok) throw new Error('Erreur chargement API');
+      const data = await response.json();
+      setReports(data);
+      setError(null);
+    } catch (err) {
+      console.error('API Error:', err);
+      setError(err.message);
+      // Fallback localStorage si API indisponible
+      try {
+        const savedReports = localStorage.getItem('constructionReports');
+        if (savedReports) {
+          setReports(JSON.parse(savedReports));
+        }
+      } catch (e) {
+        console.error('Fallback localStorage error:', e);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Vérifier si l'utilisateur est connecté
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('user');
+      }
+    }
+
+    // Charger rapports depuis MySQL
+    fetchReports();
+    
+    // Charger préférences depuis localStorage
+    try {
       const savedFilter = localStorage.getItem('reportStatusFilter');
       if (savedFilter) setStatusFilter(savedFilter);
       const savedSearch = localStorage.getItem('reportSearch');
@@ -39,7 +88,7 @@ export default function Home() {
     }
   }, []);
 
-  // Persister automatiquement à chaque modification de `reports`
+  // Backup localStorage seulement (MySQL est la source principale)
   useEffect(() => {
     try {
       localStorage.setItem('constructionReports', JSON.stringify(reports));
@@ -68,12 +117,36 @@ export default function Home() {
 
   // Mode édition : ouvre un rapport dans le formulaire
   const handleEditReport = (report) => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      setPendingAction({ type: 'editReport', data: report }); // Stocker l'action avec les données
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // Exécuter l'action d'édition
+    executeEditReport(report);
+  };
+
+  const executeEditReport = (report) => {
     setReportToEdit(report);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNewReport = () => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      setPendingAction('newReport'); // Stocker l'action en attente
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // Exécuter l'action de création de nouveau rapport
+    executeNewReport();
+  };
+
+  const executeNewReport = () => {
     setReportToEdit(null);
     setFormKey((k) => k + 1);
     setShowForm(true);
@@ -89,8 +162,62 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Sauvegarder les rapports dans l'état (enrichi)
-  const addReport = (report) => {
+  // Fonctions d'authentification
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setShowAuthModal(false);
+    
+    // Afficher notification de connexion réussie
+    setToast({
+      message: `Bienvenue ${userData.prenom} ! Connexion réussie.`,
+      type: 'success'
+    });
+    
+    // Exécuter l'action en attente après connexion
+    if (pendingAction) {
+      setTimeout(() => {
+        if (pendingAction === 'newReport') {
+          executeNewReport();
+          setToast({
+            message: 'Formulaire de nouveau rapport ouvert !',
+            type: 'success'
+          });
+        } else if (pendingAction.type === 'editReport') {
+          executeEditReport(pendingAction.data);
+          setToast({
+            message: 'Mode édition activé !',
+            type: 'success'
+          });
+        }
+        setPendingAction(null); // Réinitialiser l'action en attente
+      }, 500); // Délai pour laisser le temps à la première notification
+    }
+  };
+
+  const handleLogout = () => {
+    // Déconnexion côté client uniquement (pas besoin d'API pour JWT simple)
+    localStorage.removeItem('user');
+    setUser(null);
+    setShowForm(false);
+    setReportToEdit(null);
+    setPendingAction(null); // Réinitialiser les actions en attente
+    
+    // Notification de déconnexion
+    setToast({
+      message: "Vous êtes maintenant déconnecté",
+      type: "info"
+    });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Sauvegarder les rapports via API MySQL
+  const addReport = async (report) => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
     const now = new Date().toISOString();
     
     // Si on est en mode édition, on met à jour le rapport existant
@@ -101,8 +228,8 @@ export default function Home() {
         updatedAt: now,
         version: (reportToEdit.version || 1) + 1
       };
-      updateReport(updated);
-      setReportToEdit(null); // Quitter le mode édition
+      await updateReport(updated);
+      setReportToEdit(null);
       setShowForm(false);
       return;
     }
@@ -113,34 +240,92 @@ export default function Home() {
       createdAt: now,
       updatedAt: now,
       version: 1,
-      // Conserver le statut choisi dans le formulaire (par défaut 'En cours')
       status: report.status || 'En cours',
-  private: report.private === undefined ? false : !!report.private,
-    // standardiser les clefs attendues
-    phase: report.phase || '',
-      
+      private: report.private === undefined ? false : !!report.private,
+      phase: report.phase || '',
       entreprise: report.entreprise || '',
       attachments: report.attachments || [],
       ...report,
     };
-    setReports(prev => [enriched, ...prev]);
+
+    try {
+      // Sauvegarder dans MySQL via API
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(enriched)
+      });
+
+      if (!response.ok) throw new Error('Erreur sauvegarde');
+      
+      // Recharger la liste depuis MySQL
+      await fetchReports();
+      
+    } catch (err) {
+      console.error('Save error:', err);
+      // Fallback localStorage
+      setReports(prev => [enriched, ...prev]);
+    }
+
     setShowForm(false);
     setDraft(null);
     localStorage.removeItem('reportDraft');
     setIsDirty(false);
   };
 
-  // Supprimer un rapport
-  const deleteReport = (id) => {
-    const newReports = reports.filter((r) => r.id !== id);
-    setReports(newReports);
-    localStorage.setItem('constructionReports', JSON.stringify(newReports));
+  // Supprimer un rapport via API MySQL
+  const deleteReport = async (id) => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/reports/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) throw new Error('Erreur suppression');
+      
+      // Mise à jour locale immédiate
+      setReports(prev => prev.filter(r => r.id !== id));
+      
+    } catch (err) {
+      console.error('Delete error:', err);
+      // Fallback localStorage
+      const newReports = reports.filter((r) => r.id !== id);
+      setReports(newReports);
+      localStorage.setItem('constructionReports', JSON.stringify(newReports));
+    }
   };
 
-  // Mettre à jour un rapport existant (par id)
-  const updateReport = (updated) => {
-    const newReports = reports.map(r => r.id === updated.id ? { ...r, ...updated } : r);
-    setReports(newReports);
+  // Mettre à jour un rapport existant via API MySQL
+  const updateReport = async (updated) => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/reports/${updated.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      
+      if (!response.ok) throw new Error('Erreur mise à jour');
+      
+      // Mise à jour locale immédiate
+      setReports(prev => prev.map(r => r.id === updated.id ? { ...r, ...updated } : r));
+      
+    } catch (err) {
+      console.error('Update error:', err);
+      // Fallback localStorage
+      const newReports = reports.map(r => r.id === updated.id ? { ...r, ...updated } : r);
+      setReports(newReports);
+    }
   };
 
   // Gestion état formulaire (auto-save brouillon)
@@ -182,7 +367,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="app-container">
-  <Header />
+        <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
         <main>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h2 className="text-2xl font-semibold">Tableau de bord</h2>
@@ -242,7 +427,32 @@ export default function Home() {
             )}
             {!showForm && (
             <div className="flex flex-col gap-4">
-              {visibleReports.length === 0 ? (
+              {/* Indicateur de chargement MySQL */}
+              {loading && (
+                <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    <span className="text-blue-600">Chargement depuis MySQL...</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Indicateur d'erreur MySQL */}
+              {error && (
+                <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="text-yellow-700">
+                    ⚠️ Connexion MySQL indisponible - Mode localStorage activé
+                    <button
+                      onClick={fetchReports}
+                      className="ml-2 text-xs bg-yellow-600 text-white px-2 py-1 rounded"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {!loading && visibleReports.length === 0 ? (
                 <div className="text-center p-4 bg-white rounded-lg shadow">
                   {reports.filter(r => !r.private).length === 0 ? (
                     <div className="space-y-3">
@@ -254,7 +464,7 @@ export default function Home() {
                     </div>
                   ) : <p className="text-gray-500">Aucun résultat pour ces filtres.</p>}
                 </div>
-              ) : (
+              ) : !loading && (
                 <ReportTable 
                   reports={visibleReports}
                   onDelete={(id)=> deleteReport(id)}
@@ -287,6 +497,25 @@ export default function Home() {
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Modal d'authentification */}
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingAction(null); // Réinitialiser l'action en attente si l'utilisateur ferme la modal
+          }}
+          onLogin={handleLogin}
+        />
+        
+        {/* Notification Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
         )}
       </div>
     </div>

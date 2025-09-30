@@ -4,6 +4,7 @@ export const metadata = {
 }
 
 import { ToastProvider } from './components/ToastProvider';
+import AuthProvider from './components/AuthProvider';
 
 export default function RootLayout({
   children,
@@ -16,9 +17,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
       </head>
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   )

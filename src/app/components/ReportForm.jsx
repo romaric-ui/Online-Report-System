@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useToast } from './ToastProvider';
+import ImageCoverUpload from './ImageCoverUpload';
 
 export default function ReportForm({ addReport, reportToEdit, onCancel, onFormStateChange }) {
   const toast = useToast();
@@ -18,6 +19,8 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
       maitreOuvrage: "",
       centreTravaux: "",
       coverImage: "",
+      coverImageFile: null, // Fichier image sélectionné
+      coverImageType: null, // Type MIME de l'image
   
   phaseBadge: "", // indicateur visuel de phase (réservé / observation)
   phaseBadgeImage: "", // dataURL logo personnalisé éventuel
@@ -151,6 +154,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
       maitreOuvrage: "",
       centreTravaux: "",
       coverImage: "",
+      coverImageType: null,
     headerLogo: "",
   phaseBadge: "",
   phaseBadgeImage: "",
@@ -176,6 +180,32 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
     // Préparer quelques lignes vides pour un nouvel enregistrement ultérieur
     setNewIntervenant("");
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Fonction pour gérer la sélection d'image de couverture
+  const handleImageSelect = (file) => {
+    setForm({ ...form, coverImageFile: file });
+    
+    // Si un fichier est sélectionné, créer un aperçu
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setForm(prev => ({ 
+          ...prev, 
+          coverImage: e.target.result,
+          coverImageType: file.type // Sauvegarder le type MIME
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Supprimer l'aperçu si aucun fichier
+      setForm(prev => ({ 
+        ...prev, 
+        coverImage: '', 
+        coverImageFile: null,
+        coverImageType: null
+      }));
+    }
   };
 
   // Attachments, checklist, problèmes/solutions supprimés
@@ -342,38 +372,10 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                   )}
                 </div>
               ) : key === 'coverImage' ? (
-                <div className="space-y-2">
-                  <input
-                    type="file"
-                    accept="image/png, image/jpeg"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) { setForm(prev => ({ ...prev, coverImage: '' })); return; }
-                      // Lecture simple + dimensions
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        if (typeof reader.result === 'string') {
-                          const img = new Image();
-                          img.onload = () => {
-                            setForm(prev => ({
-                              ...prev,
-                              coverImage: reader.result,
-                              coverImageWidth: img.naturalWidth,
-                              coverImageHeight: img.naturalHeight
-                            }));
-                          };
-                          img.src = reader.result;
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    className="input-sm w-full"
-                  />
-                  <div className="text-xs text-gray-500">Formats acceptés: PNG, JPG, JPEG</div>
-                  {form.coverImage && (
-                    <img src={form.coverImage} alt="aperçu" className="h-24 w-auto rounded border bg-white" />
-                  )}
-                </div>
+                <ImageCoverUpload
+                  onImageSelect={handleImageSelect}
+                  currentImage={form.coverImage}
+                />
               ) : key === 'phaseBadge' ? (
                 <div className="space-y-1">
                   <select
