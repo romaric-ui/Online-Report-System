@@ -1,11 +1,21 @@
 // components/ReportForm.jsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from './ToastProvider';
 import ImageCoverUpload from './ImageCoverUpload';
+import { 
+  FileText, Eye, Layout, Save, Clock, Sparkles, 
+  CheckCircle2, AlertCircle, Loader2, Download,
+  Lightbulb, TrendingUp, FileSignature
+} from 'lucide-react';
 
 export default function ReportForm({ addReport, reportToEdit, onCancel, onFormStateChange }) {
   const toast = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [wordCount, setWordCount] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  
   const [form, setForm] = useState(
     reportToEdit || {
       entreprise: "SGTEC L'OEIL DU BATIMENT",
@@ -51,6 +61,32 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
   );
   const [errors, setErrors] = useState([]);
   const [newIntervenant, setNewIntervenant] = useState("");
+
+  // Auto-save simulation toutes les 30 secondes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (form.phase || form.proprietaire) {
+        setIsSaving(true);
+        setTimeout(() => {
+          setIsSaving(false);
+          setLastSaved(new Date());
+        }, 500);
+      }
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [form]);
+
+  // Compteur de mots pour les champs textuels
+  useEffect(() => {
+    const allText = [
+      form.objectifLimites,
+      form.ouvrageConcerne,
+      form.deroulementVisite,
+      form.conclusion
+    ].join(' ');
+    const words = allText.trim().split(/\s+/).filter(Boolean).length;
+    setWordCount(words);
+  }, [form.objectifLimites, form.ouvrageConcerne, form.deroulementVisite, form.conclusion]);
 
   // Couleurs pour AVIS (formulaire) - 4 avis uniquement
   const getAvisColorClass = (avis) => {
@@ -257,27 +293,65 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
   return (
     <form
       onSubmit={handleSubmit}
-      className="form-data-entry bg-white p-6 rounded-xl shadow-lg max-w-7xl mx-auto grid gap-8"
+      className="form-data-entry bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl shadow-xl max-w-7xl mx-auto grid gap-8 border border-gray-100"
     >
-      {/* Navigation ancrée rapide */}
-      <div className="sticky top-0 z-30 -mx-6 px-6 py-2 bg-white/90 backdrop-blur border-b flex gap-3 flex-wrap text-[0.65rem] tracking-wide uppercase">
-        <a href="#general" className="hover:text-blue-600 font-semibold">Général</a>
-        <a href="#descriptions" className="hover:text-blue-600 font-semibold">Descriptions</a>
-        <a href="#visite" className="hover:text-blue-600 font-semibold">Visite</a>
-        <a href="#details-ouvrage" className="hover:text-blue-600 font-semibold">Détails Ouvrage</a>
-        <a href="#investigation" className="hover:text-blue-600 font-semibold">Investigation</a>
-        <a href="#autres-points" className="hover:text-blue-600 font-semibold">Autres points</a>
-        <a href="#conclusion" className="hover:text-blue-600 font-semibold">Conclusion</a>
+      {/* En-tête du formulaire avec stats */}
+      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
+            <FileText className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {reportToEdit ? 'Modifier le rapport' : 'Nouveau rapport'}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {wordCount} mots • {isSaving ? 'Sauvegarde...' : lastSaved ? `Sauvegardé ${lastSaved.toLocaleTimeString()}` : 'Non sauvegardé'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {isSaving && (
+            <div className="flex items-center gap-2 text-blue-600 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Sauvegarde...</span>
+            </div>
+          )}
+          {lastSaved && !isSaving && (
+            <div className="flex items-center gap-2 text-green-600 text-sm">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Sauvegardé</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Navigation ancrée rapide */}
+      <div className="sticky top-0 z-30 -mx-6 px-6 py-3 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div className="flex gap-3 flex-wrap text-xs font-medium">
+          <a href="#general" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Général</a>
+          <a href="#descriptions" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Descriptions</a>
+          <a href="#visite" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Visite</a>
+          <a href="#details-ouvrage" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Détails Ouvrage</a>
+          <a href="#investigation" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Investigation</a>
+          <a href="#autres-points" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Autres points</a>
+          <a href="#conclusion" className="px-3 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">Conclusion</a>
+        </div>
+      </div>
+
       {errors.length > 0 && (
-        <div className="p-2 bg-red-50 border border-red-100 text-red-700 rounded">
-          Champs obligatoires manquants: {errors.join(', ')}
+        <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-start gap-3 animate-fade-in-up">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold">Champs obligatoires manquants</p>
+            <p className="text-sm mt-1">{errors.join(', ')}</p>
+          </div>
         </div>
       )}
 
 
       {/* Partie 1: Champs principaux */}
-  <div id="general" className="section-anchor form-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-5 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
+  <div id="general" className="section-anchor form-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-5 bg-white p-6 rounded-xl border border-gray-200 shadow-sm"  style={{ scrollMarginTop: '100px' }}>
         {mainFields.map((key) => {
           const longFields = step2Fields; // aucun champ long dans la partie 1
           const isLongField = longFields.includes(key);
@@ -296,7 +370,7 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
           );
           return (
             <div key={key} className={`flex flex-col min-w-0 ${isFullWidth ? "lg:col-span-3 md:col-span-2" : ""}`}>
-              <label className="capitalize mb-1 break-words">{labelText}</label>
+              <label className="text-sm font-semibold text-gray-700 mb-2 capitalize break-words">{labelText}</label>
               {isLongField ? (
                 <></>
               ) : key === 'intervenants' ? (
@@ -426,12 +500,17 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
       </div>
 
       {/* Ancienne deuxième partie (affichée directement) */}
-      <div id="descriptions" className="section-anchor">
-          <div className="mt-2 mb-2">
-            <hr className="border-gray-200" />
+      <div id="descriptions" className="section-anchor" style={{ scrollMarginTop: '100px' }}>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Descriptions générales</h3>
+              <p className="text-sm text-gray-500">Ces blocs décrivent le contexte et apparaîtront après la page de garde.</p>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Descriptions générales</h3>
-          <p className="text-sm text-gray-500 mb-4">Ces blocs décrivent le contexte et apparaîtront après la page de garde.</p>
 
           {/* Champs longue description */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
@@ -462,9 +541,12 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                   );
                 })}
               </div>
+          </div>
+      </div>
 
-          {/* Infos de visite */}
-          <div id="visite" className="section-anchor mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
+      {/* Infos de visite */}
+      <div id="visite" className="section-anchor" style={{ scrollMarginTop: '100px' }}>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
             <div className="flex flex-col lg:col-span-3 md:col-span-2">
               <label className="font-semibold mb-1">Personne rencontrée sur le site</label>
               <input
@@ -489,9 +571,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
               />
             </div>
           </div>
+      </div>
 
-          {/* Détails affichés sous "Ouvrage concerné" */}
-          <div id="details-ouvrage" className="section-anchor mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 bg-gray-50/60 p-4 rounded-lg border border-gray-200">
+      {/* Détails affichés sous "Ouvrage concerné" */}
+      <div id="details-ouvrage" className="section-anchor" style={{ scrollMarginTop: '100px' }}>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
             <div className="flex flex-col">
               <label className="font-semibold mb-1">Il s'agit de</label>
               <select
@@ -578,10 +662,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
               />
             </div>
           </div>
+      </div>
 
-          {/* INVESTIGATION (tableau sous RAPPORT D'INVESTIGATION) */}
-          <div id="investigation" className="section-anchor mt-10">
-            <h4 className="text-base font-semibold text-blue-600 mb-2">TABLEAU D'INVESTIGATION</h4>
+      {/* INVESTIGATION (tableau sous RAPPORT D'INVESTIGATION) */}
+      <div id="investigation" className="section-anchor bg-white p-6 rounded-xl border border-gray-200 shadow-sm" style={{ scrollMarginTop: '100px' }}>
+            <h4 className="text-base font-bold text-blue-600 mb-2">TABLEAU D'INVESTIGATION</h4>
             <p className="text-xs text-gray-600 mb-2">Saisir ici les constats principaux de l'investigation (distincts des "AUTRES POINTS").</p>
             <div className="overflow-x-auto border rounded-lg mb-3">
               <table className="min-w-full text-sm">
@@ -766,11 +851,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
               }))}
               className="px-3 py-2 bg-blue-600 text-white rounded text-xs"
             >Ajouter une ligne INVESTIGATION</button>
-          </div>
+      </div>
 
-          {/* AUTRES POINTS */}
-          <div id="autres-points" className="section-anchor mt-10">
-            <h4 className="text-base font-semibold text-blue-600 mb-2">AUTRES POINTS</h4>
+      {/* AUTRES POINTS */}
+      <div id="autres-points" className="section-anchor bg-white p-6 rounded-xl border border-gray-200 shadow-sm" style={{ scrollMarginTop: '100px' }}>
+            <h4 className="text-base font-bold text-blue-600 mb-2">AUTRES POINTS</h4>
             <div className="overflow-x-auto border rounded-lg">
               <table className="min-w-full text-sm">
                 <thead>
@@ -986,11 +1071,11 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
                 </button>
               )}
             </div>
-          </div>
+      </div>
 
-          {/* CONCLUSION */}
-          <div id="conclusion" className="section-anchor mt-10">
-            <h4 className="text-base font-semibold text-blue-600 mb-2">Conclusion</h4>
+      {/* CONCLUSION */}
+      <div id="conclusion" className="section-anchor bg-white p-6 rounded-xl border border-gray-200 shadow-sm" style={{ scrollMarginTop: '100px' }}>
+            <h4 className="text-base font-bold text-blue-600 mb-2">Conclusion</h4>
             <textarea
               name="conclusion"
               value={form.conclusion || ''}
@@ -1000,17 +1085,20 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
               maxLength={2000}
             />
             <div className="text-xs text-gray-500 mt-1"></div>
-          </div>
       </div>
+      
+
       {/* Visibilité (public/privé) retirée de l'UI; par défaut, visible */}
       {/* Section Pièces jointes, Checklist QA, Problèmes/Solutions retirées */}
 
-      <div className="flex gap-2">
+      <div className="flex gap-3 pt-4 border-t border-gray-200">
         <button
           type="submit"
-          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+          disabled={isSaving}
+          className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
         >
-          Ajouter Rapport
+          <Save className="w-5 h-5" />
+          {reportToEdit ? 'Mettre à jour le rapport' : 'Ajouter le rapport'}
         </button>
         <button
           type="button"
@@ -1044,10 +1132,19 @@ export default function ReportForm({ addReport, reportToEdit, onCancel, onFormSt
             private: false,
             status: 'En cours',
           }); setNewIntervenant(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-          className="bg-gray-200 text-gray-800 px-4 py-2 rounded"
+          className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all font-medium"
         >
           Réinitialiser
         </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-xl transition-all font-medium border border-gray-300"
+          >
+            Annuler
+          </button>
+        )}
       </div>
     </form>
   );

@@ -3,12 +3,28 @@ import GoogleProvider from 'next-auth/providers/google';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
-// Configuration de la base de données
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'onlinereports'
+// Configuration intelligente de base de données (local/Aiven)
+const isProduction = process.env.NODE_ENV === 'production';
+
+const dbConfig = isProduction ? {
+  // Configuration PRODUCTION - Aiven
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 21094,
+  ssl: { rejectUnauthorized: false },
+  connectTimeout: 60000,
+  acquireTimeout: 60000,
+} : {
+  // Configuration DÉVELOPPEMENT - Local MySQL
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'onlinereports',
+  port: 3306,
+  ssl: false,
+  connectTimeout: 60000,
 };
 
 // Créer une connexion à la base de données
@@ -21,6 +37,13 @@ const handler = NextAuth({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "select_account", // Force l'utilisateur à choisir un compte Google
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     })
   ],
   callbacks: {
@@ -93,13 +116,13 @@ const handler = NextAuth({
         try {
           const connection = await getDbConnection();
           const [users] = await connection.execute(
-            'SELECT id, nom, prenom, email, google_id, date_creation FROM utilisateur WHERE email = ?',
+            'SELECT id_utilisateur, nom, prenom, email, google_id, date_creation FROM utilisateur WHERE email = ?',
             [user.email]
           );
           
           if (users.length > 0) {
             const dbUser = users[0];
-            token.userId = dbUser.id;
+            token.userId = dbUser.id_utilisateur;
             token.nom = dbUser.nom;
             token.prenom = dbUser.prenom;
             token.email = dbUser.email;

@@ -33,6 +33,20 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Fichiers avec informations sensibles de la BD
+DEPLOYMENT.md
+GUIDE-COMPLET.md
+scripts/migrate-to-aiven.js
+scripts/test-both-dbs.js
+test-aiven-connection.js
+check-aiven-structure.js
+scripts/import-to-aiven.js
+scripts/fix-aiven-tables.js
+scripts/check-aiven-structure.js
+scripts/create-tables-simple.js
+scripts/init-aiven-database.js
+scripts/verify-deployment.js
+
 # vercel
 .vercel
 

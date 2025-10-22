@@ -1,181 +1,275 @@
-﻿# Online Report System (SGTEC)
+﻿# 📊 Online Report System (SGTEC)
 
-Application Next.js permettant la saisie structurée d’un rapport chantier et la génération d’un PDF professionnel (page de garde, sections dynamiques, tableaux avec photos, pagination avancée).
+Application Next.js moderne avec système d'authentification complet permettant la création, gestion et génération de rapports professionnels au format PDF.
 
-## Sommaire
-1. Fonctionnalités principales
-2. Démarrage rapide
-3. Saisie des données
-4. Génération PDF (détails techniques)
-5. Modèle de données (structure `report`)
-6. Personnalisation / Extension
-7. Limitations connues
-8. Roadmap potentielle
-9. Licence / Auteurs
-10. Déploiement Netlify
+## 🚀 Fonctionnalités principales
 
----
-## 1. Fonctionnalités principales
-✔ Formulaire multi-sections (informations générales, déroulement, équipe, matériel, tableaux structurés).
-✔ Deux tableaux distincts :
-	 - Tableau d’investigation (investigationPoints)
-	 - Autres points (autresPoints)
-✔ Upload et redimensionnement automatique des photos (contrôle de dimension max, conversion base64).
-✔ Génération PDF avec jsPDF + autotable :
-	 - Page de garde (logo / badge phase / méta-infos)
-	 - Sections dynamiques (texte justifié, titres stylés)
-	 - Tableaux avec coloration AVIS (logique conforme / non conforme / neutre / observations, etc.)
-	 - Images intégrées dans les cellules Photo / Cliché
-	 - Pagination commençant à la page 2 (page de garde non numérotée)
-✔ Filtrage : seules les lignes ayant un contenu sont incluses.
-✔ Couleurs configurées dans le composant PDF.
+### 🔐 Authentification & Sécurité
+- ✅ **Google OAuth 2.0** - Connexion rapide avec votre compte Google
+- ✅ **Authentification locale** - Système de connexion classique avec email/mot de passe
+- ✅ **NextAuth.js** - Gestion sécurisée des sessions
+- ✅ **Sécurité avancée** - Validation, sanitisation, protection CSRF
+- ✅ **Middleware de sécurité** - Protection des routes sensibles
 
-## 2. Démarrage rapide
-Installer les dépendances :
+### 📝 Gestion des rapports
+- ✅ **CRUD complet** - Créer, lire, modifier, supprimer des rapports
+- ✅ **Upload d'images** - Images de couverture avec redimensionnement automatique
+- ✅ **Tableaux structurés** - Investigation et autres points avec photos
+- ✅ **Génération PDF professionnelle** - Avec jsPDF + autotable
+- ✅ **Pagination avancée** - Page de garde non numérotée
+- ✅ **Filtrage intelligent** - Seules les données pertinentes sont incluses
+
+### 👥 Administration
+- ✅ **Dashboard admin** - Gestion des utilisateurs et rapports
+- ✅ **Statistiques** - Vue d'ensemble des comptes et activités
+- ✅ **API robuste** - Endpoints sécurisés pour toutes les opérations
+
+## ⚡ Installation rapide
+
+### Prérequis
+- Node.js 18+ 
+- MySQL/MariaDB
+- Compte Google Developer (pour OAuth)
+
+### 1. Cloner le projet
+```bash
+git clone https://github.com/romaric-ui/Online-Report-System.git
+cd Online-Report-System
+```
+
+### 2. Installer les dépendances
 ```bash
 npm install
 ```
-Lancer le serveur de dev :
+
+### 3. Configuration de la base de données
+
+#### Créer la base de données MySQL
+```sql
+CREATE DATABASE onlinereports CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+#### Exécuter les scripts d'initialisation
+```bash
+# Initialiser les tables
+node scripts/init-database.js
+
+# Créer les rôles admin (optionnel)
+node scripts/init-roles.js
+```
+
+### 4. Configuration des variables d'environnement
+
+Créer un fichier `.env.local` à la racine du projet :
+
+```env
+# Configuration MySQL
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=votre_mot_de_passe
+DB_NAME=onlinereports
+DB_PORT=3306
+
+# Clé secrète pour JWT
+JWT_SECRET=votre_cle_secrete_tres_longue_et_aleatoire
+
+# Configuration NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=votre_secret_nextauth_aleatoire
+
+# Configuration Google OAuth (voir section suivante)
+GOOGLE_CLIENT_ID=votre_google_client_id
+GOOGLE_CLIENT_SECRET=votre_google_client_secret
+NEXT_PUBLIC_GOOGLE_OAUTH_CONFIGURED=true
+```
+
+### 5. Configuration Google OAuth
+
+1. Aller sur [Google Cloud Console](https://console.cloud.google.com/)
+2. Créer un nouveau projet ou sélectionner un existant
+3. Activer l'API "Google+ API" et "Google OAuth2 API"
+4. Créer des identifiants OAuth 2.0 :
+   - Type d'application : Application Web
+   - URIs de redirection autorisés : `http://localhost:3000/api/auth/callback/google`
+5. Copier le Client ID et Client Secret dans votre `.env.local`
+
+### 6. Lancement de l'application
 ```bash
 npm run dev
 ```
-Accéder à l’interface : http://localhost:3000
 
-Générer un rapport :
-1. Remplir le formulaire (ajouter des lignes dans “TABLEAU D'INVESTIGATION” et/ou “AUTRES POINTS”).
-2. Ajouter si besoin un logo et un badge de phase (si l’interface le prévoit dans ta version locale).
-3. Cliquer sur “Générer / Télécharger” (selon les boutons exposés dans `PdfGenerator.jsx`).
+L'application sera accessible sur : **http://localhost:3000**
 
-## 3. Saisie des données
-Sections clés :
-- Informations administratives (propriétaire, adresse, phase, numéro affaire / rapport, etc.)
-- Déroulement de la visite (texte libre justifié dans le PDF)
-- Équipe, Matériel (texte ou listes)
-- Tableau d’investigation (investigationPoints)
-- Autres points (autresPoints) — plus général / additionnel
+## 🗄️ Structure de la base de données
 
-Chaque ligne de tableau peut contenir :
-- Chapitre (uppercase forcé)
-- Moyen de contrôle (texte multi-ligne)
-- Avis (liste déroulante normalisée)
-- Commentaire
-- Photo (PNG/JPEG redimensionnée)
-
-## 4. Génération PDF (détails)
-Localisation du code : `src/app/components/PdfGenerator.jsx`.
-Principales étapes :
-1. Initialisation doc A4 portrait.
-2. Page de garde avec logo + titre + métadonnées.
-3. Sous-titre “RAPPORT D'INVESTIGATION -PHASE X-”.
-4. Insertion du tableau d’investigation (si données) avec phrase d’introduction.
-5. Sections diverses (déroulement, équipe, matériel, autres points, conclusion...).
-6. Coloration dynamique de la colonne Avis (fond + texte) selon la valeur.
-7. Pagination appliquée en post-traitement : pages 2..N numérotées “1 / (N-1) …”.
-
-Librairies :
-- `jspdf`
-- `jspdf-autotable`
-- `html2canvas` (potentiellement utilisée pour snapshots ou logos complexes)
-
-## 5. Modèle de données (exemple simplifié)
-```ts
-type InvestigationRow = {
-	chapitre: string;
-	moyen?: string; // ou moyenDeControle
-	avis?: string;  // Conforme | Non conforme | ...
-	commentaire?: string;
-	photo?: string;       // dataURL
-	photoWidth?: number;
-	photoHeight?: number;
-};
-
-type AutrePointRow = {
-	chapitre?: string;
-	element?: string;     // Élément observé
-	moyen?: string;       // Moyen de contrôle
-	avis?: string;
-	commentaire?: string;
-	photo?: string;
-	photoWidth?: number;
-	photoHeight?: number;
-};
-
-interface Report {
-	entreprise?: string;
-	phase?: string | number;
-	noAffaire?: string;
-	noRapport?: string;
-	proprietaire?: string;
-	adresseOuvrage?: string;
-	personneRencontree?: string;
-	representantSgtec?: string;
-	deroulementVisite?: string;
-	equipe?: string;
-	materiel?: string;
-	conclusion?: string;
-	investigationPoints?: InvestigationRow[];
-	autresPoints?: AutrePointRow[];
-	// + champs annexes (badge phase, intervenants, etc.)
-}
+### Table `utilisateur`
+```sql
+CREATE TABLE utilisateur (
+  user_id INT PRIMARY KEY AUTO_INCREMENT,
+  nom VARCHAR(100) NOT NULL,
+  prenom VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  mot_de_passe VARCHAR(255), -- Peut être NULL pour les comptes Google
+  google_id VARCHAR(255) UNIQUE, -- Pour les comptes Google OAuth
+  role ENUM('user', 'admin') DEFAULT 'user',
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  derniere_connexion TIMESTAMP NULL
+);
 ```
 
-## 6. Personnalisation / Extension
-Idées faciles :
-- Extraire les couleurs AVIS dans un module `constants/avis.js`.
-- Ajouter une table des matières (collecter titres puis générer page dédiée avant pagination finale).
-- Ajouter une option “Inclure / exclure images” lors de la génération.
-- Internationalisation : encapsuler les libellés dans un dictionnaire.
+### Table `rapports`
+```sql
+CREATE TABLE rapports (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  titre VARCHAR(255) NOT NULL,
+  contenu JSON NOT NULL,
+  image_couverture TEXT,
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES utilisateur(user_id) ON DELETE CASCADE
+);
+```
 
-## 7. Limitations connues
-- Pas de compression d’image avancée (base64 direct après redimension basique).
-- Pas de persistance hors navigateur (pas encore de backend / DB intégrée).
-- Pas de test unitaire sur la sortie PDF (visuel manuel requis).
+## 🎯 Utilisation
 
-## 8. Roadmap potentielle
-- Légende des couleurs AVIS dans le PDF.
-- Export / import JSON de rapport.
-- Signature électronique (image + horodatage).
-- Sauvegarde auto localStorage.
-- Mode lecture seule.
+### Première connexion
+1. Accédez à http://localhost:3000
+2. Cliquez sur "Se connecter"
+3. Choisissez entre :
+   - **Connexion Google** (recommandé)
+   - **Créer un compte local**
 
-## 9. Licence / Auteurs
-Projet interne SGTEC (adapter selon statut juridique). Ajouter une licence (MIT / Proprietary) si nécessaire.
+### Créer un rapport
+1. Une fois connecté, cliquez sur "Nouveau rapport"
+2. Remplissez les sections :
+   - Informations générales
+   - Équipe et matériel
+   - Tableaux d'investigation
+   - Autres points
+3. Ajoutez des photos si nécessaire
+4. Générez le PDF professionnel
+
+### Administration
+- Les comptes admin peuvent accéder à `/admin/users`
+- Gestion des utilisateurs et statistiques
+- Surveillance des rapports créés
+
+## 🔧 Scripts utiles
+
+```bash
+# Créer un utilisateur de test
+node scripts/create-test-user.js
+
+# Vérifier la sécurité
+node security-check.js
+
+# Build pour production
+npm run build
+npm start
+```
+
+## 📁 Structure du projet
+
+```
+├── src/
+│   ├── app/
+│   │   ├── admin/           # Dashboard administrateur
+│   │   ├── api/             # Routes API
+│   │   │   ├── auth/        # Authentification NextAuth
+│   │   │   ├── reports/     # Gestion des rapports
+│   │   │   └── uploads/     # Upload de fichiers
+│   │   └── components/      # Composants React
+│   └── middleware.js        # Middleware de sécurité
+├── lib/
+│   ├── database.js          # Connexion MySQL
+│   ├── security.js          # Fonctions de sécurité
+│   └── error-handler.js     # Gestion d'erreurs
+├── scripts/                 # Scripts d'initialisation
+└── database/               # Scripts SQL
+```
+
+## 🔒 Sécurité
+
+- **Validation des données** - Tous les inputs sont validés et nettoyés
+- **Protection CSRF** - Tokens CSRF pour les requêtes sensibles
+- **Hachage des mots de passe** - bcryptjs avec salt
+- **Sessions sécurisées** - NextAuth.js avec JWT
+- **Protection XSS** - Sanitisation des entrées utilisateur
+- **Injection SQL** - Requêtes préparées uniquement
+
+## 🌐 Déploiement
+
+### Variables d'environnement en production
+```env
+# Remplacer par vos valeurs de production
+NEXTAUTH_URL=https://votre-domaine.com
+GOOGLE_CLIENT_ID=votre_google_client_id_prod
+DB_HOST=votre_serveur_mysql
+# ... autres variables
+```
+
+### Build de production
+```bash
+npm run build
+npm start
+```
+
+## 📚 Technologies utilisées
+
+- **Frontend** : Next.js 15, React, Tailwind CSS
+- **Backend** : Next.js API Routes
+- **Base de données** : MySQL/MariaDB
+- **Authentification** : NextAuth.js, Google OAuth 2.0
+- **Sécurité** : bcryptjs, validation/sanitisation
+- **PDF** : jsPDF, jsPDF-AutoTable
+- **Upload** : Next.js File API
+
+## 🤝 Contribution
+
+1. Forkez le projet
+2. Créez une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Committez vos changements (`git commit -m 'Ajout d'une nouvelle fonctionnalité'`)
+4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Ouvrez une Pull Request
+
+## 🐛 Résolution de problèmes
+
+### Erreur de connexion à la base de données
+```bash
+# Vérifiez que MySQL est démarré
+sudo service mysql start
+
+# Testez la connexion
+mysql -u root -p -e "SELECT 1;"
+```
+
+### Erreur Google OAuth
+- Vérifiez que les URIs de redirection sont correctes dans Google Cloud Console
+- Assurez-vous que `NEXTAUTH_URL` correspond à votre domaine
+
+### Serveur ne démarre pas
+```bash
+# Arrêter tous les processus Node.js
+taskkill /F /IM node.exe  # Windows
+# ou
+pkill node  # Linux/Mac
+
+# Nettoyer et redémarrer
+rm -rf .next
+npm run dev
+```
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 👨‍💻 Auteur
+
+**Romaric Adekou**
+- GitHub: [@romaric-ui](https://github.com/romaric-ui)
+- Projet: [Online-Report-System](https://github.com/romaric-ui/Online-Report-System)
 
 ---
-Pour toute amélioration, ouvrir une issue ou proposer un patch.
 
-Bonne génération de rapports !
-
-## 10. Déploiement Netlify
-
-### Configuration
-Un fichier `netlify.toml` est fourni. Il utilise la commande:
-```
-npm run build
-```
-et publie le dossier `.next` avec le plugin officiel `@netlify/plugin-nextjs`.
-
-Assurez-vous que la version de Node sur Netlify est 20+. (Définie via `NODE_VERSION=20`).
-
-### Étapes de déploiement
-1. Pousser le repo sur GitHub.
-2. Sur Netlify: New Site → Import from Git → choisir le repo.
-3. Build command: `npm run build` (déjà pris depuis le `netlify.toml`).
-4. Publish directory: `.next` (géré aussi par le plugin, ne pas mettre `out`).
-5. Lancer le déploiement.
-
-### Erreurs fréquentes & Solutions
-| Problème | Cause | Solution |
-|----------|-------|----------|
-| "Directory not found: out" | Tentative d'export statique (`next export`) non configurée | Ne pas utiliser `npm run export`; laisser SSR (App Router). |
-| "Module not found" pendant build | Cache ou lock incohérent | Activer option Netlify "clear cache and deploy" ou régénérer `package-lock.json`. |
-| Erreur Node version | Netlify utilise une version plus ancienne | Forcer `NODE_VERSION=20` dans `netlify.toml`. |
-| 404 sur routes dynamiques | Mauvaise config de redirection | Garder le plugin Next; ne pas surcharger avec un `_redirects` incompatible. |
-
-### Export statique ?
-L’application dépend du localStorage et d’interactions client; un export statique complet n’est pas nécessaire. Garder le mode par défaut (SSR/Edge) est plus simple.
-
-### Débogage
-Consulter les logs Netlify: onglet Deploy → logs build. Rechercher les lignes `@netlify/plugin-nextjs` pour vérifier l’injection des fonctions.
-
-Si besoin d’optimisation: activer bundling stand‑alone dans `next.config.ts` plus tard.
+⭐ **N'hésitez pas à donner une étoile au projet si vous le trouvez utile !**

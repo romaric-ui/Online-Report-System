@@ -1,6 +1,6 @@
 "use client";
 import "./globals.css";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import ReportForm from "./components/ReportForm";
 import ReportTable from "./components/ReportTable";
@@ -9,6 +9,12 @@ import Header from "./components/Header";
 import StatsBar from "./components/StatsBar";
 import AuthModal from "./components/AuthModal";
 import Toast from "./components/Toast";
+import LandingHero from "./components/LandingHero";
+import LandingFeatures from "./components/LandingFeatures";
+import LandingTestimonials from "./components/LandingTestimonials";
+import LandingPricing from "./components/LandingPricing";
+import LandingCTA from "./components/LandingCTA";
+import LandingFooter from "./components/LandingFooter";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -33,45 +39,108 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Charger rapports depuis API MySQL
-  const fetchReports = async () => {
+  // Charger rapports optimisé avec cache
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/reports');
+      console.log('🚀 Récupération des rapports...');
+      
+      const startTime = Date.now();
+      const response = await fetch('/api/reports', {
+        // Optimisations réseau
+        cache: 'default',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
       if (!response.ok) throw new Error('Erreur chargement API');
       const data = await response.json();
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`✅ ${data.length || 0} rapports chargés en ${loadTime}ms`);
+      
       setReports(data);
       setError(null);
+      
+      // Cache localStorage pour la prochaine visite
+      localStorage.setItem('constructionReports', JSON.stringify(data));
+      
     } catch (err) {
-      console.error('API Error:', err);
-      setError(err.message);
-      // Fallback localStorage si API indisponible
+      console.error('❌ Erreur API:', err.message);
+      setError(`Chargement impossible: ${err.message}`);
+      
+      // Fallback localStorage ultra-rapide
       try {
         const savedReports = localStorage.getItem('constructionReports');
         if (savedReports) {
-          setReports(JSON.parse(savedReports));
+          const cachedData = JSON.parse(savedReports);
+          setReports(cachedData);
+          console.log(`📦 ${cachedData.length} rapports chargés depuis le cache`);
+          setError('Mode hors ligne - données du cache');
         }
       } catch (e) {
-        console.error('Fallback localStorage error:', e);
+        console.error('❌ Erreur cache:', e);
+        setReports([]);
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // useCallback pour éviter les re-renders
+
+  // Synchroniser l'état user avec NextAuth session
+  useEffect(() => {
+    if (session?.user) {
+      console.log('👤 Session utilisateur:', {
+        id: session.user.id,
+        email: session.user.email,
+        nom: session.user.nom,
+        isGoogle: session.user.isGoogle
+      });
+      
+      // Mettre à jour l'état local avec les données de session
+      const userData = {
+        id: session.user.id || session.user.email, // Utiliser l'email comme fallback ID
+        email: session.user.email,
+        nom: session.user.name || session.user.nom,
+        prenom: session.user.prenom || '',
+        isGoogle: session.user.isGoogle || true,
+        isAuthenticated: true
+      };
+      
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      console.log('✅ Utilisateur synchronisé:', userData);
+    } else if (status === 'unauthenticated') {
+      // Nettoyer l'état si pas de session
+      setUser(null);
+      localStorage.removeItem('user');
+      console.log('🚫 Utilisateur déconnecté');
+    }
+  }, [session, status]);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    // Chargement différé pour de meilleures performances
+    const loadReports = async () => {
+      // Charger d'abord depuis le cache pour affichage immédiat
       try {
-        setUser(JSON.parse(savedUser));
+        const cachedReports = localStorage.getItem('constructionReports');
+        if (cachedReports) {
+          const data = JSON.parse(cachedReports);
+          setReports(data);
+          setLoading(false);
+          console.log(`⚡ Affichage instantané: ${data.length} rapports (cache)`);
+        }
       } catch (e) {
-        localStorage.removeItem('user');
+        console.error('Cache non disponible:', e);
       }
-    }
-
-    // Charger rapports depuis MySQL
-    fetchReports();
+      
+      // Puis charger les données fraîches en arrière-plan
+      setTimeout(() => fetchReports(), 100); // Délai pour UI responsive
+    };
+    
+    loadReports();
     
     // Charger préférences depuis localStorage
     try {
@@ -115,16 +184,37 @@ export default function Home() {
 
   const generateId = () => `rpt_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
-  // Mode édition : ouvre un rapport dans le formulaire
-  const handleEditReport = (report) => {
-    // Vérifier si l'utilisateur est connecté
-    if (!user) {
-      setPendingAction({ type: 'editReport', data: report }); // Stocker l'action avec les données
-      setShowAuthModal(true);
-      return;
+  // Fonction utilitaire pour vérifier l'authentification (NextAuth + état local)
+  const isAuthenticated = () => {
+    return (session?.user && user) || (status === 'authenticated' && session?.user);
+  };
+
+  // Fonction utilitaire pour afficher les toasts
+  const showToast = useCallback((toastData) => {
+    setToast(toastData);
+    // Auto-fermeture après 4 secondes
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  // Fonction pour exiger l'authentification avant une action
+  const requireAuth = (action, actionData = null) => {
+    if (isAuthenticated()) {
+      return true;
     }
     
-    // Exécuter l'action d'édition
+    console.log('🔐 Authentification requise pour:', action);
+    setPendingAction({ type: action, data: actionData });
+    setShowAuthModal(true);
+    showToast({
+      type: 'warning',
+      message: 'Veuillez vous connecter pour effectuer cette action'
+    });
+    return false;
+  };
+
+  // Mode édition : ouvre un rapport dans le formulaire
+  const handleEditReport = (report) => {
+    if (!requireAuth('editReport', report)) return;
     executeEditReport(report);
   };
 
@@ -135,14 +225,7 @@ export default function Home() {
   };
 
   const handleNewReport = () => {
-    // Vérifier si l'utilisateur est connecté
-    if (!user) {
-      setPendingAction('newReport'); // Stocker l'action en attente
-      setShowAuthModal(true);
-      return;
-    }
-    
-    // Exécuter l'action de création de nouveau rapport
+    if (!requireAuth('newReport')) return;
     executeNewReport();
   };
 
@@ -212,11 +295,7 @@ export default function Home() {
 
   // Sauvegarder les rapports via API MySQL
   const addReport = async (report) => {
-    // Vérifier si l'utilisateur est connecté
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!requireAuth('addReport', report)) return;
 
     const now = new Date().toISOString();
     
@@ -275,11 +354,7 @@ export default function Home() {
 
   // Supprimer un rapport via API MySQL
   const deleteReport = async (id) => {
-    // Vérifier si l'utilisateur est connecté
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!requireAuth('deleteReport', { id })) return;
 
     try {
       const response = await fetch(`/api/reports/${id}`, {
@@ -302,11 +377,7 @@ export default function Home() {
 
   // Mettre à jour un rapport existant via API MySQL
   const updateReport = async (updated) => {
-    // Vérifier si l'utilisateur est connecté
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
+    if (!requireAuth('updateReport', updated)) return;
 
     try {
       const response = await fetch(`/api/reports/${updated.id}`, {
@@ -364,58 +435,196 @@ export default function Home() {
       );
     });
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="app-container">
+  // État pour basculer entre landing page et dashboard
+  const [showDashboard, setShowDashboard] = useState(false);
+
+  // Si l'utilisateur veut voir le dashboard, afficher le dashboard
+  if (showDashboard && isAuthenticated()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
-        <main>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="text-2xl font-semibold">Tableau de bord</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setReportToEdit(null); window.scrollTo({ top:0, behavior:'smooth'}); }}
-                className={`px-4 py-2 rounded text-sm font-medium border transition ${!showForm ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-              >Voir rapports <span className="ml-1 inline-block px-2 py-0.5 text-[10px] rounded-full bg-gray-200 text-gray-600">{reports.length}</span></button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          
+          {/* En-tête du Dashboard avec gradient */}
+          <div className="mb-8 animate-fade-in-up">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-blue-900 bg-clip-text text-transparent mb-2">
+                  Bienvenue, {user?.prenom || session?.user?.name?.split(' ')[0] || 'Utilisateur'} 👋
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Gérez vos rapports de chantier en toute simplicité
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={handleNewReport}
-                className={`px-4 py-2 rounded text-sm font-medium border transition ${showForm ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-              >Nouveau rapport</button>
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nouveau rapport
+              </button>
+            </div>
+          </div>
+
+          {/* Statistiques en Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up animation-delay-100">
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-gray-500">Total</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{reports.length}</div>
+              <p className="text-sm text-gray-600">Rapports créés</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-gray-500">En cours</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {reports.filter(r => r.status?.toLowerCase() === 'en cours').length}
+              </div>
+              <p className="text-sm text-gray-600">Rapports actifs</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-gray-500">Terminés</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {reports.filter(r => r.status?.toLowerCase() === 'terminé').length}
+              </div>
+              <p className="text-sm text-gray-600">Rapports complétés</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-gray-500">En attente</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {reports.filter(r => r.status?.toLowerCase() === 'en attente').length}
+              </div>
+              <p className="text-sm text-gray-600">Rapports en révision</p>
+            </div>
+          </div>
+
+          {/* Onglets de navigation */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-fade-in-up animation-delay-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                <button
+                  type="button"
+                  onClick={() => { setShowForm(false); setReportToEdit(null); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    !showForm 
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  Tous les rapports
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    !showForm ? 'bg-white/20' : 'bg-gray-200'
+                  }`}>
+                    {reports.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNewReport}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    showForm 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  {reportToEdit ? 'Modifier' : 'Nouveau rapport'}
+                </button>
+              </div>
               {isDirty && showForm && (
-                <span className="text-xs text-amber-600 font-medium self-center">Brouillon non sauvegardé…</span>
+                <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">Brouillon non sauvegardé</span>
+                </div>
               )}
             </div>
-          </div>
-          <StatsBar reports={reports} />
 
-          {/* Filtres & recherche */}
-          <div className="mt-4 mb-6 grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <input
-                type="text"
-                placeholder="Rechercher (entreprise, phase, référence)"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              />
-            </div>
-            <div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 rounded border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="En cours">En cours</option>
-                <option value="Terminé">Terminé</option>
-                <option value="En attente">En attente</option>
-              </select>
-            </div>
+            {/* Filtres & recherche modernes */}
+            {!showForm && (
+              <div className="grid gap-4 md:grid-cols-3 mb-6">
+                <div className="md:col-span-2">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Rechercher par entreprise, phase, référence..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                    </div>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none shadow-sm"
+                    >
+                      <option value="all">Tous les statuts</option>
+                      <option value="En cours">En cours</option>
+                      <option value="Terminé">Terminé</option>
+                      <option value="En attente">En attente</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="grid gap-6">
+
+          {/* Contenu principal */}
+          <div className="animate-fade-in-up animation-delay-300">
             {showForm && (
-              <div className="card">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <ReportForm 
                   key={formKey}
                   addReport={addReport} 
@@ -426,57 +635,110 @@ export default function Home() {
               </div>
             )}
             {!showForm && (
-            <div className="flex flex-col gap-4">
-              {/* Indicateur de chargement MySQL */}
-              {loading && (
-                <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="inline-flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-                    <span className="text-blue-600">Chargement depuis MySQL...</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Indicateur d'erreur MySQL */}
-              {error && (
-                <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="text-yellow-700">
-                    ⚠️ Connexion MySQL indisponible - Mode localStorage activé
-                    <button
-                      onClick={fetchReports}
-                      className="ml-2 text-xs bg-yellow-600 text-white px-2 py-1 rounded"
-                    >
-                      Réessayer
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {!loading && visibleReports.length === 0 ? (
-                <div className="text-center p-4 bg-white rounded-lg shadow">
-                  {reports.filter(r => !r.private).length === 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-gray-500">Aucun rapport pour le moment.</p>
-                      <button
-                        onClick={handleNewReport}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 text-sm"
-                      >Créer un premier rapport</button>
+              <div className="flex flex-col gap-6">
+                {/* Indicateur de chargement MySQL */}
+                {loading && (
+                  <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-lg">
+                    <div className="inline-flex flex-col items-center gap-4">
+                      <div className="relative">
+                        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-gray-900 mb-1">Chargement en cours...</p>
+                        <p className="text-sm text-gray-600">Récupération de vos rapports depuis MySQL</p>
+                      </div>
                     </div>
-                  ) : <p className="text-gray-500">Aucun résultat pour ces filtres.</p>}
-                </div>
-              ) : !loading && (
-                <ReportTable 
-                  reports={visibleReports}
-                  onDelete={(id)=> deleteReport(id)}
-                  onUpdate={(r)=> updateReport(r)}
-                  onEditReport={handleEditReport}
-                  onOpenPdf={(r)=> setPdfDrawerReport(r)}
-                />
-              )}
-            </div>
+                  </div>
+                )}
+                
+                {/* Indicateur d'erreur MySQL */}
+                {error && (
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200 shadow-lg">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">Connexion MySQL indisponible</h3>
+                        <p className="text-sm text-gray-700 mb-3">
+                          Mode hors ligne activé - Vos données sont chargées depuis le cache local
+                        </p>
+                        <button
+                          onClick={fetchReports}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium text-sm shadow-md transition-all duration-200"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Réessayer la connexion
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* État vide élégant */}
+                {!loading && visibleReports.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-lg">
+                    {reports.filter(r => !r.private).length === 0 ? (
+                      <div className="max-w-md mx-auto">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun rapport pour le moment</h3>
+                        <p className="text-gray-600 mb-6">
+                          Commencez par créer votre premier rapport de chantier et gérez tous vos projets en un seul endroit.
+                        </p>
+                        <button
+                          onClick={handleNewReport}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Créer mon premier rapport
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="max-w-md mx-auto">
+                        <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                          <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucun résultat trouvé</h3>
+                        <p className="text-gray-600">
+                          Essayez de modifier vos filtres ou votre recherche
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : !loading && (
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <ReportTable 
+                      reports={visibleReports}
+                      onDelete={(id)=> deleteReport(id)}
+                      onUpdate={(r)=> updateReport(r)}
+                      onEditReport={handleEditReport}
+                      onOpenPdf={(r)=> setPdfDrawerReport(r)}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        </main>
+        </div>
         {pdfDrawerReport && (
           <div className="fixed inset-0 z-50 flex">
             <div className="flex-1 bg-black/40" onClick={()=>setPdfDrawerReport(null)} />
@@ -504,7 +766,7 @@ export default function Home() {
           isOpen={showAuthModal}
           onClose={() => {
             setShowAuthModal(false);
-            setPendingAction(null); // Réinitialiser l'action en attente si l'utilisateur ferme la modal
+            setPendingAction(null);
           }}
           onLogin={handleLogin}
         />
@@ -518,6 +780,65 @@ export default function Home() {
           />
         )}
       </div>
+    );
+  }
+
+  // Afficher la landing page pour tout le monde (connecté ou non)
+  return (
+    <div className="min-h-screen bg-white">
+      <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
+      <LandingHero 
+        onGetStarted={() => {
+          if (isAuthenticated()) {
+            setShowDashboard(true);
+          } else {
+            setShowAuthModal(true);
+          }
+        }} 
+        isAuthenticated={isAuthenticated()}
+      />
+      <LandingFeatures />
+      <LandingTestimonials />
+      <LandingPricing 
+        onGetStarted={() => {
+          if (isAuthenticated()) {
+            setShowDashboard(true);
+          } else {
+            setShowAuthModal(true);
+          }
+        }}
+        isAuthenticated={isAuthenticated()}
+      />
+      <LandingCTA 
+        onGetStarted={() => {
+          if (isAuthenticated()) {
+            setShowDashboard(true);
+          } else {
+            setShowAuthModal(true);
+          }
+        }}
+        isAuthenticated={isAuthenticated()}
+      />
+      <LandingFooter />
+      
+      {/* Modal d'authentification */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingAction(null);
+        }}
+        onLogin={handleLogin}
+      />
+      
+      {/* Notification Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
