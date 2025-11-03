@@ -8,9 +8,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const dbConfig = isProduction ? {
   // Configuration PRODUCTION - Aiven
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.AIVEN_HOST,
+  user: process.env.AIVEN_USER,
+  password: process.env.AIVEN_PASSWORD,
   database: process.env.AIVEN_DATABASE,
   port: process.env.AIVEN_PORT || 21094,
   ssl: { rejectUnauthorized: false },
@@ -54,7 +54,7 @@ const handler = NextAuth({
           
           // Vérifier si l'utilisateur existe déjà
           const [existingUsers] = await connection.execute(
-            'SELECT * FROM utilisateur WHERE email = ?',
+            'SELECT * FROM Utilisateur WHERE email = ?',
             [user.email]
           );
 
@@ -69,13 +69,14 @@ const handler = NextAuth({
             });
 
             const [result] = await connection.execute(
-              'INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, google_id, date_creation) VALUES (?, ?, ?, ?, ?, NOW())',
+              'INSERT INTO Utilisateur (nom, prenom, email, mot_de_passe, provider_id, provider) VALUES (?, ?, ?, ?, ?, ?)',
               [
                 profile.family_name || user.name.split(' ').pop() || 'Utilisateur',
                 profile.given_name || user.name.split(' ')[0] || 'Google',
                 user.email,
                 hashedPassword,
-                user.id
+                user.id,
+                'google'
               ]
             );
 
@@ -84,17 +85,17 @@ const handler = NextAuth({
             // Utilisateur existe déjà, lier le compte Google si pas encore fait
             const existingUser = existingUsers[0];
             
-            if (!existingUser.google_id) {
+            if (!existingUser.provider_id) {
               console.log('🔗 Liaison compte Google existant:', user.email);
               
               await connection.execute(
-                'UPDATE utilisateur SET google_id = ?, derniere_connexion = NOW() WHERE email = ?',
-                [user.id, user.email]
+                'UPDATE Utilisateur SET provider_id = ?, provider = ?, date_modification = NOW() WHERE email = ?',
+                [user.id, 'google', user.email]
               );
             } else {
-              // Juste mettre à jour la dernière connexion
+              // Juste mettre à jour la dernière modification
               await connection.execute(
-                'UPDATE utilisateur SET derniere_connexion = NOW() WHERE email = ?',
+                'UPDATE Utilisateur SET date_modification = NOW() WHERE email = ?',
                 [user.email]
               );
             }
@@ -116,7 +117,7 @@ const handler = NextAuth({
         try {
           const connection = await getDbConnection();
           const [users] = await connection.execute(
-            'SELECT id_utilisateur, nom, prenom, email, google_id, date_creation FROM utilisateur WHERE email = ?',
+            'SELECT id_utilisateur, nom, prenom, email, provider_id, provider, date_creation FROM Utilisateur WHERE email = ?',
             [user.email]
           );
           
@@ -126,13 +127,13 @@ const handler = NextAuth({
             token.nom = dbUser.nom;
             token.prenom = dbUser.prenom;
             token.email = dbUser.email;
-            token.google_id = dbUser.google_id;
-            token.isGoogleUser = !!dbUser.google_id;
+            token.provider_id = dbUser.provider_id;
+            token.isGoogleUser = dbUser.provider === 'google';
             
             console.log('🔐 Token JWT créé pour utilisateur:', {
-              id: dbUser.id,
+              id: dbUser.id_utilisateur,
               email: dbUser.email,
-              isGoogle: !!dbUser.google_id
+              isGoogle: dbUser.provider === 'google'
             });
           }
           
