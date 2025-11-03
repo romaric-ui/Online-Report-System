@@ -1,5 +1,5 @@
 // Script d'initialisation des tables pour Aiven
-import { connectDB } from '../../lib/database.js';
+import { connectDB } from '../../../../lib/database.js';
 
 export async function GET() {
   console.log('🚀 Initialisation des tables Aiven...');

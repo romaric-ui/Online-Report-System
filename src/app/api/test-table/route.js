@@ -1,10 +1,8 @@
 // Test final de la table Utilisateur
 export async function GET() {
   try {
-    const { connectDB } = await import('../../../lib/database.js');
-    const db = await connectDB();
-    
-    // Test si la table Utilisateur existe et sa structure
+    const { connectDB } = await import('../../../../lib/database.js');
+    const db = await connectDB();    // Test si la table Utilisateur existe et sa structure
     try {
       const [tableInfo] = await db.execute('DESCRIBE Utilisateur');
       const [tableData] = await db.execute('SELECT COUNT(*) as count FROM Utilisateur');
