@@ -1,8 +1,8 @@
 // API pour demander la réinitialisation du mot de passe
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import { connectDB } from '../../../../lib/database.js';
-import { validateEmail } from '../../../../lib/security.js';
+import { connectDB } from '../../../../../lib/database.js';
+import { validateEmail } from '../../../../../lib/security.js';
 
 export async function POST(request) {
   try {

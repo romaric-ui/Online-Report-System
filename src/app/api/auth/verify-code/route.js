@@ -1,5 +1,5 @@
 // API pour vérifier le code de vérification
-import { connectDB } from '../../../../lib/database.js';
+import { connectDB } from '../../../../../lib/database.js';
 import { validateEmail } from '../../../../lib/security.js';
 
 export async function POST(request) {

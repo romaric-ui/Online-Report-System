@@ -1,7 +1,7 @@
 // API pour envoyer un code de vérification par email
 import nodemailer from 'nodemailer';
-import { connectDB } from '../../../../lib/database.js';
-import { validateEmail } from '../../../../lib/security.js';
+import { connectDB } from '../../../../../lib/database.js';
+import { validateEmail } from '../../../../../lib/security.js';
 
 // Générer un code de vérification à 6 chiffres
 function generateVerificationCode() {

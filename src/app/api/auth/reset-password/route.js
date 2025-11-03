@@ -1,8 +1,8 @@
 // API pour réinitialiser le mot de passe avec le token
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { connectDB } from '../../../../lib/database.js';
-import { validatePassword } from '../../../../lib/security.js';
+import { connectDB } from '../../../../../lib/database.js';
+import { validatePassword } from '../../../../../lib/security.js';
 
 export async function POST(request) {
   try {
