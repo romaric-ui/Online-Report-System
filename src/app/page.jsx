@@ -798,8 +798,10 @@ export default function Home() {
         isAuthenticated={isAuthenticated()}
       />
       <LandingFeatures />
-      <LandingTestimonials />
-      <LandingPricing 
+      {/* Section Témoignages temporairement cachée */}
+      {/* <LandingTestimonials /> */}
+      {/* Section Pricing temporairement cachée */}
+      {/* <LandingPricing 
         onGetStarted={() => {
           if (isAuthenticated()) {
             setShowDashboard(true);
@@ -808,7 +810,7 @@ export default function Home() {
           }
         }}
         isAuthenticated={isAuthenticated()}
-      />
+      /> */}
       <LandingCTA 
         onGetStarted={() => {
           if (isAuthenticated()) {

@@ -31,7 +31,7 @@ export default function LandingCTA({ onGetStarted, isAuthenticated }) {
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
             {isAuthenticated
               ? "Accédez à votre espace personnel et commencez à créer vos rapports professionnels en quelques clics."
-              : "Rejoignez des centaines d'entreprises qui ont déjà fait le choix de l'efficacité. Essai gratuit pendant 14 jours, sans carte bancaire."
+              : "Rejoignez des centaines d'entreprises qui ont déjà fait le choix de l'efficacité et de la modernité."
             }
           </p>
 
@@ -41,14 +41,14 @@ export default function LandingCTA({ onGetStarted, isAuthenticated }) {
               onClick={onGetStarted}
               className="group inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-200"
             >
-              {isAuthenticated ? "Accéder à mon espace" : "Commencer gratuitement"}
+              {isAuthenticated ? "Accéder à mon espace" : "Commencer maintenant"}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               className="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white rounded-xl font-bold text-lg border-2 border-white hover:bg-white hover:text-blue-600 transition-all duration-200"
             >
-              Voir les tarifs
+              Découvrir les fonctionnalités
             </button>
           </div>
 

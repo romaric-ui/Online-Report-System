@@ -7,9 +7,9 @@ export default function LandingFooter() {
   const footerLinks = {
     product: [
       { label: "Fonctionnalités", href: "#features" },
-      { label: "Tarifs", href: "#pricing" },
       { label: "Témoignages", href: "#testimonials" },
-      { label: "FAQ", href: "#faq" }
+      { label: "FAQ", href: "#faq" },
+      { label: "Documentation", href: "#docs" }
     ],
     company: [
       { label: "À propos", href: "#about" },

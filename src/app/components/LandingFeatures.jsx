@@ -141,7 +141,7 @@ export default function LandingFeatures() {
                 "Synchronisation automatique sur tous vos appareils",
                 "Support technique réactif et disponible",
                 "Mises à jour régulières avec nouvelles fonctionnalités",
-                "Tarification transparente sans frais cachés"
+                "Sécurité renforcée et données protégées"
               ].map((benefit, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-1">
