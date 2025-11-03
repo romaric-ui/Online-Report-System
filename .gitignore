@@ -47,6 +47,10 @@ scripts/create-tables-simple.js
 scripts/init-aiven-database.js
 scripts/verify-deployment.js
 
+# Fichiers de test contenant des URLs/secrets
+test-inscription.json
+*.test.json
+
 # vercel
 .vercel
 

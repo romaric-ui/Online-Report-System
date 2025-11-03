@@ -4,7 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  SECRETS_SCAN_OMIT_KEYS = "DB_PORT,DB_NAME"
+  SECRETS_SCAN_OMIT_KEYS = "DB_PORT,DB_NAME,NEXTAUTH_URL"
+  SECRETS_SCAN_OMIT_PATHS = "test-inscription.json,*.json"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
