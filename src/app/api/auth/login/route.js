@@ -50,7 +50,7 @@ export async function POST(request) {
     // Récupérer l'utilisateur avec son rôle (requête préparée sécurisée)
     const [users] = await db.execute(
       `SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.mot_de_passe, 
-              r.libelle as nom_role, u.id_role
+              r.nom_role, u.id_role
        FROM Utilisateur u
        LEFT JOIN Role r ON u.id_role = r.id_role
        WHERE u.email = ? LIMIT 1`,
