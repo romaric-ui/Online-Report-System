@@ -63,7 +63,7 @@ export default function Header({ user, onLogout, onShowAuth }) {
               
               <div className="hidden sm:block">
                 <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-slate-900 to-blue-900 bg-clip-text text-transparent">
-                  Online Report System
+                  SGTEC
                 </h1>
                 <p className="text-xs md:text-sm text-gray-600">
                   Gestion de rapports professionnelle

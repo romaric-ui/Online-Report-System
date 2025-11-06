@@ -40,11 +40,11 @@ export default function LandingFooter() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-              Online Report System
+              SGTEC
             </h3>
             <p className="text-blue-200 mb-6 leading-relaxed">
-              La solution complète pour gérer vos rapports de construction en ligne. 
-              Simplifiez votre travail et gagnez en productivité.
+              Société de Gestion des Travaux et Encadrement de Chantier. 
+              La solution complète pour gérer vos rapports de construction en ligne.
             </p>
             
             {/* Contact Info */}
@@ -140,7 +140,7 @@ export default function LandingFooter() {
         <div className="border-t border-blue-800/50 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Copyright */}
           <p className="text-blue-300 text-sm">
-            © {currentYear} Online Report System. Tous droits réservés.
+            © {currentYear} SGTEC - Société de Gestion des Travaux et Encadrement de Chantier. Tous droits réservés.
           </p>
 
           {/* Social Links */}

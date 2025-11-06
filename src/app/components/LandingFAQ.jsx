@@ -10,8 +10,8 @@ export default function LandingFAQ() {
       category: "Général",
       questions: [
         {
-          q: "Qu'est-ce que Online Report System ?",
-          a: "Online Report System est une plateforme cloud de gestion de rapports de chantier. Elle digitalise vos processus de suivi, génère des rapports PDF professionnels et centralise toutes vos données de construction."
+          q: "Qu'est-ce que SGTEC ?",
+          a: "SGTEC (Société de Gestion des Travaux et Encadrement de Chantier) est une plateforme de gestion de rapports de chantier. Elle digitalise vos processus de suivi, génère des rapports PDF professionnels et centralise toutes vos données de construction."
         },
         {
           q: "Pour qui est destinée cette solution ?",
