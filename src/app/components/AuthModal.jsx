@@ -204,6 +204,21 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
                 )}
               </button>
             </div>
+            {isLoginMode && (
+              <div className="mt-2 text-right">
+                <a
+                  href="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onClose();
+                    window.location.href = '/forgot-password';
+                  }}
+                >
+                  Mot de passe oublié ?
+                </a>
+              </div>
+            )}
           </div>
 
           {!isLoginMode && (

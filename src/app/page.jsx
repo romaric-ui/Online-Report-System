@@ -13,6 +13,7 @@ import LandingHero from "./components/LandingHero";
 import LandingFeatures from "./components/LandingFeatures";
 import LandingTestimonials from "./components/LandingTestimonials";
 import LandingPricing from "./components/LandingPricing";
+import LandingFAQ from "./components/LandingFAQ";
 import LandingCTA from "./components/LandingCTA";
 import LandingFooter from "./components/LandingFooter";
 
@@ -811,6 +812,7 @@ export default function Home() {
         }}
         isAuthenticated={isAuthenticated()}
       /> */}
+      <LandingFAQ />
       <LandingCTA 
         onGetStarted={() => {
           if (isAuthenticated()) {

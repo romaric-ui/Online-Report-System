@@ -89,15 +89,11 @@ const handler = NextAuth({
               console.log('🔗 Liaison compte Google existant:', user.email);
               
               await connection.execute(
-                'UPDATE Utilisateur SET provider_id = ?, provider = ?, date_modification = NOW() WHERE email = ?',
+                'UPDATE Utilisateur SET provider_id = ?, provider = ? WHERE email = ?',
                 [user.id, 'google', user.email]
               );
             } else {
-              // Juste mettre à jour la dernière modification
-              await connection.execute(
-                'UPDATE Utilisateur SET date_modification = NOW() WHERE email = ?',
-                [user.email]
-              );
+              console.log('✅ Compte Google déjà lié pour:', user.email);
             }
 
             console.log('✅ Connexion Google réussie pour:', user.email);

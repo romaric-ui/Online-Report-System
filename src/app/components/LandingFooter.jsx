@@ -51,11 +51,11 @@ export default function LandingFooter() {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-blue-200">
                 <Mail className="w-4 h-4" />
-                <span className="text-sm">contact@onlinereport.com</span>
+                <span className="text-sm">sgtec-gc@groupe-imo.com</span>
               </div>
               <div className="flex items-center gap-3 text-blue-200">
                 <Phone className="w-4 h-4" />
-                <span className="text-sm">+33 1 23 45 67 89</span>
+                <span className="text-sm">+33 6 19 99 67 34</span>
               </div>
               <div className="flex items-center gap-3 text-blue-200">
                 <MapPin className="w-4 h-4" />
