@@ -1,12 +1,14 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
 // Configuration intelligente de base de données (local/Aiven)
+const useLocalDb = process.env.USE_LOCAL_DB === 'true';
 const isProduction = process.env.NODE_ENV === 'production';
 
-const dbConfig = isProduction ? {
+const dbConfig = (isProduction && !useLocalDb) ? {
   // Configuration PRODUCTION - Aiven
   host: process.env.AIVEN_HOST,
   user: process.env.AIVEN_USER,
@@ -32,8 +34,57 @@ async function getDbConnection() {
   return await mysql.createConnection(dbConfig);
 }
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          const connection = await getDbConnection();
+          
+          const [users] = await connection.execute(
+            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.mot_de_passe, u.provider, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
+            [credentials.email]
+          );
+          
+          await connection.end();
+          
+          if (users.length === 0) {
+            console.log('❌ Utilisateur non trouvé:', credentials.email);
+            return null;
+          }
+          
+          const user = users[0];
+          
+          // Vérifier le mot de passe
+          const isValid = await bcrypt.compare(credentials.password, user.mot_de_passe);
+          
+          if (!isValid) {
+            console.log('❌ Mot de passe incorrect pour:', credentials.email);
+            return null;
+          }
+          
+          console.log('✅ Connexion credentials réussie:', {
+            email: user.email,
+            role: user.nom_role
+          });
+          
+          return {
+            id: user.id_utilisateur.toString(),
+            email: user.email,
+            name: `${user.prenom} ${user.nom}`,
+            role: user.nom_role
+          };
+        } catch (error) {
+          console.error('❌ Erreur authorize:', error);
+          return null;
+        }
+      }
+    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -113,7 +164,7 @@ const handler = NextAuth({
         try {
           const connection = await getDbConnection();
           const [users] = await connection.execute(
-            'SELECT id_utilisateur, nom, prenom, email, provider_id, provider, date_creation FROM Utilisateur WHERE email = ?',
+            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.provider_id, u.provider, u.date_creation, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
             [user.email]
           );
           
@@ -124,11 +175,13 @@ const handler = NextAuth({
             token.prenom = dbUser.prenom;
             token.email = dbUser.email;
             token.provider_id = dbUser.provider_id;
+            token.role = dbUser.nom_role || 'user';
             token.isGoogleUser = dbUser.provider === 'google';
             
             console.log('🔐 Token JWT créé pour utilisateur:', {
               id: dbUser.id_utilisateur,
               email: dbUser.email,
+              role: dbUser.nom_role,
               isGoogle: dbUser.provider === 'google'
             });
           }
@@ -146,12 +199,14 @@ const handler = NextAuth({
         session.user.nom = token.nom;
         session.user.prenom = token.prenom;
         session.user.email = token.email;
+        session.user.role = token.role || 'user';
         session.user.isGoogleUser = token.isGoogleUser;
         
         console.log('👤 Session utilisateur:', {
           id: session.user.id,
           email: session.user.email,
           nom: session.user.nom,
+          role: session.user.role,
           isGoogle: session.user.isGoogleUser
         });
       }
@@ -161,7 +216,14 @@ const handler = NextAuth({
   pages: {
     signIn: '/', // Rediriger vers la page d'accueil pour la connexion
   },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
+    updateAge: 24 * 60 * 60, // 24 heures
+  },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

@@ -7,6 +7,8 @@ import {
   validateName, 
   validateRequestBody
 } from '../../../../../lib/security.js';
+import { generateOTP, storeOTP } from '../../../../../lib/otp-store';
+import { sendOTPEmail } from '../../../../../lib/email-service';
 
 export async function POST(request) {
   try {
@@ -21,7 +23,7 @@ export async function POST(request) {
       );
     }
 
-    const { nom, prenom, email, password } = body;
+    const { nom, prenom, email, password, telephone } = body;
     
     // Validation sécurisée de chaque champ
     const emailValidation = validateEmail(email);
@@ -82,16 +84,28 @@ export async function POST(request) {
 
     // Créer l'utilisateur avec requête préparée sécurisée
     const [result] = await db.execute(
-      `INSERT INTO Utilisateur (nom, prenom, email, mot_de_passe, id_role) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [cleanNom, cleanPrenom, cleanEmail, hashedPassword, 2]
+      `INSERT INTO Utilisateur (nom, prenom, email, telephone, mot_de_passe, id_role) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [cleanNom, cleanPrenom, cleanEmail, telephone || null, hashedPassword, 2]
     );
+
+    // Générer et envoyer l'OTP
+    const otp = generateOTP();
+    storeOTP(cleanEmail, otp);
+    
+    const emailResult = await sendOTPEmail(cleanEmail, otp, `${cleanPrenom} ${cleanNom}`);
+    
+    if (!emailResult.success) {
+      console.error('⚠️ Erreur envoi email OTP, mais compte créé');
+    }
 
     return Response.json(
       { 
         success: true, 
         message: 'Compte créé avec succès',
-        userId: result.insertId 
+        userId: result.insertId,
+        requiresVerification: true,
+        email: cleanEmail
       },
       { status: 201 }
     );

@@ -1,6 +1,7 @@
 // Composant de connexion/inscription
 'use client';
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import GoogleSignInButton from './GoogleSignInButton';
 
 export default function AuthModal({ isOpen, onClose, onLogin }) {
@@ -9,6 +10,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
     nom: '',
     prenom: '',
     email: '',
+    telephone: '',
     password: '',
     confirmPassword: ''
   });
@@ -38,6 +40,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             nom: formData.nom,
             prenom: formData.prenom,
             email: formData.email,
+            telephone: formData.telephone,
             password: formData.password
           })
         });
@@ -48,43 +51,50 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           throw new Error(data.error || 'Erreur lors de l\'inscription');
         }
 
-        // Connexion automatique après inscription
-        const loginResponse = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password
-          })
+        // Rediriger vers la page de vérification OTP
+        if (data.requiresVerification) {
+          const name = `${formData.prenom} ${formData.nom}`;
+          window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(name)}`;
+          return;
+        }
+
+        // Si pas de vérification requise, connexion automatique avec NextAuth
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false
         });
 
-        const loginData = await loginResponse.json();
-        
-        if (loginResponse.ok) {
-          localStorage.setItem('user', JSON.stringify(loginData.user));
-          onLogin(loginData.user);
+        if (result?.ok) {
           onClose();
+          window.location.reload(); // Rafraîchir pour charger la session
+        } else {
+          throw new Error('Erreur lors de la connexion automatique');
         }
       } else {
-        // Connexion
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password
-          })
+        // Connexion avec NextAuth
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false
         });
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Erreur de connexion');
+        if (!result?.ok) {
+          throw new Error(result?.error || 'Email ou mot de passe incorrect');
         }
 
-        localStorage.setItem('user', JSON.stringify(data.user));
-        onLogin(data.user);
         onClose();
+        
+        // Seul l'admin est redirigé automatiquement
+        const sessionResponse = await fetch('/api/auth/session');
+        const sessionData = await sessionResponse.json();
+        
+        if (sessionData?.user?.role === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          // L'utilisateur simple reste sur la page actuelle
+          window.location.reload();
+        }
       }
     } catch (error) {
       setError(error.message);
@@ -152,6 +162,19 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
                   required={!isLoginMode}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Votre nom"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Téléphone (optionnel)
+                </label>
+                <input
+                  type="tel"
+                  name="telephone"
+                  value={formData.telephone}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="+33 6 12 34 56 78"
                 />
               </div>
             </>

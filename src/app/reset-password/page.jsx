@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [token, setToken] = useState('');
+  const [step, setStep] = useState(1); // 1 = email, 2 = code, 3 = nouveaux mots de passe
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,17 +18,91 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useEffect(() => {
-    const tokenParam = searchParams.get('token');
-    if (!tokenParam) {
-      setError('Token de réinitialisation manquant');
-    } else {
-      setToken(tokenParam);
+  const handleSendCode = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setError('Email requis');
+      return;
     }
-  }, [searchParams]);
+
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage('Code envoyé ! Vérifiez votre email.');
+        setStep(2);
+      } else {
+        setError(data.error || 'Une erreur est survenue');
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    
+    if (!code) {
+      setError('Code requis');
+      return;
+    }
+
+    if (code.length !== 6) {
+      setError('Le code doit contenir 6 chiffres');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/auth/verify-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage('Code valide ! Créez votre nouveau mot de passe.');
+        setStep(3);
+      } else {
+        setError(data.error || 'Code invalide');
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!email || !code) {
+      setError('Email et code sont requis');
+      return;
+    }
+    
+    if (code.length !== 6) {
+      setError('Le code doit contenir 6 chiffres');
+      return;
+    }
     
     if (newPassword !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
@@ -46,16 +122,31 @@ function ResetPasswordForm() {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword })
+        body: JSON.stringify({ email, code, newPassword })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessage('Mot de passe réinitialisé avec succès ! Redirection...');
-        setTimeout(() => {
-          router.push('/');
-        }, 2000);
+        setMessage('Mot de passe réinitialisé avec succès ! Connexion automatique...');
+        
+        // Connexion automatique de l'utilisateur
+        const result = await signIn('credentials', {
+          email: data.email,
+          password: newPassword,
+          redirect: false
+        });
+
+        if (result?.ok) {
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 1500);
+        } else {
+          setMessage('Mot de passe réinitialisé ! Redirection vers la page d\'accueil...');
+          setTimeout(() => {
+            router.push('/');
+          }, 2000);
+        }
       } else {
         setError(data.error || 'Une erreur est survenue');
       }
@@ -66,20 +157,12 @@ function ResetPasswordForm() {
     }
   };
 
-  if (!token && !error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            Nouveau mot de passe
+            {step === 1 ? 'Réinitialiser le mot de passe' : step === 2 ? 'Vérifier le code' : 'Nouveau mot de passe'}
           </h2>
           <Link
             href="/"
@@ -87,6 +170,23 @@ function ResetPasswordForm() {
           >
             ×
           </Link>
+        </div>
+
+        {/* Indicateur d'étapes */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === 1 ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}`}>
+              {step === 1 ? '1' : '✓'}
+            </div>
+            <div className={`w-16 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === 2 ? 'bg-blue-600 text-white' : step > 2 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
+              {step > 2 ? '✓' : '2'}
+            </div>
+            <div className={`w-16 h-1 ${step >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
+              3
+            </div>
+          </div>
         </div>
 
         {message && (
@@ -101,7 +201,117 @@ function ResetPasswordForm() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ÉTAPE 1: Entrer l'email */}
+        {step === 1 && (
+          <form onSubmit={handleSendCode} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Adresse email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="votre@email.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Nous vous enverrons un code de vérification à 6 chiffres
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Envoi en cours...
+                </>
+              ) : (
+                'Envoyer le code'
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* ÉTAPE 2: Entrer le code et le nouveau mot de passe */}
+        {step === 2 && (
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+              />
+            </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Code de vérification
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              required
+              maxLength={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest font-bold"
+              placeholder="000000"
+              autoFocus
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Entrez le code à 6 chiffres reçu par email
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || code.length !== 6}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Vérification...
+              </>
+            ) : (
+              'Vérifier le code'
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setStep(1); setCode(''); setMessage(''); setError(''); }}
+            className="w-full text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ← Renvoyer un nouveau code
+          </button>
+        </form>
+        )}
+
+        {/* ÉTAPE 3: Entrer les nouveaux mots de passe */}
+        {step === 3 && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+              <p className="text-sm text-green-800">
+                ✓ Code vérifié pour <strong>{email}</strong>
+              </p>
+            </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nouveau mot de passe
@@ -170,7 +380,7 @@ function ResetPasswordForm() {
 
           <button
             type="submit"
-            disabled={loading || !token || !newPassword || newPassword !== confirmPassword}
+            disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (
@@ -185,7 +395,16 @@ function ResetPasswordForm() {
               'Réinitialiser le mot de passe'
             )}
           </button>
+
+          <button
+            type="button"
+            onClick={() => { setStep(2); setNewPassword(''); setConfirmPassword(''); setMessage(''); setError(''); }}
+            className="w-full text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ← Retour à l'étape précédente
+          </button>
         </form>
+        )}
 
         <div className="mt-4 text-center">
           <Link

@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMessage('Un email de réinitialisation vous a été envoyé. Vérifiez votre boîte de réception.');
+        setMessage('Un code de réinitialisation vous a été envoyé par email. Vérifiez votre boîte de réception.');
         setEmail('');
       } else {
         setError(data.error || 'Une erreur est survenue');
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
                 Envoi en cours...
               </>
             ) : (
-              'Envoyer le lien de réinitialisation'
+              'Envoyer le code de réinitialisation'
             )}
           </button>
         </form>

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { Menu, X, User, LogOut, LogIn, FileText, BarChart3, Settings } from 'lucide-react';
+import NotificationCenter from './NotificationCenter';
 
 export default function Header({ user, onLogout, onShowAuth }) {
   const { data: session } = useSession();
@@ -80,28 +81,42 @@ export default function Header({ user, onLogout, onShowAuth }) {
             >
               Accueil
             </a>
-            {(user || session?.user) && (
+            {(user || session?.user) && session?.user?.role === 'admin' && (
               <>
                 <a 
-                  href="#" 
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
-                >
-                  <FileText className="w-4 h-4" />
-                  Rapports
-                </a>
-                <a 
-                  href="#" 
+                  href="/admin/dashboard" 
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
                 >
                   <BarChart3 className="w-4 h-4" />
-                  Statistiques
+                  Dashboard
+                </a>
+                <a 
+                  href="/admin/users" 
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+                >
+                  <User className="w-4 h-4" />
+                  Utilisateurs
                 </a>
               </>
+            )}
+            {(user || session?.user) && session?.user?.role !== 'admin' && (
+              <a 
+                href="/dashboard" 
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+              >
+                <FileText className="w-4 h-4" />
+                Mes rapports
+              </a>
             )}
           </nav>
 
           {/* Actions utilisateur */}
           <div className="flex items-center gap-3">
+            {/* Centre de notifications */}
+            {(user || session?.user) && (
+              <NotificationCenter />
+            )}
+
             {!(user || session?.user) && (
               <button
                 onClick={onShowAuth}

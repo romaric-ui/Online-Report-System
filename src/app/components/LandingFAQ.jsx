@@ -1,9 +1,13 @@
 "use client";
 import { useState } from 'react';
 import { Plus, Minus } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import MessageModal from './MessageModal';
 
 export default function LandingFAQ() {
+  const { data: session, status } = useSession();
   const [openIndex, setOpenIndex] = useState(0);
+  const [showMessageModal, setShowMessageModal] = useState(false);
 
   const faqs = [
     {
@@ -68,6 +72,19 @@ export default function LandingFAQ() {
 
   const toggleFAQ = (index) => {
     setOpenIndex(openIndex === index ? null : index);
+  };
+
+  const handleEmailClick = (e) => {
+    e.preventDefault();
+    
+    // Vérifier si l'utilisateur est connecté
+    if (status === 'authenticated') {
+      setShowMessageModal(true);
+    } else {
+      // Rediriger vers la page de connexion avec message
+      alert('Veuillez vous connecter pour envoyer un message à l\'administrateur.');
+      window.location.href = '/?login=true';
+    }
   };
 
   return (
@@ -155,15 +172,15 @@ export default function LandingFAQ() {
               Vous ne trouvez pas la réponse à votre question ?
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="mailto:sgtec-gc@groupe-imo.com"
+              <button
+                onClick={handleEmailClick}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transform hover:scale-105 transition-all duration-200 shadow-lg"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 Envoyez-nous un email
-              </a>
+              </button>
               <a
                 href="tel:+33619996734"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
@@ -177,6 +194,12 @@ export default function LandingFAQ() {
           </div>
         </div>
       </div>
+
+      {/* Message Modal */}
+      <MessageModal 
+        isOpen={showMessageModal} 
+        onClose={() => setShowMessageModal(false)} 
+      />
     </section>
   );
 }

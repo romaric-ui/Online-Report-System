@@ -40,8 +40,24 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Vérifier si on doit ouvrir le modal de connexion (pour admin)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'login') {
+      setShowAuthModal(true);
+    }
+  }, []);
+
   // Charger rapports optimisé avec cache
   const fetchReports = useCallback(async () => {
+    // Ne charger que si authentifié
+    if (!session?.user) {
+      console.log('⚠️ Utilisateur non authentifié, chargement annulé');
+      setLoading(false);
+      setReports([]);
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('🚀 Récupération des rapports...');
@@ -55,17 +71,27 @@ export default function Home() {
         }
       });
       
-      if (!response.ok) throw new Error('Erreur chargement API');
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('🔒 Non authentifié');
+          setReports([]);
+          setError(null);
+          return;
+        }
+        throw new Error('Erreur chargement API');
+      }
+      
       const data = await response.json();
+      const reportsList = data.reports || data || [];
       
       const loadTime = Date.now() - startTime;
-      console.log(`✅ ${data.length || 0} rapports chargés en ${loadTime}ms`);
+      console.log(`✅ ${reportsList.length} rapports chargés en ${loadTime}ms`);
       
-      setReports(data);
+      setReports(reportsList);
       setError(null);
       
       // Cache localStorage pour la prochaine visite
-      localStorage.setItem('constructionReports', JSON.stringify(data));
+      localStorage.setItem('constructionReports', JSON.stringify(reportsList));
       
     } catch (err) {
       console.error('❌ Erreur API:', err.message);
@@ -87,7 +113,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []); // useCallback pour éviter les re-renders
+  }, [session]); // Dépendance à session
 
   // Synchroniser l'état user avec NextAuth session
   useEffect(() => {
@@ -122,6 +148,13 @@ export default function Home() {
   }, [session, status]);
 
   useEffect(() => {
+    // Ne charger que si authentifié
+    if (!session?.user) {
+      setLoading(false);
+      setReports([]);
+      return;
+    }
+
     // Chargement différé pour de meilleures performances
     const loadReports = async () => {
       // Charger d'abord depuis le cache pour affichage immédiat
@@ -156,7 +189,7 @@ export default function Home() {
     } catch (e) {
       console.error('Erreur parsing localStorage', e);
     }
-  }, []);
+  }, [session, fetchReports]);
 
   // Backup localStorage seulement (MySQL est la source principale)
   useEffect(() => {
@@ -187,7 +220,7 @@ export default function Home() {
 
   // Fonction utilitaire pour vérifier l'authentification (NextAuth + état local)
   const isAuthenticated = () => {
-    return (session?.user && user) || (status === 'authenticated' && session?.user);
+    return session?.user || status === 'authenticated';
   };
 
   // Fonction utilitaire pour afficher les toasts
@@ -246,52 +279,29 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Fonctions d'authentification
-  const handleLogin = (userData) => {
-    setUser(userData);
+  // Fonctions d'authentification (NextAuth gère la session)
+  const handleLogin = () => {
+    // NextAuth gère déjà la session, on ferme juste le modal
     setShowAuthModal(false);
-    
-    // Afficher notification de connexion réussie
-    setToast({
-      message: `Bienvenue ${userData.prenom} ! Connexion réussie.`,
-      type: 'success'
-    });
     
     // Exécuter l'action en attente après connexion
     if (pendingAction) {
       setTimeout(() => {
         if (pendingAction === 'newReport') {
           executeNewReport();
-          setToast({
-            message: 'Formulaire de nouveau rapport ouvert !',
-            type: 'success'
-          });
         } else if (pendingAction.type === 'editReport') {
           executeEditReport(pendingAction.data);
-          setToast({
-            message: 'Mode édition activé !',
-            type: 'success'
-          });
         }
-        setPendingAction(null); // Réinitialiser l'action en attente
-      }, 500); // Délai pour laisser le temps à la première notification
+        setPendingAction(null);
+      }, 500);
     }
   };
 
   const handleLogout = () => {
-    // Déconnexion côté client uniquement (pas besoin d'API pour JWT simple)
-    localStorage.removeItem('user');
-    setUser(null);
+    // NextAuth gère déjà la déconnexion via signOut()
     setShowForm(false);
     setReportToEdit(null);
-    setPendingAction(null); // Réinitialiser les actions en attente
-    
-    // Notification de déconnexion
-    setToast({
-      message: "Vous êtes maintenant déconnecté",
-      type: "info"
-    });
-    setTimeout(() => setToast(null), 3000);
+    setPendingAction(null);
   };
 
   // Sauvegarder les rapports via API MySQL
@@ -790,13 +800,23 @@ export default function Home() {
       <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
       <LandingHero 
         onGetStarted={() => {
-          if (isAuthenticated()) {
-            setShowDashboard(true);
+          if (status === 'authenticated' && session?.user) {
+            // Rediriger vers le dashboard utilisateur
+            window.location.href = '/dashboard';
+          } else if (status === 'loading') {
+            // Attendre que la session soit chargée
+            setTimeout(() => {
+              if (session?.user) {
+                window.location.href = '/dashboard';
+              } else {
+                setShowAuthModal(true);
+              }
+            }, 500);
           } else {
             setShowAuthModal(true);
           }
         }} 
-        isAuthenticated={isAuthenticated()}
+        isAuthenticated={status === 'authenticated'}
       />
       <LandingFeatures />
       {/* Section Témoignages temporairement cachée */}
@@ -815,13 +835,21 @@ export default function Home() {
       <LandingFAQ />
       <LandingCTA 
         onGetStarted={() => {
-          if (isAuthenticated()) {
-            setShowDashboard(true);
+          if (status === 'authenticated' && session?.user) {
+            window.location.href = '/dashboard';
+          } else if (status === 'loading') {
+            setTimeout(() => {
+              if (session?.user) {
+                window.location.href = '/dashboard';
+              } else {
+                setShowAuthModal(true);
+              }
+            }, 500);
           } else {
             setShowAuthModal(true);
           }
         }}
-        isAuthenticated={isAuthenticated()}
+        isAuthenticated={status === 'authenticated'}
       />
       <LandingFooter />
       

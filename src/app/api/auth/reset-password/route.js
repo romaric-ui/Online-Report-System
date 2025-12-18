@@ -1,18 +1,17 @@
-// API pour réinitialiser le mot de passe avec le token
+// API pour réinitialiser le mot de passe avec le code
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { connectDB } from '../../../../../lib/database.js';
 import { validatePassword } from '../../../../../lib/security.js';
 
 export async function POST(request) {
   try {
-    const { token, newPassword } = await request.json();
+    const { email, code, newPassword } = await request.json();
     
     // Validations de base
-    if (!token || !newPassword) {
+    if (!email || !code || !newPassword) {
       return Response.json({
         success: false,
-        error: 'Token et nouveau mot de passe requis'
+        error: 'Email, code et nouveau mot de passe requis'
       }, { status: 400 });
     }
     
@@ -28,23 +27,20 @@ export async function POST(request) {
     
     const db = await connectDB();
     
-    // Hasher le token reçu pour le comparer avec celui en base
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    
-    // Vérifier le token
+    // Vérifier le code
     const [resetRequests] = await db.execute(
       `SELECT pr.id, pr.id_utilisateur, pr.expires_at, pr.used, u.email
        FROM PasswordReset pr
-       INNER JOIN Utilisateur u ON pr.id_utilisateur = u.id_utilisateur
-       WHERE pr.token = ? AND pr.used = FALSE
+       INNER JOIN utilisateur u ON pr.id_utilisateur = u.id_utilisateur
+       WHERE pr.code = ? AND pr.email = ? AND pr.used = FALSE
        LIMIT 1`,
-      [hashedToken]
+      [code, email]
     );
     
     if (resetRequests.length === 0) {
       return Response.json({
         success: false,
-        error: 'Token invalide ou déjà utilisé'
+        error: 'Code invalide ou déjà utilisé'
       }, { status: 400 });
     }
     
@@ -57,7 +53,7 @@ export async function POST(request) {
     if (now > expiresAt) {
       return Response.json({
         success: false,
-        error: 'Le lien de réinitialisation a expiré. Veuillez en demander un nouveau.'
+        error: 'Le code de réinitialisation a expiré. Veuillez en demander un nouveau.'
       }, { status: 400 });
     }
     
@@ -66,7 +62,7 @@ export async function POST(request) {
     
     // Mettre à jour le mot de passe de l'utilisateur
     await db.execute(
-      'UPDATE Utilisateur SET mot_de_passe = ?, date_modification = CURRENT_TIMESTAMP WHERE id_utilisateur = ?',
+      'UPDATE utilisateur SET mot_de_passe = ? WHERE id_utilisateur = ?',
       [hashedPassword, resetRequest.id_utilisateur]
     );
     
