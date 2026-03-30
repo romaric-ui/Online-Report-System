@@ -55,7 +55,7 @@ export default function AdminMessagesPage() {
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors du chargement des messages');
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function AdminMessagesPage() {
       
       await fetchMessages();
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors de la mise à jour du statut');
     } finally {
       setActionLoading(false);
     }
@@ -114,13 +114,13 @@ export default function AdminMessagesPage() {
         setReplyMessage(null);
         setReplyContent('');
         await handleStatusChange(replyMessage.id_message, 'traite');
-        alert('✅ Réponse envoyée avec succès !');
+        alert('Réponse envoyée avec succès');
       } else {
-        alert('❌ Erreur lors de l\'envoi de la réponse');
+        alert('Erreur lors de l\'envoi de la réponse');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('❌ Erreur lors de l\'envoi de la réponse');
+      alert('Erreur lors de l\'envoi de la réponse');
     } finally {
       setSending(false);
     }
@@ -138,15 +138,14 @@ export default function AdminMessagesPage() {
       });
 
       if (response.ok) {
-        alert('✅ Message supprimé avec succès');
+        alert('Message supprimé avec succès');
         await fetchMessages();
       } else {
-        const data = await response.json();
-        alert(data.error || '❌ Erreur lors de la suppression');
+        alert('Erreur lors de la suppression du message');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('❌ Erreur lors de la suppression du message');
+      alert('Erreur lors de la suppression du message');
     } finally {
       setActionLoading(false);
     }
@@ -273,9 +272,12 @@ export default function AdminMessagesPage() {
               )}
             </button>
 
-            <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200">
-              <Settings className="w-5 h-5" />
-              <span className="font-medium">Paramètres</span>
+            <button
+              onClick={() => router.push('/admin/create-admin')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200"
+            >
+              <Shield className="w-5 h-5" />
+              <span className="font-medium">Créer un admin</span>
             </button>
           </nav>
 

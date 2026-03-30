@@ -55,7 +55,7 @@ export default function MessageModal({ isOpen, onClose }) {
       }, 2000);
       
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors de l\'envoi du message. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }

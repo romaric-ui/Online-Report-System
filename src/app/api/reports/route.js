@@ -29,8 +29,6 @@ export async function GET(request) {
       [session.user.id]
     );
 
-    console.log(`📄 ${reports.length} rapports récupérés pour l'utilisateur ${session.user.id}`);
-
     return NextResponse.json({ reports });
 
   } catch (error) {
@@ -121,8 +119,6 @@ export async function POST(request) {
       ]
     );
 
-    console.log(`✅ Rapport créé avec ID: ${result.insertId}`);
-
     return NextResponse.json(
       { 
         message: 'Rapport créé avec succès',
@@ -184,12 +180,20 @@ export async function PUT(request) {
       );
     }
 
-    // Construire la requête UPDATE dynamiquement
-    const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined);
+    // Liste blanche des colonnes modifiables (protection SQL injection)
+    const ALLOWED_COLUMNS = new Set([
+      'numero_affaire', 'numero_rapport', 'nom_chantier', 'adresse_chantier',
+      'date_visite', 'phase', 'equipe_presente', 'materiel_utilise',
+      'objectifs_limites', 'deroulement', 'investigation', 'autres_points',
+      'conclusion', 'photo_couverture', 'statut', 'titre', 'description'
+    ]);
+
+    // Construire la requête UPDATE dynamiquement (colonnes whitelistées uniquement)
+    const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined && ALLOWED_COLUMNS.has(key));
     
     if (fields.length === 0) {
       return NextResponse.json(
-        { error: 'Aucune donnée à mettre à jour' },
+        { error: 'Aucune donnée valide à mettre à jour' },
         { status: 400 }
       );
     }
@@ -203,8 +207,6 @@ export async function PUT(request) {
       `UPDATE rapport SET ${setClause}, date_modification = NOW() WHERE id_rapport = ?`,
       [...values, id_rapport]
     );
-
-    console.log(`✅ Rapport ${id_rapport} modifié`);
 
     return NextResponse.json({ message: 'Rapport modifié avec succès' });
 
@@ -265,8 +267,6 @@ export async function DELETE(request) {
       'DELETE FROM rapport WHERE id_rapport = ?',
       [id_rapport]
     );
-
-    console.log(`🗑️ Rapport ${id_rapport} supprimé`);
 
     return NextResponse.json({ message: 'Rapport supprimé avec succès' });
 

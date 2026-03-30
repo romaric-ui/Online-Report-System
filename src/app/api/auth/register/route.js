@@ -7,7 +7,7 @@ import {
   validateName, 
   validateRequestBody
 } from '../../../../../lib/security.js';
-import { generateOTP, storeOTP } from '../../../../../lib/otp-store';
+import { generateOTP } from '../../../../../lib/otp-store';
 import { sendOTPEmail } from '../../../../../lib/email-service';
 
 export async function POST(request) {
@@ -68,11 +68,12 @@ export async function POST(request) {
 
     // Vérifier si l'utilisateur existe déjà (requête préparée sécurisée)
     const [existingUser] = await db.execute(
-      'SELECT id_utilisateur FROM Utilisateur WHERE email = ? LIMIT 1',
+      'SELECT id_utilisateur, id_role FROM Utilisateur WHERE email = ? LIMIT 1',
       [cleanEmail]
     );
 
     if (existingUser.length > 0) {
+      // Message générique pour ne pas révéler qu'un compte admin existe
       return Response.json(
         { error: 'Un compte avec cet email existe déjà' },
         { status: 409 }
@@ -89,10 +90,16 @@ export async function POST(request) {
       [cleanNom, cleanPrenom, cleanEmail, telephone || null, hashedPassword, 2]
     );
 
-    // Générer et envoyer l'OTP
+    // Générer et stocker l'OTP en base de données
     const otp = generateOTP();
-    storeOTP(cleanEmail, otp);
-    
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await db.execute('DELETE FROM otp_verification WHERE user_id = ?', [result.insertId]);
+    await db.execute(
+      'INSERT INTO otp_verification (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)',
+      [result.insertId, cleanEmail, otp, expiresAt]
+    );
+
     const emailResult = await sendOTPEmail(cleanEmail, otp, `${cleanPrenom} ${cleanNom}`);
     
     if (!emailResult.success) {

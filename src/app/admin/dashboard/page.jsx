@@ -8,7 +8,7 @@ import {
   Shield, FileText, CheckCircle, Clock, XCircle,
   TrendingUp, Activity, BarChart3,
   Calendar, Download, Filter, Plus, Eye,
-  Edit2, LogOut
+  Edit2, LogOut, UserPlus, MessageSquare, Ban
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -52,15 +52,11 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/dashboard');
       
       if (response.status === 401) {
-        // Non authentifié - rediriger vers la page de connexion
-        console.log('🔒 Non authentifié, redirection...');
         router.push('/?login=required');
         return;
       }
       
       if (response.status === 403) {
-        // Pas les droits admin
-        console.log('🚫 Accès refusé - rôle admin requis');
         router.push('/');
         return;
       }
@@ -184,11 +180,19 @@ export default function AdminDashboard() {
           </a>
 
           <a
-            href="/admin/settings"
+            href="/admin/messages"
             className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition-all group"
           >
-            <Settings className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span>Paramètres</span>
+            <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span>Messages</span>
+          </a>
+
+          <a
+            href="/admin/create-admin"
+            className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition-all group"
+          >
+            <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span>Créer un admin</span>
           </a>
         </nav>
 
@@ -381,7 +385,7 @@ export default function AdminDashboard() {
           {/* Actions Rapides */}
           <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-900 mb-6">Actions Rapides</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <button 
                 onClick={() => router.push('/admin/users')}
                 className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-2xl border-2 border-blue-200 hover:border-blue-400 transition-all group"
@@ -400,16 +404,31 @@ export default function AdminDashboard() {
                 <p className="text-sm text-slate-600">{stats.reports.pending} en attente</p>
               </button>
 
-              <button className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 rounded-2xl border-2 border-emerald-200 hover:border-emerald-400 transition-all group">
+              <button 
+                onClick={() => alert('Export des données — Fonctionnalité bientôt disponible')}
+                className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 rounded-2xl border-2 border-emerald-200 hover:border-emerald-400 transition-all group"
+              >
                 <Download className="w-8 h-8 text-emerald-600 mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="font-bold text-slate-900 mb-1">Export Données</h3>
-                <p className="text-sm text-slate-600">CSV, Excel, PDF</p>
+                <p className="text-sm text-slate-600">Bientôt disponible</p>
               </button>
 
-              <button className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-2xl border-2 border-purple-200 hover:border-purple-400 transition-all group">
+              <button 
+                onClick={() => alert('Paramètres système — Fonctionnalité bientôt disponible')}
+                className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-2xl border-2 border-purple-200 hover:border-purple-400 transition-all group"
+              >
                 <Settings className="w-8 h-8 text-purple-600 mb-3 group-hover:scale-110 transition-transform" />
                 <h3 className="font-bold text-slate-900 mb-1">Paramètres</h3>
-                <p className="text-sm text-slate-600">Configuration système</p>
+                <p className="text-sm text-slate-600">Bientôt disponible</p>
+              </button>
+
+              <button 
+                onClick={() => router.push('/admin/users?filter=block')}
+                className="p-6 bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 rounded-2xl border-2 border-red-200 hover:border-red-400 transition-all group"
+              >
+                <Ban className="w-8 h-8 text-red-600 mb-3 group-hover:scale-110 transition-transform" />
+                <h3 className="font-bold text-slate-900 mb-1">Bloquer Compte</h3>
+                <p className="text-sm text-slate-600">Gérer les blocages</p>
               </button>
             </div>
           </div>

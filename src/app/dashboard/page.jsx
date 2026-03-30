@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, Plus, Eye, Download, Edit2, Trash2, 
@@ -113,12 +113,12 @@ export default function UserDashboard() {
   
   // Actions
   const handleView = (report) => {
-    // Generer et telecharger le PDF
-    console.log('Voir rapport:', report);
+    // Rediriger vers la page principale pour voir/générer le PDF
+    router.push(`/?view=${report.id_rapport}`);
   };
   
   const handleEdit = (report) => {
-    router.push(`/reports/edit/${report.id}`);
+    router.push(`/?edit=${report.id_rapport}`);
   };
   
   const handleDelete = (report) => {
@@ -128,7 +128,7 @@ export default function UserDashboard() {
   
   const confirmDelete = async () => {
     try {
-      const response = await fetch(`/api/reports/${selectedReport.id}`, {
+      const response = await fetch(`/api/reports/${selectedReport.id_rapport}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Erreur suppression');
@@ -211,11 +211,11 @@ export default function UserDashboard() {
                 <span className="hidden md:inline">Accueil</span>
               </button>
               <button
-                onClick={() => router.push('/api/auth/signout')}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all shadow-lg"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden md:inline">Deconnexion</span>
+                <span className="hidden md:inline">Déconnexion</span>
               </button>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function UserDashboard() {
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <button
-              onClick={() => router.push('/reports/create')}
+              onClick={() => router.push('/reports/new')}
               className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5" />
@@ -336,11 +336,11 @@ export default function UserDashboard() {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun rapport trouve</h3>
             <p className="text-gray-600 mb-6">Commencez par creer votre premier rapport</p>
             <button
-              onClick={() => router.push('/reports/create')}
+              onClick={() => router.push('/reports/new')}
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg transition-all"
             >
               <Plus className="w-5 h-5" />
-              Creer un rapport
+              Créer un rapport
             </button>
           </div>
         ) : (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Users, Shield, FileText, Settings, BarChart3, Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Mail, Calendar, LogOut, Home, Edit2, Trash2, Ban, CheckCircle, Eye, UserCog, Bell, MessageSquare, Languages, Phone } from 'lucide-react';
+import { Users, Shield, FileText, Settings, BarChart3, Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Mail, Calendar, LogOut, Home, Edit2, Trash2, Ban, CheckCircle, Eye, Bell, MessageSquare, Languages, Phone, UserPlus } from 'lucide-react';
 
 // Dictionnaire de traductions
 const translations = {
@@ -45,8 +45,6 @@ const translations = {
     block: 'Bloquer',
     active: 'Actif',
     blocked: 'Bloqué',
-    promote: 'Promouvoir admin',
-    demote: 'Rétrograder user',
     changeRole: 'Changer le rôle',
     showing: 'Affichage',
     of: 'sur',
@@ -56,8 +54,6 @@ const translations = {
     confirmAction: 'Confirmer l\'action',
     confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?',
     confirmBlock: 'Êtes-vous sûr de vouloir bloquer cet utilisateur ?',
-    confirmPromote: 'Êtes-vous sûr de vouloir promouvoir cet utilisateur en admin ?',
-    confirmDemote: 'Êtes-vous sûr de vouloir rétrograder cet admin en utilisateur ?',
     confirmRoleChange: 'Êtes-vous sûr de vouloir changer le rôle de cet utilisateur ?',
     cancel: 'Annuler',
     confirm: 'Confirmer',
@@ -106,8 +102,6 @@ const translations = {
     block: 'Block',
     active: 'Active',
     blocked: 'Blocked',
-    promote: 'Promote to admin',
-    demote: 'Demote to user',
     changeRole: 'Change role',
     showing: 'Showing',
     of: 'of',
@@ -117,8 +111,6 @@ const translations = {
     confirmAction: 'Confirm Action',
     confirmDelete: 'Are you sure you want to delete this user?',
     confirmBlock: 'Are you sure you want to block this user?',
-    confirmPromote: 'Are you sure you want to promote this user to admin?',
-    confirmDemote: 'Are you sure you want to demote this admin to user?',
     confirmRoleChange: 'Are you sure you want to change this user\'s role?',
     cancel: 'Cancel',
     confirm: 'Confirm',
@@ -207,7 +199,7 @@ export default function AdminUsersPage() {
       const data = await response.json();
       setUsers(data);
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors du chargement des utilisateurs');
     } finally {
       setLoading(false);
     }
@@ -246,10 +238,9 @@ export default function AdminUsersPage() {
       const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: modalAction === 'delete' ? 'DELETE' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: modalAction,
-          status: modalAction === 'block' ? 'blocked' : 'active',
-          role: modalAction === 'promote' ? 'admin' : modalAction === 'demote' ? 'user' : undefined
+          status: modalAction === 'block' ? 'blocked' : 'active'
         })
       });
 
@@ -351,9 +342,12 @@ export default function AdminUsersPage() {
               )}
             </button>
 
-            <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200">
-              <Settings className="w-5 h-5" />
-              <span className="font-medium">{t.settings}</span>
+            <button
+              onClick={() => router.push('/admin/create-admin')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all duration-200"
+            >
+              <UserPlus className="w-5 h-5" />
+              <span className="font-medium">Créer un admin</span>
             </button>
           </nav>
 
@@ -560,6 +554,7 @@ export default function AdminUsersPage() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{t.phone}</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{t.type}</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{t.role}</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{t.status}</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{language === 'fr' ? 'Création' : 'Created'}</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{language === 'fr' ? 'Dernière connexion' : 'Last Login'}</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">{t.actions}</th>
@@ -623,6 +618,19 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {user.status === 'blocked' ? (
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-md">
+                            <Ban className="w-3 h-3 mr-1.5" />
+                            {t.blocked}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md">
+                            <CheckCircle className="w-3 h-3 mr-1.5" />
+                            {t.active}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4 text-slate-400" />
                           <span className="text-sm text-slate-700">
@@ -650,24 +658,6 @@ export default function AdminUsersPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                           
-                          {(user.role || 'user') === 'user' ? (
-                            <button
-                              onClick={() => handleUserAction('promote', user)}
-                              className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all"
-                              title="Promouvoir admin"
-                            >
-                              <UserCog className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleUserAction('demote', user)}
-                              className="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-all"
-                              title="Rétrograder user"
-                            >
-                              <Users className="w-4 h-4" />
-                            </button>
-                          )}
-
                           {user.status !== 'blocked' ? (
                             <button
                               onClick={() => handleUserAction('block', user)}
@@ -770,8 +760,6 @@ export default function AdminUsersPage() {
                 {modalAction === 'delete' && (language === 'fr' ? 'Supprimer l\'utilisateur' : 'Delete User')}
                 {modalAction === 'block' && (language === 'fr' ? 'Bloquer l\'utilisateur' : 'Block User')}
                 {modalAction === 'unblock' && (language === 'fr' ? 'Débloquer l\'utilisateur' : 'Unblock User')}
-                {modalAction === 'promote' && (language === 'fr' ? 'Promouvoir en Admin' : 'Promote to Admin')}
-                {modalAction === 'demote' && (language === 'fr' ? 'Rétrograder en User' : 'Demote to User')}
                 {modalAction === 'view' && (language === 'fr' ? 'Détails de l\'utilisateur' : 'User Details')}
               </h3>
               <button 
@@ -836,8 +824,6 @@ export default function AdminUsersPage() {
                   {modalAction === 'delete' && (language === 'fr' ? 'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.' : 'Are you sure you want to delete this user? This action is irreversible.')}
                   {modalAction === 'block' && (language === 'fr' ? 'Cet utilisateur ne pourra plus se connecter.' : 'This user will no longer be able to log in.')}
                   {modalAction === 'unblock' && (language === 'fr' ? 'Cet utilisateur pourra à nouveau se connecter.' : 'This user will be able to log in again.')}
-                  {modalAction === 'promote' && (language === 'fr' ? 'Cet utilisateur aura accès au dashboard administrateur.' : 'This user will have access to the admin dashboard.')}
-                  {modalAction === 'demote' && (language === 'fr' ? 'Cet utilisateur perdra ses privilèges administrateur.' : 'This user will lose their admin privileges.')}
                 </p>
 
                 <div className="flex gap-3">

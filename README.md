@@ -1,23 +1,34 @@
 ﻿# 📊 Online Report System (SGTEC)
 
-Application Next.js moderne avec système d'authentification complet permettant la création, gestion et génération de rapports professionnels au format PDF.
+Application Next.js moderne avec système d'authentification complet permettant la création, gestion et génération de rapports **de chantier** professionnels au format PDF.
+
+## 🎯 Rôle complet du site
+
+- **Digitaliser les rapports de chantier** (Next.js, React, MySQL/MariaDB, jsPDF) : remplacer les comptes-rendus papier ou Excel par une solution web centralisée.
+- **Standardiser la rédaction des comptes-rendus** (Next.js, React, Tailwind CSS) : imposer une structure unique pour tous les rapports de chantier (infos chantier, équipe, matériel, avancement, incidents, photos, etc.).
+- **Assurer la traçabilité des interventions** (MySQL/MariaDB, timestamps SQL, JWT) : historiser la création, modification et suppression des rapports, avec lien à chaque utilisateur et à chaque chantier.
+- **Faciliter la collaboration terrain / bureau** (Next.js, NextAuth.js, rôles user/admin) : permettre aux techniciens, conducteurs de travaux et responsables de consulter et exploiter les mêmes rapports.
+- **Fournir des livrables professionnels au client** (jsPDF, jsPDF-AutoTable) : générer automatiquement des PDF propres, paginés, prêts à être envoyés au maître d’ouvrage ou archivés.
+- **Superviser l’activité des chantiers** (Dashboard Next.js, MySQL/MariaDB) : offrir aux administrateurs une vision d’ensemble des chantiers, rapports et utilisateurs (dashboard, statistiques).
+- **Sécuriser les informations sensibles de chantier** (NextAuth.js, bcryptjs, middleware Next.js) : contrôler l’accès par authentification, rôles (user/admin) et bonnes pratiques de sécurité (hash des mots de passe, CSRF, XSS, etc.).
+- **Centraliser les données chantiers** (MySQL/MariaDB, schéma SQL) : stocker tous les rapports dans une base de données unique pour faciliter la recherche, le suivi et les audits.
 
 ## 🚀 Fonctionnalités principales
 
 ### 🔐 Authentification & Sécurité
-- ✅ **Google OAuth 2.0** - Connexion rapide avec votre compte Google
-- ✅ **Authentification locale** - Système de connexion classique avec email/mot de passe
-- ✅ **NextAuth.js** - Gestion sécurisée des sessions
-- ✅ **Sécurité avancée** - Validation, sanitisation, protection CSRF
-- ✅ **Middleware de sécurité** - Protection des routes sensibles
+- ✅ **Google OAuth 2.0** (NextAuth.js, API Google OAuth 2.0) - Connexion rapide avec votre compte Google
+- ✅ **Authentification locale** (NextAuth.js Credentials, bcryptjs, MySQL) - Système de connexion classique avec email/mot de passe
+- ✅ **NextAuth.js** (NextAuth.js, JWT) - Gestion sécurisée des sessions
+- ✅ **Sécurité avancée** (Next.js, validations & sanitisation côté serveur) - Validation, sanitisation, protection CSRF
+- ✅ **Middleware de sécurité** (Next.js Middleware) - Protection des routes sensibles
 
 ### 📝 Gestion des rapports
-- ✅ **CRUD complet** - Créer, lire, modifier, supprimer des rapports
-- ✅ **Upload d'images** - Images de couverture avec redimensionnement automatique
-- ✅ **Tableaux structurés** - Investigation et autres points avec photos
-- ✅ **Génération PDF professionnelle** - Avec jsPDF + autotable
-- ✅ **Pagination avancée** - Page de garde non numérotée
-- ✅ **Filtrage intelligent** - Seules les données pertinentes sont incluses
+- ✅ **CRUD complet** (Next.js API Routes, MySQL/MariaDB) - Créer, lire, modifier, supprimer des rapports
+- ✅ **Upload d'images** (Next.js File API) - Images de couverture avec redimensionnement automatique
+- ✅ **Tableaux structurés** (React, Tailwind CSS) - Investigation et autres points avec photos
+- ✅ **Génération PDF professionnelle** (jsPDF, jsPDF-AutoTable) - Avec jsPDF + autotable
+- ✅ **Pagination avancée** (jsPDF) - Page de garde non numérotée
+- ✅ **Filtrage intelligent** (MySQL/MariaDB, requêtes filtrées) - Seules les données pertinentes sont incluses
 
 ### 👥 Administration
 - ✅ **Dashboard admin** - Gestion des utilisateurs et rapports
@@ -27,9 +38,9 @@ Application Next.js moderne avec système d'authentification complet permettant 
 ## ⚡ Installation rapide
 
 ### Prérequis
-- Node.js 18+ 
-- MySQL/MariaDB
-- Compte Google Developer (pour OAuth)
+- Node.js 20 (voir `engines` dans package.json)
+- MySQL 8+ ou MariaDB 10.5+
+- Compte Google Developer (optionnel, pour OAuth Google)
 
 ### 1. Cloner le projet
 ```bash
@@ -44,44 +55,50 @@ npm install
 
 ### 3. Configuration de la base de données
 
-#### Créer la base de données MySQL
-```sql
-CREATE DATABASE onlinereports CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+Le script crée automatiquement la base, les tables et les rôles par défaut :
 
-#### Exécuter les scripts d'initialisation
 ```bash
-# Initialiser les tables
+# Crée la base "onlinereports" + toutes les tables + rôles
 node scripts/init-database.js
 
-# Créer les rôles admin (optionnel)
-node scripts/init-roles.js
+# Créer le compte administrateur (admin@sgtec.com / Admin@123)
+node scripts/create-admin.js
 ```
+
+> 💡 Le schéma SQL complet se trouve dans `database/schema.sql` si vous préférez l'exécuter manuellement :
+> ```bash
+> mysql -u root -p < database/schema.sql
+> ```
 
 ### 4. Configuration des variables d'environnement
 
-Créer un fichier `.env.local` à la racine du projet :
+Copiez le template puis éditez-le avec vos valeurs :
+
+```bash
+cp env.template .env.local
+```
+
+Variables minimales pour le développement local :
 
 ```env
-# Configuration MySQL
+# MySQL local
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=votre_mot_de_passe
+DB_PASSWORD=
 DB_NAME=onlinereports
 DB_PORT=3306
+USE_LOCAL_DB=true
 
-# Clé secrète pour JWT
-JWT_SECRET=votre_cle_secrete_tres_longue_et_aleatoire
-
-# Configuration NextAuth
+# NextAuth (OBLIGATOIRE)
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=votre_secret_nextauth_aleatoire
+NEXTAUTH_SECRET=une-chaine-aleatoire-de-32-caracteres-minimum
 
-# Configuration Google OAuth (voir section suivante)
+# Google OAuth (optionnel)
 GOOGLE_CLIENT_ID=votre_google_client_id
 GOOGLE_CLIENT_SECRET=votre_google_client_secret
-NEXT_PUBLIC_GOOGLE_OAUTH_CONFIGURED=true
 ```
+
+> 📝 Voir `env.template` pour la liste complète des variables disponibles.
 
 ### 5. Configuration Google OAuth
 
@@ -102,33 +119,26 @@ L'application sera accessible sur : **http://localhost:3000**
 
 ## 🗄️ Structure de la base de données
 
-### Table `utilisateur`
-```sql
-CREATE TABLE utilisateur (
-  user_id INT PRIMARY KEY AUTO_INCREMENT,
-  nom VARCHAR(100) NOT NULL,
-  prenom VARCHAR(100) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  mot_de_passe VARCHAR(255), -- Peut être NULL pour les comptes Google
-  google_id VARCHAR(255) UNIQUE, -- Pour les comptes Google OAuth
-  role ENUM('user', 'admin') DEFAULT 'user',
-  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  derniere_connexion TIMESTAMP NULL
-);
-```
+> 📄 Schéma complet : [`database/schema.sql`](database/schema.sql)
 
-### Table `rapports`
-```sql
-CREATE TABLE rapports (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  titre VARCHAR(255) NOT NULL,
-  contenu JSON NOT NULL,
-  image_couverture TEXT,
-  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES utilisateur(user_id) ON DELETE CASCADE
-);
+### Tables principales
+
+| Table | Description |
+|-------|-------------|
+| `Role` | Rôles (Administrateur, Utilisateur) |
+| `Utilisateur` | Comptes utilisateurs (credentials + Google OAuth) |
+| `Rapport` | Rapports de chantier |
+| `DonneesFormulaire` | Champs dynamiques des rapports (clé-valeur) |
+| `ImageCouverture` | Images de couverture des rapports |
+| `HistoriqueTelechargement` | Historique des téléchargements PDF |
+| `Message` | Messages de contact / support |
+| `Notification` | Notifications système |
+
+### Relations
+```
+Role (1) ──── (N) Utilisateur (1) ──── (N) Rapport (1) ──── (N) DonneesFormulaire
+                                        │                └──── (N) ImageCouverture
+                                        └──── (N) HistoriqueTelechargement
 ```
 
 ## 🎯 Utilisation
@@ -140,15 +150,16 @@ CREATE TABLE rapports (
    - **Connexion Google** (recommandé)
    - **Créer un compte local**
 
-### Créer un rapport
-1. Une fois connecté, cliquez sur "Nouveau rapport"
+### Créer un rapport de chantier
+1. Une fois connecté, cliquez sur "Nouveau rapport".
 2. Remplissez les sections :
-   - Informations générales
-   - Équipe et matériel
-   - Tableaux d'investigation
-   - Autres points
-3. Ajoutez des photos si nécessaire
-4. Générez le PDF professionnel
+   - Informations chantier (client, localisation, date, numéro de chantier, etc.)
+   - Équipe et matériel présents sur site
+   - Suivi d'avancement et observations
+   - Incidents / non-conformités et actions correctives
+   - Autres points et remarques
+3. Ajoutez des photos du chantier si nécessaire.
+4. Générez le PDF professionnel pour partage ou archivage.
 
 ### Administration
 - Les comptes admin peuvent accéder à `/admin/users`
@@ -158,11 +169,11 @@ CREATE TABLE rapports (
 ## 🔧 Scripts utiles
 
 ```bash
-# Créer un utilisateur de test
-node scripts/create-test-user.js
+# Initialiser la base de données (crée les tables + rôles)
+node scripts/init-database.js
 
-# Vérifier la sécurité
-node security-check.js
+# Créer le compte administrateur
+node scripts/create-admin.js
 
 # Build pour production
 npm run build

@@ -89,8 +89,6 @@ export async function GET(request) {
       activity: recentActivity || []
     };
 
-    console.log('📊 Statistiques dashboard:', stats);
-
     return NextResponse.json(stats);
 
   } catch (error) {

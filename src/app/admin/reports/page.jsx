@@ -64,14 +64,12 @@ export default function AdminReportsPage() {
       
       if (response.status === 401) {
         // Non authentifié - rediriger vers la page de connexion
-        console.log('🔒 Non authentifié, redirection...');
         router.push('/?login=required');
         return;
       }
       
       if (response.status === 403) {
         // Pas les droits admin
-        console.log('🚫 Accès refusé - rôle admin requis');
         router.push('/');
         return;
       }
@@ -144,7 +142,7 @@ export default function AdminReportsPage() {
         // Notification succès
         alert(`Rapport ${validationType === 'valide' ? 'validé' : 'rejeté'} avec succès!`);
       } else {
-        alert('Erreur: ' + data.error);
+        alert('Erreur lors du traitement du rapport');
       }
     } catch (error) {
       console.error('Erreur validation:', error);

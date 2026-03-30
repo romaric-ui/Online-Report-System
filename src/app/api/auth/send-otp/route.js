@@ -31,8 +31,8 @@ async function getDbConnection() {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'votre-email@gmail.com',
-    pass: process.env.EMAIL_PASSWORD || 'votre-mot-de-passe-app',
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
@@ -69,7 +69,7 @@ export async function POST(request) {
 
     // Envoyer l'email
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'votre-email@gmail.com',
+      from: process.env.EMAIL_USER,
       to: email,
       subject: 'Code de vérification - Online Report',
       html: `
@@ -151,8 +151,6 @@ export async function POST(request) {
     };
 
     await transporter.sendMail(mailOptions);
-
-    console.log('✅ OTP envoyé à:', email, '- Code:', otp);
 
     return NextResponse.json({
       success: true,

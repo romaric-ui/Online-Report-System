@@ -143,15 +143,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        {/* Retour au site */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => router.push('/')}
-            className="text-slate-400 hover:text-white transition-colors text-sm"
-          >
-            ← Retour à l'accueil
-          </button>
-        </div>
+
       </div>
     </div>
   );

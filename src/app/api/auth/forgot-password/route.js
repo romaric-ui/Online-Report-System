@@ -166,12 +166,11 @@ export async function POST(request) {
     });
     
   } catch (error) {
-    console.error('❌ Erreur mot de passe oublié:', error);
+    console.error('Erreur mot de passe oublié:', error.message);
     
     return Response.json({
       success: false,
-      error: 'Erreur lors de l\'envoi du lien de réinitialisation',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Erreur lors de l\'envoi du lien de réinitialisation'
     }, { status: 500 });
   }
 }

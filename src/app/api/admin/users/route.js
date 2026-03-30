@@ -1,180 +1,210 @@
-import mysql from 'mysql2/promise';
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
+import { connectDB } from '../../../../../lib/database';
+import { validateEmail, validateName, validateId } from '../../../../../lib/security';
 
-// Configuration de la base de données
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: 'onlinereports', // Forcer la base de données locale
-  port: 3306
-};
+// Helper : vérifier que l'appelant est admin
+async function requireAdmin() {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'admin') {
+    return { authorized: false, session: null };
+  }
+  return { authorized: true, session };
+}
 
 // GET - Récupérer tous les utilisateurs
 export async function GET() {
-  let connection;
-  
   try {
-    connection = await mysql.createConnection(dbConfig);
-    
-    // Récupérer tous les utilisateurs avec leurs informations de base
-    const [users] = await connection.execute(`
+    const { authorized } = await requireAdmin();
+    if (!authorized) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+
+    const db = await connectDB();
+
+    // Récupérer tous les utilisateurs avec leur rôle via la table Role
+    const [users] = await db.execute(`
       SELECT 
-        id_utilisateur as id, 
-        nom, 
-        prenom, 
-        email, 
-        google_id,
-        date_creation,
-        derniere_connexion
-      FROM utilisateur 
-      ORDER BY date_creation DESC
+        u.id_utilisateur as id, 
+        u.nom, 
+        u.prenom, 
+        u.email,
+        u.telephone,
+        u.statut,
+        u.provider_id as google_id,
+        u.provider,
+        u.date_creation,
+        u.derniere_connexion,
+        r.nom_role as role
+      FROM Utilisateur u
+      LEFT JOIN Role r ON u.id_role = r.id_role
+      ORDER BY u.date_creation DESC
     `);
 
-    // Statistiques
-    const totalUsers = users.length;
-    const googleUsers = users.filter(u => u.google_id).length;
-    const localUsers = users.filter(u => !u.google_id).length;
+    // Normaliser le rôle pour le frontend
+    const normalizedUsers = users.map(u => ({
+      ...u,
+      role: u.role === 'Administrateur' ? 'admin' : 'user',
+      status: u.statut === 'bloque' ? 'blocked' : 'active'
+    }));
 
-    console.log('📊 Statistiques utilisateurs:', {
-      total: totalUsers,
-      google: googleUsers,
-      local: localUsers
-    });
+    return NextResponse.json(normalizedUsers);
 
-    return Response.json(users);
-    
   } catch (error) {
-    console.error('❌ Erreur API admin/users GET:', error);
-    return Response.json(
+    console.error('Erreur API admin/users GET:', error.message);
+    return NextResponse.json(
       { error: 'Erreur lors du chargement des utilisateurs' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
-// PUT - Modifier un utilisateur
+// PUT - Modifier un utilisateur (nom, prénom, email)
 export async function PUT(request) {
-  let connection;
-  
   try {
-    const { id, nom, prenom, email } = await request.json();
-    
-    if (!id) {
-      return Response.json(
-        { error: 'ID utilisateur requis' },
-        { status: 400 }
-      );
+    const { authorized } = await requireAdmin();
+    if (!authorized) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    connection = await mysql.createConnection(dbConfig);
-    
-    // Construire la requête de mise à jour
+    const body = await request.json();
+    const { id, nom, prenom, email } = body;
+
+    // Validation de l'ID
+    const idValidation = validateId(id, 'ID utilisateur');
+    if (!idValidation.isValid) {
+      return NextResponse.json({ error: idValidation.error }, { status: 400 });
+    }
+
+    // Construire la requête de mise à jour avec validation
     const updates = [];
     const values = [];
-    
+
     if (nom !== undefined) {
+      const nomValidation = validateName(nom, 'Nom');
+      if (!nomValidation.isValid) {
+        return NextResponse.json({ error: nomValidation.error }, { status: 400 });
+      }
       updates.push('nom = ?');
-      values.push(nom);
+      values.push(nomValidation.value);
     }
+
     if (prenom !== undefined) {
+      const prenomValidation = validateName(prenom, 'Prénom');
+      if (!prenomValidation.isValid) {
+        return NextResponse.json({ error: prenomValidation.error }, { status: 400 });
+      }
       updates.push('prenom = ?');
-      values.push(prenom);
+      values.push(prenomValidation.value);
     }
+
     if (email !== undefined) {
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        return NextResponse.json({ error: emailValidation.error }, { status: 400 });
+      }
       updates.push('email = ?');
-      values.push(email);
+      values.push(emailValidation.value);
     }
-    
+
     if (updates.length === 0) {
-      return Response.json(
-        { error: 'Aucune donnée à modifier' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Aucune donnée à modifier' }, { status: 400 });
     }
-    
-    values.push(id);
-    
-    await connection.execute(
-      `UPDATE utilisateur SET ${updates.join(', ')} WHERE id_utilisateur = ?`,
+
+    const db = await connectDB();
+
+    // Vérifier que l'utilisateur existe
+    const [existing] = await db.execute(
+      'SELECT id_utilisateur FROM Utilisateur WHERE id_utilisateur = ?',
+      [idValidation.value]
+    );
+    if (existing.length === 0) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
+
+    // Si changement d'email, vérifier l'unicité
+    if (email !== undefined) {
+      const [duplicate] = await db.execute(
+        'SELECT id_utilisateur FROM Utilisateur WHERE email = ? AND id_utilisateur != ?',
+        [email.trim().toLowerCase(), idValidation.value]
+      );
+      if (duplicate.length > 0) {
+        return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 });
+      }
+    }
+
+    values.push(idValidation.value);
+
+    await db.execute(
+      `UPDATE Utilisateur SET ${updates.join(', ')} WHERE id_utilisateur = ?`,
       values
     );
 
-    console.log('✅ Utilisateur modifié:', id);
-
-    return Response.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Utilisateur modifié avec succès'
     });
-    
+
   } catch (error) {
-    console.error('❌ Erreur API admin/users PUT:', error);
-    return Response.json(
+    console.error('Erreur API admin/users PUT:', error.message);
+    return NextResponse.json(
       { error: 'Erreur lors de la modification de l\'utilisateur' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
 // DELETE - Supprimer un utilisateur
 export async function DELETE(request) {
-  let connection;
-  
   try {
+    const { authorized, session } = await requireAdmin();
+    if (!authorized) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return Response.json(
-        { error: 'ID utilisateur requis' },
+    const rawId = searchParams.get('id');
+
+    const idValidation = validateId(rawId, 'ID utilisateur');
+    if (!idValidation.isValid) {
+      return NextResponse.json({ error: idValidation.error }, { status: 400 });
+    }
+
+    // Empêcher l'auto-suppression
+    if (parseInt(session.user.id) === idValidation.value) {
+      return NextResponse.json(
+        { error: 'Vous ne pouvez pas supprimer votre propre compte' },
         { status: 400 }
       );
     }
 
-    connection = await mysql.createConnection(dbConfig);
-    
+    const db = await connectDB();
+
     // Vérifier si l'utilisateur existe
-    const [users] = await connection.execute(
-      'SELECT id_utilisateur FROM utilisateur WHERE id_utilisateur = ?',
-      [id]
+    const [users] = await db.execute(
+      'SELECT id_utilisateur FROM Utilisateur WHERE id_utilisateur = ?',
+      [idValidation.value]
     );
-    
+
     if (users.length === 0) {
-      return Response.json(
-        { error: 'Utilisateur non trouvé' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
-    
-    // Supprimer l'utilisateur
-    await connection.execute(
-      'DELETE FROM utilisateur WHERE id_utilisateur = ?',
-      [id]
-    );
 
-    console.log('🗑️ Utilisateur supprimé:', id);
+    // Supprimer les données liées puis l'utilisateur
+    await db.execute('DELETE FROM Rapport WHERE id_utilisateur = ?', [idValidation.value]);
+    await db.execute('DELETE FROM Utilisateur WHERE id_utilisateur = ?', [idValidation.value]);
 
-    return Response.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Utilisateur supprimé avec succès'
     });
-    
+
   } catch (error) {
-    console.error('❌ Erreur API admin/users DELETE:', error);
-    return Response.json(
+    console.error('Erreur API admin/users DELETE:', error.message);
+    return NextResponse.json(
       { error: 'Erreur lors de la suppression de l\'utilisateur' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }

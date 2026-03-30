@@ -69,8 +69,6 @@ export async function POST(request) {
 
     await connection.end();
 
-    console.log('✅ Email vérifié pour:', email);
-
     return NextResponse.json({
       success: true,
       message: 'Email vérifié avec succès',

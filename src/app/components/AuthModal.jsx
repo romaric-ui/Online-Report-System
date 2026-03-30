@@ -80,6 +80,9 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
         });
 
         if (!result?.ok) {
+          if (result?.error === 'ACCOUNT_BLOCKED') {
+            throw new Error('ACCOUNT_BLOCKED');
+          }
           throw new Error(result?.error || 'Email ou mot de passe incorrect');
         }
 
@@ -97,7 +100,11 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
         }
       }
     } catch (error) {
-      setError(error.message);
+      if (error.message === 'ACCOUNT_BLOCKED') {
+        setError('Votre compte a été bloqué. Veuillez contacter le service client.');
+      } else {
+        setError('Une erreur est survenue. Veuillez réessayer.');
+      }
     } finally {
       setLoading(false);
     }
@@ -308,6 +315,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
                 nom: '',
                 prenom: '',
                 email: '',
+                telephone: '',
                 password: '',
                 confirmPassword: ''
               });

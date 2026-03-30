@@ -1,40 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 
 export default function NotificationCenter() {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [nonLuesCount, setNonLuesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all' ou 'unread'
 
-  // Charger les notifications
-  const loadNotifications = async () => {
+  // Charger les notifications (seulement si authentifié)
+  const loadNotifications = useCallback(async () => {
+    if (status !== 'authenticated') return;
+    
     try {
       setLoading(true);
       const params = filter === 'unread' ? '?nonLues=true' : '';
       const response = await fetch(`/api/user/notifications${params}`);
+      
+      if (!response.ok) return;
       const data = await response.json();
 
       if (data.success) {
-        setNotifications(data.notifications);
-        setNonLuesCount(data.nonLuesCount);
+        setNotifications(data.notifications || []);
+        setNonLuesCount(data.nonLuesCount || 0);
       }
     } catch (error) {
-      console.error('Erreur chargement notifications:', error);
+      // Silencieux en cas d'erreur réseau
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, filter]);
 
-  // Charger au montage et toutes les 30 secondes
+  // Charger au montage et toutes les 30 secondes (seulement si authentifié)
   useEffect(() => {
+    if (status !== 'authenticated') return;
+    
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
-  }, [filter]);
+  }, [status, filter, loadNotifications]);
 
   // Marquer une notification comme lue
   const marquerCommeLue = async (id) => {

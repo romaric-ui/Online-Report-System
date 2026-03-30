@@ -47,40 +47,43 @@ export const authOptions = {
           const connection = await getDbConnection();
           
           const [users] = await connection.execute(
-            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.mot_de_passe, u.provider, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
+            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.mot_de_passe, u.statut, u.provider, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
             [credentials.email]
           );
           
           await connection.end();
           
           if (users.length === 0) {
-            console.log('❌ Utilisateur non trouvé:', credentials.email);
             return null;
           }
           
           const user = users[0];
           
+          // Vérifier si le compte est bloqué
+          if (user.statut === 'bloque') {
+            throw new Error('ACCOUNT_BLOCKED');
+          }
+          
           // Vérifier le mot de passe
           const isValid = await bcrypt.compare(credentials.password, user.mot_de_passe);
           
           if (!isValid) {
-            console.log('❌ Mot de passe incorrect pour:', credentials.email);
             return null;
           }
           
-          console.log('✅ Connexion credentials réussie:', {
-            email: user.email,
-            role: user.nom_role
-          });
+          // Normaliser le rôle : 'Administrateur' → 'admin', sinon → 'user'
+          const normalizedRole = user.nom_role === 'Administrateur' ? 'admin' : 'user';
           
           return {
             id: user.id_utilisateur.toString(),
             email: user.email,
             name: `${user.prenom} ${user.nom}`,
-            role: user.nom_role
+            role: normalizedRole
           };
         } catch (error) {
-          console.error('❌ Erreur authorize:', error);
+          if (error.message === 'ACCOUNT_BLOCKED') {
+            throw error; // Propager pour que NextAuth renvoie l'erreur au client
+          }
           return null;
         }
       }
@@ -105,22 +108,29 @@ export const authOptions = {
           
           // Vérifier si l'utilisateur existe déjà
           const [existingUsers] = await connection.execute(
-            'SELECT * FROM Utilisateur WHERE email = ?',
+            'SELECT id_utilisateur, id_role, provider, provider_id FROM Utilisateur WHERE email = ?',
             [user.email]
           );
 
-          if (existingUsers.length === 0) {
-            // Créer un nouvel utilisateur Google dans notre base de données
-            const hashedPassword = await bcrypt.hash(user.id + 'google_oauth', 10); // Mot de passe unique basé sur Google ID
-            
-            console.log('🆕 Création nouvel utilisateur Google:', {
-              email: user.email,
-              nom: profile.family_name || user.name.split(' ').pop() || 'Utilisateur',
-              prenom: profile.given_name || user.name.split(' ')[0] || 'Google'
-            });
+          if (existingUsers.length > 0) {
+            // Vérifier si le compte est bloqué
+            const existingUser = existingUsers[0];
+            const [statusCheck] = await connection.execute(
+              'SELECT statut FROM Utilisateur WHERE id_utilisateur = ?',
+              [existingUser.id_utilisateur]
+            );
+            if (statusCheck.length > 0 && statusCheck[0].statut === 'bloque') {
+              await connection.end();
+              return '/api/auth/signin?error=ACCOUNT_BLOCKED';
+            }
+          }
 
-            const [result] = await connection.execute(
-              'INSERT INTO Utilisateur (nom, prenom, email, mot_de_passe, provider_id, provider) VALUES (?, ?, ?, ?, ?, ?)',
+          if (existingUsers.length === 0) {
+            // Créer un nouvel utilisateur Google (toujours rôle utilisateur = 2)
+            const hashedPassword = await bcrypt.hash(user.id + 'google_oauth', 10);
+
+            await connection.execute(
+              'INSERT INTO Utilisateur (nom, prenom, email, mot_de_passe, provider_id, provider, id_role) VALUES (?, ?, ?, ?, ?, ?, 2)',
               [
                 profile.family_name || user.name.split(' ').pop() || 'Utilisateur',
                 profile.given_name || user.name.split(' ')[0] || 'Google',
@@ -131,23 +141,25 @@ export const authOptions = {
               ]
             );
 
-            console.log('✅ Utilisateur Google créé avec ID:', result.insertId);
           } else {
-            // Utilisateur existe déjà, lier le compte Google si pas encore fait
             const existingUser = existingUsers[0];
             
+            // SÉCURITÉ : Bloquer la connexion Google si le compte est admin
+            // L'admin ne peut se connecter que par email/mot de passe
+            if (existingUser.id_role === 1) {
+              await connection.end();
+              return false;
+            }
+
+            // Lier le compte Google si pas encore fait (utilisateurs normaux uniquement)
             if (!existingUser.provider_id) {
-              console.log('🔗 Liaison compte Google existant:', user.email);
-              
               await connection.execute(
                 'UPDATE Utilisateur SET provider_id = ?, provider = ? WHERE email = ?',
                 [user.id, 'google', user.email]
               );
             } else {
-              console.log('✅ Compte Google déjà lié pour:', user.email);
             }
 
-            console.log('✅ Connexion Google réussie pour:', user.email);
           }
 
           await connection.end();
@@ -164,7 +176,7 @@ export const authOptions = {
         try {
           const connection = await getDbConnection();
           const [users] = await connection.execute(
-            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.provider_id, u.provider, u.date_creation, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
+            'SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.id_role, u.provider_id, u.provider, u.date_creation, r.nom_role FROM Utilisateur u LEFT JOIN Role r ON u.id_role = r.id_role WHERE u.email = ?',
             [user.email]
           );
           
@@ -175,15 +187,10 @@ export const authOptions = {
             token.prenom = dbUser.prenom;
             token.email = dbUser.email;
             token.provider_id = dbUser.provider_id;
-            token.role = dbUser.nom_role || 'user';
             token.isGoogleUser = dbUser.provider === 'google';
-            
-            console.log('🔐 Token JWT créé pour utilisateur:', {
-              id: dbUser.id_utilisateur,
-              email: dbUser.email,
-              role: dbUser.nom_role,
-              isGoogle: dbUser.provider === 'google'
-            });
+
+            // Normaliser le rôle : 'Administrateur' → 'admin', sinon → 'user'
+            token.role = dbUser.id_role === 1 ? 'admin' : 'user';
           }
           
           await connection.end();
@@ -201,14 +208,6 @@ export const authOptions = {
         session.user.email = token.email;
         session.user.role = token.role || 'user';
         session.user.isGoogleUser = token.isGoogleUser;
-        
-        console.log('👤 Session utilisateur:', {
-          id: session.user.id,
-          email: session.user.email,
-          nom: session.user.nom,
-          role: session.user.role,
-          isGoogle: session.user.isGoogleUser
-        });
       }
       return session;
     }
@@ -218,7 +217,7 @@ export const authOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 jours
+    maxAge: 24 * 60 * 60, // 24 heures
     updateAge: 24 * 60 * 60, // 24 heures
   },
   secret: process.env.NEXTAUTH_SECRET,

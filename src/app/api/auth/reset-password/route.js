@@ -85,12 +85,11 @@ export async function POST(request) {
     });
     
   } catch (error) {
-    console.error('❌ Erreur réinitialisation mot de passe:', error);
+    console.error('Erreur réinitialisation mot de passe:', error.message);
     
     return Response.json({
       success: false,
-      error: 'Erreur lors de la réinitialisation du mot de passe',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Erreur lors de la réinitialisation du mot de passe'
     }, { status: 500 });
   }
 }

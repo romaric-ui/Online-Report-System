@@ -15,59 +15,61 @@ export default function LandingFAQ() {
       questions: [
         {
           q: "Qu'est-ce que SGTEC ?",
-          a: "SGTEC (Société de Gestion des Travaux et Encadrement de Chantier) est une plateforme de gestion de rapports de chantier. Elle digitalise vos processus de suivi, génère des rapports PDF professionnels et centralise toutes vos données de construction."
+          a: "SGTEC est une application web de gestion de rapports de chantier. Elle vous permet de créer des comptes-rendus structurés en ligne et de générer des PDF professionnels prêts à envoyer au client ou au maître d'ouvrage.",
         },
         {
-          q: "Pour qui est destinée cette solution ?",
-          a: "Notre plateforme s'adresse aux entreprises du BTP, chefs de chantier, conducteurs de travaux, architectes et bureaux d'études qui souhaitent moderniser leur gestion documentaire."
-        }
-      ]
+          q: "À qui s'adresse cette application ?",
+          a: "Aux entreprises du BTP, chefs de chantier, conducteurs de travaux et bureaux d'études qui veulent remplacer les rapports papier ou Excel par un outil web simple et structuré.",
+        },
+      ],
     },
     {
-      category: "Fonctionnalités",
+      category: "Utilisation",
       questions: [
         {
           q: "Comment créer un rapport ?",
-          a: "Connectez-vous, cliquez sur 'Nouveau rapport', renseignez les informations du chantier (entreprise, phase, équipe, matériel), puis générez le PDF en un clic. Le tout en moins de 2 minutes."
+          a: "Connectez-vous, cliquez sur « Nouveau rapport », remplissez les champs (client, localisation, phase, équipe, matériel, avancement, incidents) puis cliquez sur « Générer PDF ». Le document est prêt en quelques secondes.",
         },
         {
-          q: "Puis-je personnaliser mes rapports ?",
-          a: "Oui, vous pouvez ajouter votre logo, personnaliser les couleurs, ajouter des photos de couverture et adapter les champs selon vos besoins spécifiques."
+          q: "Quelles informations contient un rapport ?",
+          a: "Chaque rapport inclut : les informations du chantier (client, localisation, date, phase), l'équipe et le matériel présents, l'avancement des travaux, les incidents ou non-conformités, les observations, et éventuellement des photos.",
         },
         {
-          q: "Les rapports sont-ils modifiables ?",
-          a: "Absolument. Vous pouvez modifier vos rapports à tout moment, régénérer les PDFs et conserver un historique complet des versions."
-        }
-      ]
+          q: "Puis-je modifier un rapport après l'avoir créé ?",
+          a: "Oui, vos rapports restent modifiables depuis votre tableau de bord. Vous pouvez mettre à jour les informations et regénérer le PDF à tout moment.",
+        },
+      ],
     },
     {
-      category: "Sécurité & Données",
+      category: "Compte & Sécurité",
       questions: [
+        {
+          q: "Comment créer un compte ?",
+          a: "Vous pouvez vous inscrire avec votre email (un code de vérification vous sera envoyé) ou vous connecter directement avec votre compte Google.",
+        },
         {
           q: "Mes données sont-elles sécurisées ?",
-          a: "Oui. Nous utilisons un chiffrement SSL/TLS, des mots de passe hashés (bcrypt), et notre infrastructure est hébergée sur des serveurs certifiés avec sauvegardes quotidiennes automatiques."
+          a: "Oui. Les mots de passe sont hashés avec bcrypt, les sessions utilisent des tokens JWT, et toutes les entrées sont validées côté serveur pour prévenir les injections SQL et les attaques XSS. Chaque utilisateur n'a accès qu'à ses propres rapports.",
         },
-        
-      ]
+      ],
     },
     {
-      category: "Tarifs & Support",
+      category: "Support",
       questions: [
         {
-          q: "Quels sont les tarifs ?",
-          a: "Nous proposons un essai gratuit, puis des formules à partir de 19€/mois. Contactez-nous pour une offre sur mesure adaptée à la taille de votre entreprise."
+          q: "L'application est-elle gratuite ?",
+          a: "Oui, l'inscription et l'utilisation sont actuellement gratuites. Des formules payantes avec des fonctionnalités avancées pourront être proposées à l'avenir.",
         },
         {
-          q: "Comment obtenir de l'aide ?",
-          a: "Notre équipe support est disponible par email (sgtec-gc@groupe-imo.com) ou téléphone (+33 6 19 99 67 34). Réponse garantie sous 24h ouvrées."
-        }
-      ]
-    }
+          q: "Comment contacter le support ?",
+          a: "Vous pouvez nous envoyer un message directement depuis l'application (une fois connecté) ou nous écrire à sgtec-gc@groupe-imo.com.",
+        },
+      ],
+    },
   ];
 
-  // Aplatir toutes les questions pour l'index global
-  const allQuestions = faqs.flatMap((cat, catIndex) => 
-    cat.questions.map((q, qIndex) => ({ ...q, catIndex, qIndex, category: cat.category }))
+  const allQuestions = faqs.flatMap((cat) =>
+    cat.questions.map((q) => ({ ...q, category: cat.category }))
   );
 
   const toggleFAQ = (index) => {
@@ -76,130 +78,86 @@ export default function LandingFAQ() {
 
   const handleEmailClick = (e) => {
     e.preventDefault();
-    
-    // Vérifier si l'utilisateur est connecté
     if (status === 'authenticated') {
       setShowMessageModal(true);
     } else {
-      // Rediriger vers la page de connexion avec message
-      alert('Veuillez vous connecter pour envoyer un message à l\'administrateur.');
+      alert("Veuillez vous connecter pour envoyer un message à l'administrateur.");
       window.location.href = '/?login=true';
     }
   };
 
   return (
-    <section id="faq" className="relative py-24 overflow-hidden bg-white">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-cyan-50/30" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-20" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-100 rounded-full blur-3xl opacity-20" />
+    <section id="faq" className="py-24 bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-20">
-          <span className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600/10 to-cyan-600/10 text-blue-700 rounded-full text-sm font-semibold mb-4">
-            FAQ
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent">
-            Questions Fréquentes
+        <div className="text-center mb-16">
+          <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">FAQ</span>
+          <h2 className="mt-3 text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
+            Questions fréquentes
           </h2>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Tout ce que vous devez savoir sur notre plateforme de gestion de rapports
+          <p className="mt-4 text-gray-500">
+            Les réponses aux questions les plus courantes sur l'application.
           </p>
         </div>
 
-        {/* FAQ Grid - 2 colonnes sur desktop */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
+        <div className="space-y-2">
           {allQuestions.map((item, index) => (
             <div
               key={index}
-              className={`group relative bg-white rounded-2xl border-2 transition-all duration-300 ${
-                openIndex === index 
-                  ? 'border-blue-500 shadow-xl shadow-blue-100/50' 
-                  : 'border-slate-200 hover:border-blue-300 hover:shadow-lg'
+              className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                openIndex === index
+                  ? 'border-blue-200 bg-white shadow-sm'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
-              {/* Category badge */}
-              {(index === 0 || allQuestions[index - 1].category !== item.category) && (
-                <div className="absolute -top-3 left-6">
-                  <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-bold rounded-full shadow-lg">
-                    {item.category}
-                  </span>
-                </div>
-              )}
-
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full px-6 py-6 text-left flex items-start gap-4 transition-colors duration-200"
+                className="w-full px-5 py-4 text-left flex items-center justify-between gap-4"
               >
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                  openIndex === index 
-                    ? 'bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg' 
-                    : 'bg-slate-100 group-hover:bg-blue-50'
+                <span className={`font-semibold text-sm leading-snug ${
+                  openIndex === index ? 'text-blue-700' : 'text-gray-800'
                 }`}>
-                  {openIndex === index ? (
-                    <Minus className="w-5 h-5 text-white" strokeWidth={3} />
-                  ) : (
-                    <Plus className="w-5 h-5 text-slate-600 group-hover:text-blue-600" strokeWidth={3} />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className={`font-bold text-lg mb-1 transition-colors duration-200 ${
-                    openIndex === index ? 'text-blue-700' : 'text-slate-800 group-hover:text-blue-600'
-                  }`}>
-                    {item.q}
-                  </h3>
+                  {item.q}
+                </span>
+                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  openIndex === index ? 'bg-blue-600' : 'bg-gray-100'
+                }`}>
+                  {openIndex === index
+                    ? <Minus className="w-3.5 h-3.5 text-white" />
+                    : <Plus className="w-3.5 h-3.5 text-gray-500" />
+                  }
                 </div>
               </button>
-              
-              <div className={`overflow-hidden transition-all duration-300 ${
-                openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+
+              <div className={`transition-all duration-300 overflow-hidden ${
+                openIndex === index ? 'max-h-96' : 'max-h-0'
               }`}>
-                <div className="px-6 pb-6 pl-[4.5rem]">
-                  <p className="text-slate-600 leading-relaxed">
-                    {item.a}
-                  </p>
+                <div className="px-5 pb-5">
+                  <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* CTA Bottom */}
-        <div className="mt-20 text-center">
-          <div className="inline-block p-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-3xl shadow-2xl">
-            <p className="text-white text-lg mb-6 font-medium">
-              Vous ne trouvez pas la réponse à votre question ?
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleEmailClick}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transform hover:scale-105 transition-all duration-200 shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Envoyez-nous un email
-              </button>
-              <a
-                href="tel:+33619996734"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                Appelez-nous
-              </a>
-            </div>
-          </div>
+        {/* Contact CTA */}
+        <div className="mt-12 text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+          <p className="text-sm font-semibold text-gray-900 mb-1">Vous avez une autre question ?</p>
+          <p className="text-sm text-gray-400 mb-5">Notre équipe vous répond rapidement.</p>
+          <button
+            onClick={handleEmailClick}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Envoyez-nous un message
+          </button>
         </div>
       </div>
 
-      {/* Message Modal */}
-      <MessageModal 
-        isOpen={showMessageModal} 
-        onClose={() => setShowMessageModal(false)} 
-      />
+      <MessageModal isOpen={showMessageModal} onClose={() => setShowMessageModal(false)} />
     </section>
   );
 }

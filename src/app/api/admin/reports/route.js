@@ -65,8 +65,6 @@ export async function GET(request) {
         r.date_creation DESC`
     );
 
-    console.log(`📋 ${reports.length} rapports récupérés (admin)`);
-
     return NextResponse.json({ reports });
 
   } catch (error) {
@@ -155,8 +153,6 @@ export async function PUT(request) {
       [statut, commentaire_admin || null, session.user.id, id_rapport]
     );
 
-    console.log(`✅ Rapport ${id_rapport} ${statut} par admin ${session.user.id}`);
-
     // Envoyer email de notification
     try {
       const { email, nom, prenom, nom_chantier, numero_rapport } = rapportInfo[0];
@@ -210,7 +206,6 @@ export async function PUT(request) {
         `,
       });
 
-      console.log(`📧 Email envoyé à ${email}`);
     } catch (emailError) {
       console.error('⚠️ Erreur envoi email:', emailError);
       // Ne pas bloquer la validation si l'email échoue
@@ -278,8 +273,6 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
-
-    console.log(`🗑️ Rapport ${id_rapport} supprimé par admin ${session.user.id}`);
 
     return NextResponse.json({ message: 'Rapport supprimé avec succès' });
 

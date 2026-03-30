@@ -1,12 +1,12 @@
 import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../auth/[...nextauth]/route';
 import nodemailer from 'nodemailer';
 import { createNotification } from '../../../../../../lib/notifications';
-import { connectDB } from '../../../../../../lib/database';
 
 export async function POST(request) {
   try {
     // Vérifier l'authentification admin
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     
     if (!session || session.user?.role !== 'admin') {
       return Response.json(
@@ -201,11 +201,9 @@ export async function POST(request) {
       userId: userId,
       type: 'message',
       titre: 'Nouvelle réponse de l\'administrateur',
-      contenu: `L'administrateur a répondu à votre message "${originalSubject || 'Votre message'}"`,
+      message: `L'administrateur a répondu à votre message "${originalSubject || 'Votre message'}"`,
       lien: '/dashboard#contact'
     });
-
-    console.log('✅ Réponse envoyée à:', userEmail);
 
     return Response.json({
       success: true,

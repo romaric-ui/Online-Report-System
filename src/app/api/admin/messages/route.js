@@ -42,8 +42,6 @@ export async function GET(request) {
 
     const [messages] = await db.execute(query, params);
 
-    console.log(`📨 ${messages.length} messages récupérés`);
-
     return NextResponse.json({ messages });
 
   } catch (error) {
@@ -97,20 +95,19 @@ export async function POST(request) {
 
     // Envoyer notification email à l'admin
     try {
-      await sendMessageNotificationEmail(
-        'admin@sgtec.com', // Email admin
-        `${user.prenom} ${user.nom}`,
-        user.email,
-        sujet,
-        contenu
-      );
-      console.log('✅ Email de notification envoyé à l\'admin');
+      if (user) {
+        await sendMessageNotificationEmail(
+          'admin@sgtec.com', // Email admin
+          `${user.prenom} ${user.nom}`,
+          user.email,
+          sujet,
+          contenu
+        );
+      }
     } catch (emailError) {
       console.error('⚠️ Erreur envoi email notification:', emailError);
       // Ne pas bloquer l'envoi du message si l'email échoue
     }
-
-    console.log(`✅ Message créé avec ID: ${result.insertId}`);
 
     return NextResponse.json(
       { 
@@ -167,8 +164,6 @@ export async function PUT(request) {
       [...params, id_message]
     );
 
-    console.log(`✅ Message ${id_message} marqué comme ${statut}`);
-
     return NextResponse.json({ success: true });
 
   } catch (error) {
@@ -204,12 +199,10 @@ export async function DELETE(request) {
 
     const connection = await connectDB();
     
-    await connection.query(
+    await connection.execute(
       'DELETE FROM message WHERE id_message = ?',
       [id_message]
     );
-
-    console.log('✅ Message supprimé:', id_message);
 
     return NextResponse.json({
       success: true,

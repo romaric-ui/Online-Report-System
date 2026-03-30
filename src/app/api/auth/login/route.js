@@ -2,12 +2,31 @@
 import { connectDB } from '../../../../../lib/database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { rateLimitCheck } from '../../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
 
 export async function POST(request) {
   try {
+    // Rate limiting par IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+
+    const rateLimit = rateLimitCheck(
+      ip,
+      SECURITY_CONFIG.rateLimits.login.maxAttempts,
+      SECURITY_CONFIG.rateLimits.login.windowMs
+    );
+    if (!rateLimit.allowed) {
+      return Response.json({
+        success: false,
+        error: SECURITY_MESSAGES.rateLimitExceeded
+      }, { status: 429 });
+    }
+
     const body = await request.json();
     const { email, password } = body;
-    
+
     // Validations simples
     if (!email || !password) {
       return Response.json({
@@ -47,14 +66,17 @@ export async function POST(request) {
       }, { status: 401 });
     }
 
+    // Normaliser le rôle : 'Administrateur' → 'admin', sinon → 'user'
+    const normalizedRole = user.nom_role === 'Administrateur' ? 'admin' : 'user';
+
     // Générer un token JWT
     const token = jwt.sign(
       { 
         userId: user.id_utilisateur, 
         email: user.email,
-        role: user.nom_role 
+        role: normalizedRole 
       },
-      process.env.JWT_SECRET || 'votre-secret-jwt-temporaire',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
@@ -64,7 +86,7 @@ export async function POST(request) {
       nom: user.nom,
       prenom: user.prenom,
       email: user.email,
-      role: user.nom_role,
+      role: normalizedRole,
       roleId: user.id_role
     };
 
@@ -79,12 +101,11 @@ export async function POST(request) {
     );
 
   } catch (error) {
-    console.error('❌ Erreur connexion:', error);
+    console.error('Erreur connexion');
     
     return Response.json({
       success: false,
-      error: 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'
     }, { status: 500 });
   }
 }

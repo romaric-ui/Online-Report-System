@@ -193,7 +193,7 @@ export function useImageUpload() {
       return result;
 
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors de l\'envoi de l\'image. Veuillez réessayer.');
       return null;
     } finally {
       setUploading(false);
@@ -231,7 +231,7 @@ export function useImageUpload() {
       return result;
 
     } catch (err) {
-      setError(err.message);
+      setError('Erreur lors de la mise à jour de l\'image. Veuillez réessayer.');
       return null;
     } finally {
       setUploading(false);
