@@ -178,9 +178,9 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 3.5 — Mettre à jour Header (lien Chantiers)
 
 ### Sprint 4 — Gestion des Équipes
-- [ ] 4.1 — Tables Ouvrier, AffectationChantier, Pointage
-- [ ] 4.2 — Repository + API équipes
-- [ ] 4.3 — Pages ouvriers, affectation, pointage
+- [x] 4.1 — Tables Ouvrier, AffectationChantier, Pointage
+- [x] 4.2 — Repository + API équipes
+- [x] 4.3 — Pages ouvriers, affectation, pointage
 
 ### Sprint 5 — Gestion du Matériel
 - [ ] 5.1 — Tables Materiel, AffectationMateriel

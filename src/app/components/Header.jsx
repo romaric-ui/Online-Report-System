@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, User, LogOut, LogIn, FileText, ChevronDown, MapPin } from 'lucide-react';
+import { Menu, X, User, LogOut, LogIn, FileText, ChevronDown, MapPin, Users } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 
 export default function Header({ user, onLogout, onShowAuth }) {
@@ -77,8 +77,15 @@ export default function Header({ user, onLogout, onShowAuth }) {
                   <MapPin className="w-4 h-4" />
                   Chantiers
                 </a>
-                <a 
-                  href="/dashboard" 
+                <a
+                  href="/equipes"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                >
+                  <Users className="w-4 h-4" />
+                  Équipes
+                </a>
+                <a
+                  href="/dashboard"
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
                 >
                   <FileText className="w-4 h-4" />
@@ -197,8 +204,15 @@ export default function Header({ user, onLogout, onShowAuth }) {
                   <MapPin className="w-5 h-5" />
                   Chantiers
                 </a>
-                <a 
-                  href="/dashboard" 
+                <a
+                  href="/equipes"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                >
+                  <Users className="w-5 h-5" />
+                  Équipes
+                </a>
+                <a
+                  href="/dashboard"
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
                 >
                   <FileText className="w-5 h-5" />

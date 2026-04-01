@@ -2,11 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
-import { BaseRepository } from '../../../../../lib/repositories/base.repository.js';
-import { chantierRepo } from '../../../../../lib/repositories/chantier.repository.js';
-import { successResponse, createdResponse, errorResponse } from '../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../lib/tenant.js';
-import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../lib/errors/index.js';
+import { BaseRepository } from '../../../../../../lib/repositories/base.repository.js';
+import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
+import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
+import { requireTenant } from '../../../../../../lib/tenant.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 const photoRepo = new BaseRepository('PhotoChantier', 'id_photo');
 
