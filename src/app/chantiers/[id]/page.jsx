@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Grid, ClipboardList, Image, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Camera, FileText, Users } from 'lucide-react';
+import { ArrowLeft, Grid, ClipboardList, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Camera, FileText, Users, Wrench } from 'lucide-react';
 
 const STATUS_LABELS = {
   planifie: 'Planifié',
@@ -32,7 +32,7 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const id = params.id;
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [chantier, setChantier] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,6 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
     }
   };
 
-  const taskStats = chantier?.tache_count ? { en_cours: 'En cours' } : {};
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -120,6 +119,12 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
                   </button>
                   <button type="button" onClick={() => router.push(`/chantiers/${id}/taches`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
                     <Activity className="w-4 h-4" /> Tâches
+                  </button>
+                  <button type="button" onClick={() => router.push(`/chantiers/${id}/equipe`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Équipe
+                  </button>
+                  <button type="button" onClick={() => router.push(`/chantiers/${id}/materiel`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <Wrench className="w-4 h-4" /> Matériel
                   </button>
                   <button type="button" onClick={() => alert('Édition à venir') } className="rounded-3xl border border-slate-200 bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition inline-flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" /> Modifier

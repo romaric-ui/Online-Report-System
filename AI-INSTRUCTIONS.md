@@ -183,8 +183,8 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 4.3 — Pages ouvriers, affectation, pointage
 
 ### Sprint 5 — Gestion du Matériel
-- [ ] 5.1 — Tables Materiel, AffectationMateriel
-- [ ] 5.2 — Repository + API + Pages matériel
+- [x] 5.1 — Tables Materiel, AffectationMateriel
+- [x] 5.2 — Repository + API + Pages matériel
 
 ### Sprint 6 — Budget & Dépenses
 - [ ] 6.1 — Tables BudgetChantier, Depense
