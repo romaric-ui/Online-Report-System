@@ -173,7 +173,7 @@ export default function AdminUsersPage() {
       const response = await fetch('/api/admin/notifications');
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
+        setNotifications(data.data || []);
       }
     } catch (error) {
       console.error('Erreur notifications:', error);
@@ -185,7 +185,7 @@ export default function AdminUsersPage() {
       const response = await fetch('/api/admin/messages?statut=non_lu');
       if (response.ok) {
         const data = await response.json();
-        setUnreadMessages(data.messages?.length || 0);
+        setUnreadMessages(data.data?.messages?.length || 0);
       }
     } catch (error) {
       console.error('Erreur messages:', error);
@@ -197,7 +197,7 @@ export default function AdminUsersPage() {
       const response = await fetch('/api/admin/users');
       if (!response.ok) throw new Error('Erreur lors du chargement des utilisateurs');
       const data = await response.json();
-      setUsers(data);
+      setUsers(data.data || []);
     } catch (err) {
       setError('Erreur lors du chargement des utilisateurs');
     } finally {

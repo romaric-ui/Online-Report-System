@@ -1,174 +1,108 @@
-// API pour gérer les notifications utilisateur
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { connectDB } from '../../../../../lib/database.js';
+import { notifRepo } from '../../../../../lib/repositories/notification.repository.js';
+import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
+import { AuthenticationError, ValidationError } from '../../../../../lib/errors/index.js';
 
-// GET - Récupérer les notifications de l'utilisateur connecté
-export async function GET(request) {
+const apiHandler = (handler) => async (request, context) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return Response.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
-    }
-    
-    const { searchParams } = new URL(request.url);
-    const nonLues = searchParams.get('nonLues') === 'true';
-    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50') || 50, 1), 200);
-    
-    const db = await connectDB();
-    
-    let query = `
-      SELECT 
-        id_notification,
-        type_notification,
-        titre,
-        contenu,
-        lien,
-        lu,
-        date_creation,
-        date_lecture
-      FROM Notification
-      WHERE id_utilisateur = ?
-    `;
-    
-    if (nonLues) {
-      query += ' AND lu = FALSE';
-    }
-    
-    query += ` ORDER BY date_creation DESC LIMIT ${limit}`;
-
-    const [notifications] = await db.execute(query, [session.user.id]);
-    
-    // Compter les notifications non lues
-    const [countResult] = await db.execute(
-      'SELECT COUNT(*) as count FROM Notification WHERE id_utilisateur = ? AND lu = FALSE',
-      [session.user.id]
-    );
-    
-    return Response.json({
-      success: true,
-      notifications,
-      nonLuesCount: countResult[0].count
-    });
-    
+    return await handler(request, context);
   } catch (error) {
-    console.error('Erreur récupération notifications:', error);
-    return Response.json({
-      success: false,
-      error: 'Erreur serveur'
-    }, { status: 500 });
+    return errorResponse(error, request);
   }
+};
+
+async function handleGET(request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new AuthenticationError('Non authentifié');
+  }
+
+  const { searchParams } = new URL(request.url);
+  const nonLues = searchParams.get('nonLues') === 'true';
+  const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10) || 50, 1), 200);
+  const userId = parseInt(session.user.id, 10);
+
+  let query = `
+    SELECT
+      id_notification,
+      type_notification,
+      titre,
+      contenu,
+      lien,
+      lu,
+      date_creation,
+      date_lecture
+    FROM Notification
+    WHERE id_utilisateur = ?
+  `;
+
+  if (nonLues) {
+    query += ' AND lu = FALSE';
+  }
+  query += ' ORDER BY date_creation DESC LIMIT ?';
+  const notifications = await notifRepo.raw(query, [userId, parseInt(limit, 10)]);
+  const nonLuesCount = await notifRepo.count('id_utilisateur = ? AND lu = FALSE', [userId]);
+
+  return successResponse({ notifications, nonLuesCount });
 }
 
-// PUT - Marquer une notification comme lue
-export async function PUT(request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return Response.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
-    }
-    
-    const { id_notification, marquerToutesLues } = await request.json();
-    const db = await connectDB();
-    
-    if (marquerToutesLues) {
-      // Marquer toutes les notifications comme lues
-      await db.execute(
-        'UPDATE Notification SET lu = TRUE, date_lecture = NOW() WHERE id_utilisateur = ? AND lu = FALSE',
-        [session.user.id]
-      );
-      
-      return Response.json({
-        success: true,
-        message: 'Toutes les notifications marquées comme lues'
-      });
-    } else if (id_notification) {
-      // Marquer une notification spécifique comme lue
-      await db.execute(
-        'UPDATE Notification SET lu = TRUE, date_lecture = NOW() WHERE id_notification = ? AND id_utilisateur = ?',
-        [id_notification, session.user.id]
-      );
-      
-      return Response.json({
-        success: true,
-        message: 'Notification marquée comme lue'
-      });
-    } else {
-      return Response.json({
-        success: false,
-        error: 'ID de notification requis'
-      }, { status: 400 });
-    }
-    
-  } catch (error) {
-    console.error('Erreur mise à jour notification:', error);
-    return Response.json({
-      success: false,
-      error: 'Erreur serveur'
-    }, { status: 500 });
+async function handlePUT(request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new AuthenticationError('Non authentifié');
   }
+
+  const { id_notification, marquerToutesLues } = await request.json();
+  const userId = parseInt(session.user.id, 10);
+
+  if (marquerToutesLues) {
+    await notifRepo.markAllAsRead(userId);
+    return successResponse({ message: 'Toutes les notifications marquées comme lues' });
+  }
+
+  if (!id_notification) {
+    throw new ValidationError('ID de notification requis');
+  }
+
+  await notifRepo.markAsRead(parseInt(id_notification, 10), userId);
+  return successResponse({ message: 'Notification marquée comme lue' });
 }
 
-// DELETE - Supprimer une notification
-export async function DELETE(request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return Response.json({
-        success: false,
-        error: 'Non authentifié'
-      }, { status: 401 });
-    }
-    
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const toutesLues = searchParams.get('toutesLues') === 'true';
-    
-    const db = await connectDB();
-    
-    if (toutesLues) {
-      // Supprimer toutes les notifications lues
-      await db.execute(
-        'DELETE FROM Notification WHERE id_utilisateur = ? AND lu = TRUE',
-        [session.user.id]
-      );
-      
-      return Response.json({
-        success: true,
-        message: 'Notifications lues supprimées'
-      });
-    } else if (id) {
-      // Supprimer une notification spécifique
-      await db.execute(
-        'DELETE FROM Notification WHERE id_notification = ? AND id_utilisateur = ?',
-        [id, session.user.id]
-      );
-      
-      return Response.json({
-        success: true,
-        message: 'Notification supprimée'
-      });
-    } else {
-      return Response.json({
-        success: false,
-        error: 'ID requis'
-      }, { status: 400 });
-    }
-    
-  } catch (error) {
-    console.error('Erreur suppression notification:', error);
-    return Response.json({
-      success: false,
-      error: 'Erreur serveur'
-    }, { status: 500 });
+async function handleDELETE(request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new AuthenticationError('Non authentifié');
   }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const toutesLues = searchParams.get('toutesLues') === 'true';
+
+  const userId = parseInt(session.user.id, 10);
+
+  if (toutesLues) {
+    await notifRepo.raw('DELETE FROM Notification WHERE id_utilisateur = ? AND lu = TRUE', [userId]);
+    return successResponse({ message: 'Notifications lues supprimées' });
+  }
+
+  if (!id) {
+    throw new ValidationError('ID requis');
+  }
+
+  const result = await notifRepo.raw(
+    'DELETE FROM Notification WHERE id_notification = ? AND id_utilisateur = ?',
+    [parseInt(id, 10), userId]
+  );
+
+  if (result.affectedRows === 0) {
+    throw new ValidationError('Notification non trouvée');
+  }
+
+  return successResponse({ message: 'Notification supprimée' });
 }
+
+export const GET = apiHandler(handleGET);
+export const PUT = apiHandler(handlePUT);
+export const DELETE = apiHandler(handleDELETE);

@@ -1,31 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import mysql from 'mysql2/promise';
-
-// Configuration de base de données
-const isProduction = process.env.NODE_ENV === 'production';
-
-const dbConfig = isProduction ? {
-  host: process.env.AIVEN_HOST,
-  user: process.env.AIVEN_USER,
-  password: process.env.AIVEN_PASSWORD,
-  database: process.env.AIVEN_DATABASE,
-  port: process.env.AIVEN_PORT || 21094,
-  ssl: { rejectUnauthorized: false },
-  connectTimeout: 60000,
-} : {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'onlinereports',
-  port: 3306,
-  ssl: false,
-  connectTimeout: 60000,
-};
-
-async function getDbConnection() {
-  return await mysql.createConnection(dbConfig);
-}
+import { getDbConnection } from '../../../../../lib/database.js';
 
 // Configuration de l'email
 const transporter = nodemailer.createTransport({

@@ -1,44 +1,62 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
-import nodemailer from 'nodemailer';
+import { messageRepo } from '../../../../../../lib/repositories/message.repository.js';
+import { successResponse, errorResponse } from '../../../../../../lib/api-response.js';
+import { AuthorizationError, ValidationError, NotFoundError } from '../../../../../../lib/errors/index.js';
 import { createNotification } from '../../../../../../lib/notifications';
+import nodemailer from 'nodemailer';
 
-export async function POST(request) {
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+const apiHandler = (handler) => async (request, context) => {
   try {
-    // Vérifier l'authentification admin
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user?.role !== 'admin') {
-      return Response.json(
-        { error: 'Non autorisé' },
-        { status: 403 }
-      );
-    }
+    return await handler(request, context);
+  } catch (error) {
+    return errorResponse(error, request);
+  }
+};
 
-    const { userEmail, userName, originalSubject, reponse, userId } = await request.json();
+async function handlePOST(request) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user?.role !== 'admin') {
+    throw new AuthorizationError('Non autorisé');
+  }
 
-    // Valider les données
-    if (!userEmail || !reponse || !userId) {
-      return Response.json(
-        { error: 'Email, userId et réponse requis' },
-        { status: 400 }
-      );
-    }
+  const { userEmail, userName, originalSubject, reponse, userId, id_message } = await request.json();
+  if (!userEmail || !reponse || !userId) {
+    throw new ValidationError('Email, userId et réponse requis');
+  }
 
-    // Configuration du transporteur email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+  const userRows = await messageRepo.raw(
+    'SELECT id_utilisateur FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1',
+    [userId]
+  );
 
-    // Template HTML pour la réponse
-    const htmlTemplate = `
+  if (!userRows.length) {
+    throw new NotFoundError('Utilisateur introuvable');
+  }
+
+  if (id_message) {
+    await messageRepo.raw(
+      'UPDATE Message SET statut = ?, date_reponse = NOW() WHERE id_message = ?',
+      ['repondu', id_message]
+    );
+  }
+
+  await transporter.sendMail({
+    from: `"Société de Gestion des Travaux et Encadrement de chantier - Support" <${process.env.EMAIL_USER}>`,
+    to: userEmail,
+    subject: `Re: ${originalSubject || 'Votre message'} - Société de Gestion des Travaux et Encadrement de chantier`,
+    html: `
       <!DOCTYPE html>
       <html>
       <head>
@@ -142,79 +160,51 @@ export async function POST(request) {
             <h1>📬 Réponse de l'Administrateur</h1>
             <p>SGTEC - Système de Gestion Technique</p>
           </div>
-          
           <div class="content">
             <p class="greeting">Bonjour ${userName || 'Utilisateur'},</p>
-            
             <p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
-              Nous avons bien reçu votre message et nous vous remercions de nous avoir contactés. 
+              Nous avons bien reçu votre message et nous vous remercions de nous avoir contactés.
               Voici notre réponse :
             </p>
-
             ${originalSubject ? `
               <div class="original-subject">
                 <strong>Concernant votre message :</strong>
                 <p>${originalSubject}</p>
               </div>
             ` : ''}
-
             <div class="message-box">
               <p>${reponse.replace(/\n/g, '<br>')}</p>
             </div>
-
             <p style="color: #555; line-height: 1.6; margin-top: 30px;">
-              Si vous avez d'autres questions ou besoin d'assistance supplémentaire, 
+              Si vous avez d'autres questions ou besoin d'assistance supplémentaire,
               n'hésitez pas à nous contacter à nouveau.
             </p>
-
             <div class="signature">
               <p><strong>L'équipe SGTEC</strong></p>
               <p>Support Technique</p>
-              <p style="font-size: 13px; color: #6c757d;">
-                📧 ${process.env.EMAIL_USER}
-              </p>
+              <p style="font-size: 13px; color: #6c757d;">📧 ${process.env.EMAIL_USER}</p>
             </div>
           </div>
-          
           <div class="footer">
             <p><strong>SGTEC - Système de Gestion Technique</strong></p>
             <p>© 2025 SGTEC. Tous droits réservés.</p>
-            <p style="font-size: 12px; margin-top: 15px;">
-              Cet email a été envoyé en réponse à votre demande de support.
-            </p>
+            <p style="font-size: 12px; margin-top: 15px;">Cet email a été envoyé en réponse à votre demande de support.</p>
           </div>
         </div>
       </body>
       </html>
-    `;
+    `
+  });
 
-    // Envoyer l'email
-    await transporter.sendMail({
-      from: `"Société de Gestion des Travaux et Encadrement de chantier - Support" <${process.env.EMAIL_USER}>`,
-      to: userEmail,
-      subject: `Re: ${originalSubject || 'Votre message'} - Société de Gestion des Travaux et Encadrement de chantier`,
-      html: htmlTemplate,
-    });
+  await createNotification({
+    userId,
+    type: 'message',
+    titre: 'Nouvelle réponse de l\'administrateur',
+    message: `L'administrateur a répondu à votre message "${originalSubject || 'Votre message'}"`,
+    lien: '/dashboard#contact'
+  });
 
-    // Créer une notification pour l'utilisateur
-    await createNotification({
-      userId: userId,
-      type: 'message',
-      titre: 'Nouvelle réponse de l\'administrateur',
-      message: `L'administrateur a répondu à votre message "${originalSubject || 'Votre message'}"`,
-      lien: '/dashboard#contact'
-    });
-
-    return Response.json({
-      success: true,
-      message: 'Réponse envoyée avec succès'
-    });
-
-  } catch (error) {
-    console.error('❌ Erreur lors de l\'envoi de la réponse:', error);
-    return Response.json(
-      { error: 'Erreur lors de l\'envoi de la réponse' },
-      { status: 500 }
-    );
-  }
+  return successResponse({ message: 'Réponse envoyée avec succès' });
 }
+
+export const POST = apiHandler(handlePOST);

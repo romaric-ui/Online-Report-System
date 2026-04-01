@@ -46,9 +46,12 @@ export default function AdminDashboard() {
     }
   }, [status, session]);
 
+  const [apiError, setApiError] = useState(null);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setApiError(null);
       const response = await fetch('/api/admin/dashboard');
       
       if (response.status === 401) {
@@ -63,13 +66,18 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        if (!data.success) {
+          setApiError(data.message || 'Erreur lors du chargement des données du dashboard');
+          return;
+        }
+        setStats(data.data);
       } else {
         console.error('Erreur API:', response.status);
+        setApiError('Erreur API: ' + response.status);
       }
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
-      // Ne pas afficher d'erreur en console pour éviter le spam
+      setApiError('Erreur de chargement du dashboard');
     } finally {
       setLoading(false);
     }
@@ -252,6 +260,11 @@ export default function AdminDashboard() {
         </header>
 
         <div className="p-8 space-y-8">
+          {apiError && (
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
+              <strong className="font-semibold">Erreur :</strong> {apiError}
+            </div>
+          )}
           {/* Statistiques */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-3xl shadow-xl p-6 border border-slate-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">

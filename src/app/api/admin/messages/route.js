@@ -1,219 +1,115 @@
-import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { connectDB } from '../../../../../lib/database.js';
+import { messageRepo } from '../../../../../lib/repositories/message.repository.js';
+import { successResponse, createdResponse, errorResponse } from '../../../../../lib/api-response.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../lib/errors/index.js';
 import { sendMessageNotificationEmail } from '../../../../../lib/email-service.js';
 
-// GET - Récupérer les messages (admin uniquement)
-export async function GET(request) {
+const apiHandler = (handler) => async (request, context) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Accès non autorisé' },
-        { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const statut = searchParams.get('statut');
-
-    const db = await connectDB();
-
-    let query = `
-      SELECT 
-        m.*,
-        u.nom,
-        u.prenom,
-        u.email
-      FROM message m
-      JOIN utilisateur u ON m.id_utilisateur = u.id_utilisateur
-    `;
-
-    const params = [];
-
-    if (statut) {
-      query += ' WHERE m.statut = ?';
-      params.push(statut);
-    }
-
-    query += ' ORDER BY m.date_creation DESC';
-
-    const [messages] = await db.execute(query, params);
-
-    return NextResponse.json({ messages });
-
+    return await handler(request, context);
   } catch (error) {
-    console.error('❌ Erreur GET messages:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la récupération des messages' },
-      { status: 500 }
-    );
+    return errorResponse(error, request);
   }
+};
+
+async function requireAdmin() {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'admin') {
+    throw new AuthorizationError('Accès non autorisé');
+  }
+  return session;
 }
 
-// POST - Envoyer un message à l'admin
-export async function POST(request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { sujet, contenu } = body;
-
-    // Validation
-    if (!sujet || !contenu) {
-      return NextResponse.json(
-        { error: 'Sujet et contenu requis' },
-        { status: 400 }
-      );
-    }
-
-    const db = await connectDB();
-
-    // Insérer le message
-    const [result] = await db.execute(
-      `INSERT INTO message (id_utilisateur, sujet, contenu, statut, date_creation)
-       VALUES (?, ?, ?, 'non_lu', NOW())`,
-      [session.user.id, sujet, contenu]
-    );
-
-    // Récupérer les infos de l'utilisateur
-    const [users] = await db.execute(
-      'SELECT nom, prenom, email FROM utilisateur WHERE id_utilisateur = ?',
-      [session.user.id]
-    );
-
-    const user = users[0];
-
-    // Envoyer notification email à l'admin
-    try {
-      if (user) {
-        await sendMessageNotificationEmail(
-          'admin@sgtec.com', // Email admin
-          `${user.prenom} ${user.nom}`,
-          user.email,
-          sujet,
-          contenu
-        );
-      }
-    } catch (emailError) {
-      console.error('⚠️ Erreur envoi email notification:', emailError);
-      // Ne pas bloquer l'envoi du message si l'email échoue
-    }
-
-    return NextResponse.json(
-      { 
-        success: true,
-        message: 'Message envoyé avec succès',
-        id_message: result.insertId
-      },
-      { status: 201 }
-    );
-
-  } catch (error) {
-    console.error('❌ Erreur POST message:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de l\'envoi du message' },
-      { status: 500 }
-    );
-  }
+async function handleGET(request) {
+  await requireAdmin();
+  const { searchParams } = new URL(request.url);
+  const statut = searchParams.get('statut');
+  const messages = await messageRepo.findAll({ statut });
+  return successResponse({ messages });
 }
 
-// PUT - Marquer un message comme lu/traité (admin uniquement)
-export async function PUT(request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Accès non autorisé' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const { id_message, statut } = body;
-
-    if (!id_message || !statut) {
-      return NextResponse.json(
-        { error: 'ID message et statut requis' },
-        { status: 400 }
-      );
-    }
-
-    const db = await connectDB();
-
-    // Mettre à jour le statut
-    const updateFields = ['statut = ?'];
-    const params = [statut];
-
-    if (statut === 'lu' || statut === 'traite') {
-      updateFields.push('date_lecture = NOW()');
-    }
-
-    await db.execute(
-      `UPDATE message SET ${updateFields.join(', ')} WHERE id_message = ?`,
-      [...params, id_message]
-    );
-
-    return NextResponse.json({ success: true });
-
-  } catch (error) {
-    console.error('❌ Erreur PUT /api/admin/messages:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour du message' },
-      { status: 500 }
-    );
+async function handlePOST(request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    throw new AuthenticationError('Non authentifié');
   }
+
+  const body = await request.json();
+  const { sujet, contenu } = body;
+  if (!sujet || !contenu) {
+    throw new ValidationError('Sujet et contenu requis');
+  }
+
+  const message = await messageRepo.create({
+    id_utilisateur: session.user.id,
+    sujet,
+    contenu,
+    statut: 'non_lu',
+    date_creation: new Date().toISOString().slice(0, 19).replace('T', ' ')
+  });
+
+  const userRows = await messageRepo.raw(
+    'SELECT nom, prenom, email FROM Utilisateur WHERE id_utilisateur = ?',
+    [session.user.id]
+  );
+  const user = userRows[0];
+
+  try {
+    if (user) {
+      await sendMessageNotificationEmail(
+        'admin@sgtec.com',
+        `${user.prenom} ${user.nom}`,
+        user.email,
+        sujet,
+        contenu
+      );
+    }
+  } catch (emailError) {
+    console.error('⚠️ Erreur envoi email notification:', emailError);
+  }
+
+  return createdResponse({
+    message: 'Message envoyé avec succès',
+    id_message: message.id_message
+  });
 }
 
-// DELETE - Supprimer un message (admin seulement)
-export async function DELETE(request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Non autorisé' },
-        { status: 403 }
-      );
-    }
+async function handlePUT(request) {
+  await requireAdmin();
+  const body = await request.json();
+  const { id_message, statut } = body;
 
-    const { searchParams } = new URL(request.url);
-    const id_message = searchParams.get('id_message');
-
-    if (!id_message) {
-      return NextResponse.json(
-        { error: 'ID du message requis' },
-        { status: 400 }
-      );
-    }
-
-    const connection = await connectDB();
-    
-    await connection.execute(
-      'DELETE FROM message WHERE id_message = ?',
-      [id_message]
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: 'Message supprimé avec succès'
-    });
-
-  } catch (error) {
-    console.error('❌ Erreur DELETE /api/admin/messages:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la suppression du message' },
-      { status: 500 }
-    );
+  if (!id_message || !statut) {
+    throw new ValidationError('ID message et statut requis');
   }
+
+  if (!['lu', 'traite'].includes(statut)) {
+    throw new ValidationError('Statut invalide');
+  }
+
+  await messageRepo.raw(
+    'UPDATE Message SET statut = ?, date_lecture = NOW() WHERE id_message = ?',
+    [statut, id_message]
+  );
+
+  return successResponse({ message: 'Message mis à jour avec succès' });
 }
+
+async function handleDELETE(request) {
+  await requireAdmin();
+  const { searchParams } = new URL(request.url);
+  const id_message = searchParams.get('id_message');
+
+  if (!id_message) {
+    throw new ValidationError('ID du message requis');
+  }
+
+  await messageRepo.delete(id_message);
+  return successResponse({ message: 'Message supprimé avec succès' });
+}
+
+export const GET = apiHandler(handleGET);
+export const POST = apiHandler(handlePOST);
+export const PUT = apiHandler(handlePUT);
+export const DELETE = apiHandler(handleDELETE);

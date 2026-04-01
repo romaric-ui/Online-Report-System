@@ -328,6 +328,12 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             }
           </button>
         </div>
+
+        <div className="mt-4 text-center text-sm">
+          <a href="/inscription" className="text-blue-600 hover:text-blue-800">
+            Créer un compte entreprise
+          </a>
+        </div>
       </div>
     </div>
   );
