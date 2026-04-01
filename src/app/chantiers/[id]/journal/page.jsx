@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Plus, CalendarDays, CloudSnow, Sun, Cloud, CloudRain, Zap, FileText, User } from 'lucide-react';
@@ -13,8 +13,9 @@ const METEO_OPTIONS = [
   { value: 'vent_fort', label: 'Vent fort', emoji: '💨' },
 ];
 
-export default function ChantierJournalPage({ params }) {
-  const { id } = params;
+export default function ChantierJournalPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const id = params.id;
   const router = useRouter();
   const { data: session, status } = useSession();
   const [journals, setJournals] = useState([]);

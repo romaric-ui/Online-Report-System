@@ -1,10 +1,10 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
-import { tacheRepo } from '../../../../../lib/repositories/tache.repository.js';
-import { chantierRepo } from '../../../../../lib/repositories/chantier.repository.js';
-import { successResponse, createdResponse, errorResponse } from '../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../lib/tenant.js';
-import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../lib/errors/index.js';
+import { tacheRepo } from '../../../../../../lib/repositories/tache.repository.js';
+import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
+import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
+import { requireTenant } from '../../../../../../lib/tenant.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -14,8 +14,9 @@ const apiHandler = (handler) => async (request, context) => {
   }
 };
 
-function parseChantierId(params) {
-  const chantierId = parseInt(params.id, 10);
+async function parseChantierId(params) {
+  const resolvedParams = await params;
+  const chantierId = parseInt(resolvedParams.id, 10);
   if (!chantierId || Number.isNaN(chantierId) || chantierId <= 0) {
     throw new ValidationError('ID chantier invalide');
   }
@@ -37,7 +38,7 @@ async function handleGET(request, { params }) {
   }
 
   const entrepriseId = requireTenant(session);
-  const chantierId = parseChantierId(params);
+  const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
   const { searchParams } = new URL(request.url);
@@ -55,7 +56,7 @@ async function handlePOST(request, { params }) {
   }
 
   const entrepriseId = requireTenant(session);
-  const chantierId = parseChantierId(params);
+  const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
   const body = await request.json();
@@ -99,7 +100,7 @@ async function handlePUT(request, { params }) {
   }
 
   const entrepriseId = requireTenant(session);
-  const chantierId = parseChantierId(params);
+  const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
   const body = await request.json();

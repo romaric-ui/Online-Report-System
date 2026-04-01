@@ -162,7 +162,7 @@ export default function ChantiersPage() {
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
                     <span>Progression</span>
-                    <span>{chantier.progression?.toFixed(0) || 0}%</span>
+                    <span>{parseFloat(chantier.progression || 0).toFixed(0)}%</span>
                   </div>
                   <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
                     <div

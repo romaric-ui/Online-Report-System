@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Grid, ClipboardList, Image, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Photo, FileText } from 'lucide-react';
+import { ArrowLeft, Grid, ClipboardList, Image, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Camera, FileText, Users } from 'lucide-react';
 
 const STATUS_LABELS = {
   planifie: 'Planifié',
@@ -28,8 +28,9 @@ function getProgressColor(value) {
   return 'bg-red-500';
 }
 
-export default function ChantierDetailPage({ params }) {
-  const { id } = params;
+export default function ChantierDetailPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const id = params.id;
   const router = useRouter();
   const { data: session, status } = useSession();
   const [chantier, setChantier] = useState(null);
@@ -115,7 +116,7 @@ export default function ChantierDetailPage({ params }) {
                     <ClipboardList className="w-4 h-4" /> Journal
                   </button>
                   <button type="button" onClick={() => router.push(`/chantiers/${id}/photos`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
-                    <Photo className="w-4 h-4" /> Photos
+                    <Camera className="w-4 h-4" /> Photos
                   </button>
                   <button type="button" onClick={() => router.push(`/chantiers/${id}/taches`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
                     <Activity className="w-4 h-4" /> Tâches
@@ -169,7 +170,7 @@ export default function ChantierDetailPage({ params }) {
                       <Compass className="w-4 h-4" />
                       <span className="text-sm">Progression</span>
                     </div>
-                    <p className="text-slate-900 font-semibold">{chantier.progression?.toFixed(0) || 0}%</p>
+                    <p className="text-slate-900 font-semibold">{parseFloat(chantier.progression || 0).toFixed(1)}%</p>
                     <div className="mt-3 h-3 w-full rounded-full bg-slate-100 overflow-hidden">
                       <div className={`h-full rounded-full ${getProgressColor(chantier.progression || 0)}`} style={{ width: `${chantier.progression || 0}%` }} />
                     </div>
@@ -187,7 +188,7 @@ export default function ChantierDetailPage({ params }) {
                 </div>
                 <div className="rounded-3xl bg-white p-5 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3 text-slate-500 mb-3">
-                    <Photo className="w-5 h-5" />
+                    <Camera className="w-5 h-5" />
                     <span className="text-sm">Photos</span>
                   </div>
                   <p className="text-3xl font-bold text-slate-900">{chantier.photo_count ?? 0}</p>
@@ -204,7 +205,7 @@ export default function ChantierDetailPage({ params }) {
                     <CheckCircle className="w-5 h-5" />
                     <span className="text-sm">Progression</span>
                   </div>
-                  <p className="text-3xl font-bold text-slate-900">{chantier.progression?.toFixed(0) || 0}%</p>
+                  <p className="text-3xl font-bold text-slate-900">{parseFloat(chantier.progression || 0).toFixed(1)}%</p>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Plus, Image, Filter, Camera, FileImage, UploadCloud, CheckCircle } from 'lucide-react';
@@ -13,8 +13,9 @@ const PHOTO_TYPES = [
   { value: 'probleme', label: 'Problème' },
 ];
 
-export default function ChantierPhotosPage({ params }) {
-  const { id } = params;
+export default function ChantierPhotosPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const id = params.id;
   const router = useRouter();
   const { data: session, status } = useSession();
   const [photos, setPhotos] = useState([]);

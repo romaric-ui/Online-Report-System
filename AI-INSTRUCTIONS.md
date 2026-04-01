@@ -174,8 +174,8 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 3.1 — Tables Chantier, Lot, JournalChantier, PhotoChantier, Tache
 - [x] 3.2 — Repository + 6 routes API chantier
 - [x] 3.3 — 6 pages UI chantier
-- [ ] 3.4 — Lier rapports aux chantiers
-- [ ] 3.5 — Mettre à jour Header (lien Chantiers)
+- [x] 3.4 — Lier rapports aux chantiers
+- [x] 3.5 — Mettre à jour Header (lien Chantiers)
 
 ### Sprint 4 — Gestion des Équipes
 - [ ] 4.1 — Tables Ouvrier, AffectationChantier, Pointage

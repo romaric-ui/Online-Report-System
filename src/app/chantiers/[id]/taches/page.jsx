@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Plus, CheckCircle, Circle, Edit3, ArrowLeft } from 'lucide-react';
@@ -33,8 +33,9 @@ const PRIORITY_CLASSES = {
   urgente: 'bg-red-100 text-red-700',
 };
 
-export default function ChantierTachesPage({ params }) {
-  const { id } = params;
+export default function ChantierTachesPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const id = params.id;
   const router = useRouter();
   const { data: session, status } = useSession();
   const [tasks, setTasks] = useState([]);
