@@ -187,8 +187,8 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 5.2 — Repository + API + Pages matériel
 
 ### Sprint 6 — Budget & Dépenses
-- [ ] 6.1 — Tables BudgetChantier, Depense
-- [ ] 6.2 — Repository + API + Page budget
+- [x] 6.1 — Tables BudgetChantier, Depense
+- [x] 6.2 — Repository + API + Page budget
 
 ### Sprint 7 — Planification Gantt
 - [ ] 7.1 — Étendre table Tache + DependanceTache + Jalon
