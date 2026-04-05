@@ -203,9 +203,10 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 9A.1 — API dashboard projet (KPIs, alertes, activité, budget)
 - [x] 9A.2 — Page dashboard projet + mise à jour Header
 
-### Sprint 9B — Rapports Automatiques
-- [ ] 9B.1 — API rapports automatiques (PDF chantier, résumé hebdo, stats)
-- [ ] 9B.2 — Page rapports avec génération PDF enrichie
+### Sprint 9B — Gestion des Documents
+- [x] 9B.1 — Table DocumentChantier + migration SQL
+- [x] 9B.2 — Repository + API documents (upload, liste, suppression)
+- [x] 9B.3 — Page documents (drag & drop, filtres, tableau)
 
 ### Sprint 9C — Communication / Chat
 - [ ] 9C.1 — Tables ChatMessage, Conversation + migration SQL
