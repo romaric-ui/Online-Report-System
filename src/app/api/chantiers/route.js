@@ -68,6 +68,10 @@ async function handlePOST(request) {
     throw new ValidationError('Le nom du chantier est requis');
   }
 
+  if (date_debut && date_fin_prevue && date_fin_prevue < date_debut) {
+    throw new ValidationError('La date de fin doit être supérieure ou égale à la date de début');
+  }
+
   const chantier = await chantierRepo.create({
     id_entreprise: entrepriseId,
     nom,

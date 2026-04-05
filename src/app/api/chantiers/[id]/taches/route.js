@@ -76,6 +76,10 @@ async function handlePOST(request, { params }) {
     throw new ValidationError('Le nom de la tâche est requis');
   }
 
+  if (date_debut && date_fin_prevue && date_fin_prevue < date_debut) {
+    throw new ValidationError('La date de fin doit être supérieure ou égale à la date de début');
+  }
+
   const tache = await tacheRepo.create({
     id_chantier: chantierId,
     id_lot: id_lot ? parseInt(id_lot, 10) : null,
@@ -128,6 +132,12 @@ async function handlePUT(request, { params }) {
 
   if (Object.keys(sanitizedData).length === 0) {
     throw new ValidationError('Aucune donnée valide à mettre à jour');
+  }
+
+  const mergedDebut     = sanitizedData.date_debut     !== undefined ? sanitizedData.date_debut     : tache.date_debut;
+  const mergedFinPrevue = sanitizedData.date_fin_prevue !== undefined ? sanitizedData.date_fin_prevue : tache.date_fin_prevue;
+  if (mergedDebut && mergedFinPrevue && mergedFinPrevue < mergedDebut) {
+    throw new ValidationError('La date de fin doit être supérieure ou égale à la date de début');
   }
 
   await tacheRepo.update(id_tache, sanitizedData);

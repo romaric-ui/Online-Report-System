@@ -191,9 +191,9 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 6.2 — Repository + API + Page budget
 
 ### Sprint 7 — Planification Gantt
-- [ ] 7.1 — Étendre table Tache + DependanceTache + Jalon
-- [ ] 7.2 — Algorithme CPM (lib/algorithms/cpm.js)
-- [ ] 7.3 — API + Page Gantt interactive
+- [x] 7.1 — Étendre table Tache + DependanceTache + Jalon
+- [x] 7.2 — Algorithme CPM (lib/algorithms/cpm.js)
+- [x] 7.3 — API + Page Gantt interactive
 
 ### Sprint 8 — Module HSE Sécurité
 - [ ] 8.1 — Tables ChecklistSecurite, ItemChecklist, IncidentSecurite

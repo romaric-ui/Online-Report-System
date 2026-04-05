@@ -93,6 +93,10 @@ export default function ChantierTachesPage({ params: paramsPromise }) {
       setError('Le nom de la tâche est requis.');
       return;
     }
+    if (form.date_debut && form.date_fin_prevue && form.date_fin_prevue < form.date_debut) {
+      setError('La date de fin doit être supérieure ou égale à la date de début.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {

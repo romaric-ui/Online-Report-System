@@ -44,6 +44,10 @@ export default function NouveauChantierPage() {
       setError('Le nom du chantier est requis.');
       return;
     }
+    if (values.date_debut && values.date_fin_prevue && values.date_fin_prevue < values.date_debut) {
+      setError('La date de fin doit être supérieure ou égale à la date de début.');
+      return;
+    }
     setError('');
     setLoading(true);
 
