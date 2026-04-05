@@ -196,8 +196,8 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 7.3 — API + Page Gantt interactive
 
 ### Sprint 8 — Module HSE Sécurité
-- [ ] 8.1 — Tables ChecklistSecurite, ItemChecklist, IncidentSecurite
-- [ ] 8.2 — API + Pages sécurité
+- [x] 8.1 — Tables ChecklistSecurite, ItemChecklist, IncidentSecurite
+- [x] 8.2 — API + Pages sécurité
 
 ### Sprint 9 — Abonnements & Paiement
 - [ ] 9.1 — Tables Plan, Abonnement
