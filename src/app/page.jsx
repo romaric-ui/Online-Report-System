@@ -67,14 +67,19 @@ export default function Home() {
     setPendingAction(null);
   };
 
+  // Retourne l'URL du dashboard selon le rôle
+  const getDashboardUrl = useCallback(() => {
+    return session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard';
+  }, [session]);
+
   // Helper pour ouvrir le modal ou rediriger vers le dashboard
   const handleGetStarted = useCallback(() => {
     if (status === 'authenticated' && session?.user) {
-      window.location.href = '/dashboard';
+      window.location.href = getDashboardUrl();
     } else if (status === 'loading') {
       setTimeout(() => {
         if (session?.user) {
-          window.location.href = '/dashboard';
+          window.location.href = getDashboardUrl();
         } else {
           setShowAuthModal(true);
         }
@@ -82,7 +87,7 @@ export default function Home() {
     } else {
       setShowAuthModal(true);
     }
-  }, [status, session]);
+  }, [status, session, getDashboardUrl]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -93,10 +98,10 @@ export default function Home() {
       />
       <LandingFeatures />
       <LandingTestimonials />
-      <LandingPricing 
+      <LandingPricing
         onGetStarted={() => {
           if (status === 'authenticated' && session?.user) {
-            window.location.href = '/dashboard';
+            window.location.href = getDashboardUrl();
           } else {
             setShowAuthModal(true);
           }

@@ -199,16 +199,30 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 8.1 — Tables ChecklistSecurite, ItemChecklist, IncidentSecurite
 - [x] 8.2 — API + Pages sécurité
 
-### Sprint 9 — Abonnements & Paiement
-- [ ] 9.1 — Tables Plan, Abonnement
-- [ ] 9.2 — Middleware plan-guard
-- [ ] 9.3 — Stripe Checkout + Webhooks
-- [ ] 9.4 — Mettre à jour LandingPricing.jsx
+### Sprint 9A — Dashboard Projet
+- [x] 9A.1 — API dashboard projet (KPIs, alertes, activité, budget)
+- [x] 9A.2 — Page dashboard projet + mise à jour Header
 
-### Sprint 10 — Dashboard & Finalisation
-- [ ] 10.1 — Dashboard global enrichi
-- [ ] 10.2 — Navigation complète
-- [ ] 10.3 — Tests (vitest + playwright)
+### Sprint 9B — Rapports Automatiques
+- [ ] 9B.1 — API rapports automatiques (PDF chantier, résumé hebdo, stats)
+- [ ] 9B.2 — Page rapports avec génération PDF enrichie
+
+### Sprint 9C — Communication / Chat
+- [ ] 9C.1 — Tables ChatMessage, Conversation + migration SQL
+- [ ] 9C.2 — API chat + notifications
+- [ ] 9C.3 — Page chat par chantier
+
+### Sprint 10 — Abonnements & Paiement
+- [ ] 10.1 — Tables Plan, Abonnement
+- [ ] 10.2 — Middleware plan-guard (vérification limites)
+- [ ] 10.3 — Stripe Checkout + Webhooks
+- [ ] 10.4 — Mettre à jour LandingPricing.jsx avec vrais prix
+
+### Sprint 11 — Dashboard Avancé & Finalisation
+- [ ] 11.1 — Dashboard global enrichi
+- [ ] 11.2 — Navigation complète
+- [ ] 11.3 — Validations obligatoires sur les formulaires
+- [ ] 11.4 — Tests (vitest + playwright)
 
 
 ## DÉTAIL DES SPRINTS

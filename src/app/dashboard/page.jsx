@@ -36,9 +36,9 @@ export default function UserDashboard() {
       router.push('/');
     }
     if (status === 'authenticated') {
-      // Rediriger l'admin vers son dashboard
+      // Rediriger l'admin vers le dashboard projet (pas le super-admin SGTEC)
       if (session?.user?.role === 'admin') {
-        router.push('/admin/dashboard');
+        router.push('/dashboard-projet');
         return;
       }
       fetchReports();

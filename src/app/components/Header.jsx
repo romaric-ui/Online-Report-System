@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X, User, LogOut, LogIn, FileText, ChevronDown, MapPin, Users, Wrench } from 'lucide-react';
+import { Menu, X, LogOut, LogIn, FileText, ChevronDown, MapPin, Users, Wrench, LayoutDashboard } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 
 export default function Header({ user, onLogout, onShowAuth }) {
@@ -15,7 +15,6 @@ export default function Header({ user, onLogout, onShowAuth }) {
   const displayName = user?.prenom || session?.user?.prenom || session?.user?.name?.split(' ')[0] || '';
   const displayLastName = user?.nom || session?.user?.nom || session?.user?.name?.split(' ').pop() || '';
   const displayEmail = user?.email || session?.user?.email || '';
-  const displayRole = user?.role || 'Utilisateur';
   const initials = `${displayName.charAt(0)}${displayLastName.charAt(0)}`.toUpperCase() || 'U';
 
   useEffect(() => {
@@ -71,6 +70,13 @@ export default function Header({ user, onLogout, onShowAuth }) {
             {isLoggedIn ? (
               <>
                 <a
+                  href={session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard'}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  {session?.user?.role === 'admin' ? 'Mon projet' : 'Mes rapports'}
+                </a>
+                <a
                   href="/chantiers"
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
                 >
@@ -90,13 +96,6 @@ export default function Header({ user, onLogout, onShowAuth }) {
                 >
                   <Wrench className="w-4 h-4" />
                   Matériel
-                </a>
-                <a
-                  href="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                >
-                  <FileText className="w-4 h-4" />
-                  Mes rapports
                 </a>
               </>
             ) : (
@@ -145,15 +144,24 @@ export default function Header({ user, onLogout, onShowAuth }) {
                       </div>
                     </div>
 
-                    {/* Lien dashboard */}
+                    {/* Liens dashboard */}
                     <div className="py-1">
                       <a
-                        href="/dashboard"
+                        href={session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard'}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <FileText className="w-4 h-4 text-gray-400" />
-                        <span>Mes rapports</span>
+                        <LayoutDashboard className="w-4 h-4 text-gray-400" />
+                        <span>{session?.user?.role === 'admin' ? 'Mon projet' : 'Mes rapports'}</span>
                       </a>
+                      {session?.user?.role === 'admin' && (
+                        <a
+                          href="/dashboard"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-gray-400" />
+                          <span>Mes rapports</span>
+                        </a>
+                      )}
                     </div>
 
                     {/* Déconnexion */}
@@ -205,6 +213,13 @@ export default function Header({ user, onLogout, onShowAuth }) {
             {isLoggedIn ? (
               <>
                 <a
+                  href={session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard'}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  {session?.user?.role === 'admin' ? 'Mon projet' : 'Mes rapports'}
+                </a>
+                <a
                   href="/chantiers"
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
                 >
@@ -224,13 +239,6 @@ export default function Header({ user, onLogout, onShowAuth }) {
                 >
                   <Wrench className="w-5 h-5" />
                   Matériel
-                </a>
-                <a
-                  href="/dashboard"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                >
-                  <FileText className="w-5 h-5" />
-                  Mes rapports
                 </a>
               </>
             ) : (
