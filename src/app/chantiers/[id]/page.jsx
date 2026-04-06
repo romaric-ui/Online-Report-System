@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Grid, ClipboardList, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Camera, FileText, Users, Wrench, BarChart3, ShieldCheck, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Grid, ClipboardList, CalendarDays, MapPin, Wallet, SlidersHorizontal, CheckCircle, Activity, Compass, Camera, FileText, Users, Wrench, BarChart3, ShieldCheck, FolderOpen, FileBarChart, MessageCircle } from 'lucide-react';
 
 const STATUS_LABELS = {
   planifie: 'Planifié',
@@ -137,6 +137,12 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
                   </button>
                   <button type="button" onClick={() => router.push(`/chantiers/${id}/documents`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
                     <FolderOpen className="w-4 h-4" /> Documents
+                  </button>
+                  <button type="button" onClick={() => router.push(`/chantiers/${id}/rapport-auto`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <FileBarChart className="w-4 h-4" /> Rapport
+                  </button>
+                  <button type="button" onClick={() => router.push(`/chantiers/${id}/chat`)} className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" /> Discussion
                   </button>
                   <button type="button" onClick={() => alert('Édition à venir') } className="rounded-3xl border border-slate-200 bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition inline-flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" /> Modifier

@@ -208,10 +208,20 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 9B.2 — Repository + API documents (upload, liste, suppression)
 - [x] 9B.3 — Page documents (drag & drop, filtres, tableau)
 
-### Sprint 9C — Communication / Chat
-- [ ] 9C.1 — Tables ChatMessage, Conversation + migration SQL
-- [ ] 9C.2 — API chat + notifications
-- [ ] 9C.3 — Page chat par chantier
+### Sprint 9C — Rapports Automatiques
+- [~] 9C.1 — API rapport chantier + API résumé hebdo (en pause — à revoir)
+- [~] 9C.2 — Pages rapport chantier + résumé hebdo + boutons (en pause — à revoir)
+
+### Sprint 9D — Communication / Chat
+- [x] 9D.1 — Tables ChatMessage, Conversation + migration SQL (database/migrations/010_chat.sql)
+- [x] 9D.2 — API chat GET + POST (/api/chantiers/[id]/chat)
+- [x] 9D.3 — Page chat par chantier + bouton Discussion dans fiche chantier
+
+### Sprint 9E — Invitations & Rôles entreprise
+- [x] 9E.1 — Table InvitationEntreprise + RoleEntreprise + migration SQL (database/migrations/011_invitations.sql)
+- [x] 9E.2 — Repository invitation + API invitations (envoyer, accepter, annuler, lister) + API equipe-projet (membres, rôles)
+- [x] 9E.3 — Page /dashboard-projet/equipe + page publique /invitation/[code] + bouton "Mon équipe" dans dashboard
+- [ ] 9E.4 — Contrôle d'accès par rôle dans les routes API
 
 ### Sprint 10 — Abonnements & Paiement
 - [ ] 10.1 — Tables Plan, Abonnement

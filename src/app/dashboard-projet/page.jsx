@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import {
   Building2, Wallet, Users, TrendingUp, AlertTriangle, ShieldCheck,
   PlusCircle, UserPlus, Wrench, ChevronRight, Clock, Camera,
-  ClipboardList, Calendar, ArrowUpRight,
+  ClipboardList, Calendar, ArrowUpRight, FileBarChart,
 } from 'lucide-react';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
@@ -209,6 +209,18 @@ export default function DashboardProjetPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition shadow-sm shadow-amber-200"
             >
               <Wrench className="w-4 h-4" /> Ajouter du matériel
+            </button>
+            <button
+              onClick={() => router.push('/dashboard-projet/rapport-hebdo')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-sm"
+            >
+              <FileBarChart className="w-4 h-4" /> Rapport hebdo
+            </button>
+            <button
+              onClick={() => router.push('/dashboard-projet/equipe')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-700 text-white rounded-xl text-sm font-semibold hover:bg-violet-800 transition shadow-sm shadow-violet-200"
+            >
+              <UserPlus className="w-4 h-4" /> Mon équipe
             </button>
           </div>
         </div>
