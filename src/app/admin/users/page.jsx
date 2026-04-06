@@ -235,7 +235,7 @@ export default function AdminUsersPage() {
   const confirmAction = async () => {
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/admin/users/${selectedUser.id_utilisateur}`, {
         method: modalAction === 'delete' ? 'DELETE' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

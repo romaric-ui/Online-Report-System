@@ -242,11 +242,10 @@ export default function EquipePage() {
                       className="w-full appearance-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition bg-white"
                     >
                       <option value="">Choisir un rôle…</option>
-                      {roles.filter(r => r.nom !== 'admin').map(r => (
-                        <option key={r.id_role_entreprise} value={r.id_role_entreprise}>
-                          {ROLE_LABELS[r.nom] || r.nom}
-                        </option>
-                      ))}
+                      <option value="1">Admin</option>
+                      <option value="2">Chef de chantier</option>
+                      <option value="3">Conducteur de travaux</option>
+                      <option value="4">Ouvrier</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>

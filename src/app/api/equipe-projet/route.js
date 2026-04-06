@@ -9,6 +9,7 @@ const apiHandler = (handler) => async (request, context) => {
   try {
     return await handler(request, context);
   } catch (error) {
+    console.error('[equipe-projet]', error?.code, error?.message, error?.sqlMessage);
     return errorResponse(error, request);
   }
 };

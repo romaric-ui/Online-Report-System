@@ -36,7 +36,7 @@ async function handlePUT(request, { params }) {
   await requireAdmin(session, entrepriseId);
 
   const resolved = await params;
-  const invId = parseInt(resolved.id, 10);
+  const invId = parseInt(resolved.code, 10);
   if (!invId || Number.isNaN(invId)) throw new ValidationError('ID invitation invalide');
 
   const invitation = await invitationRepo.findById(invId);
