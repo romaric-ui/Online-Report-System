@@ -1,150 +1,182 @@
 "use client";
-import { Check, Zap, Star, Crown, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Check } from 'lucide-react';
 
-export default function LandingPricing({ onGetStarted, isAuthenticated }) {
-  const plans = [
-    {
-      name: "Gratuit",
-      icon: Zap,
-      price: "0",
-      description: "Pour découvrir et utiliser l'application",
-      features: [
-        "Rapports illimités",
-        "Export PDF professionnel",
-        "Photos de couverture",
-        "Tableau de bord personnel",
-        "Connexion Google ou email",
-      ],
-      cta: isAuthenticated ? "Accéder à mes rapports" : "Commencer gratuitement",
-      available: true,
-      highlight: true,
-    },
-    {
-      name: "Pro",
-      icon: Star,
-      price: null,
-      description: "Bientôt disponible",
-      features: [
-        "Toutes les fonctionnalités gratuites",
-        "Modèles de rapports personnalisés",
-        "Logo de l'entreprise sur les PDF",
-        "Export en lot",
-        "Archivage avancé",
-      ],
-      cta: "Bientôt disponible",
-      available: false,
-      highlight: false,
-    },
-    {
-      name: "Entreprise",
-      icon: Crown,
-      price: null,
-      description: "Bientôt disponible",
-      features: [
-        "Tout du plan Pro",
-        "Multi-utilisateurs",
-        "Gestion des rôles avancée",
-        "Support prioritaire",
-        "Facturation mensuelle",
-      ],
-      cta: "Bientôt disponible",
-      available: false,
-      highlight: false,
-    },
-  ];
+const plans = [
+  {
+    name: "Essentiel",
+    monthlyPrice: 15000,
+    description: "Parfait pour démarrer votre digitalisation.",
+    features: [
+      "1 utilisateur",
+      "3 chantiers actifs",
+      "Rapports PDF",
+      "Journal de chantier",
+      "Photos de chantier",
+    ],
+    cta: "Commencer",
+    highlight: false,
+    badge: null,
+  },
+  {
+    name: "Pro",
+    monthlyPrice: 45000,
+    description: "Pour les équipes qui gèrent plusieurs chantiers.",
+    features: [
+      "2 utilisateurs",
+      "25 chantiers actifs",
+      "Tout Essentiel inclus",
+      "Équipes & pointage",
+      "Matériel",
+      "Budget & dépenses",
+      "Documents",
+      "Chat d'équipe",
+    ],
+    cta: "Commencer",
+    highlight: true,
+    badge: "Populaire",
+  },
+  {
+    name: "Enterprise",
+    monthlyPrice: null,
+    description: "Pour les grandes structures avec des besoins spécifiques.",
+    features: [
+      "Utilisateurs illimités",
+      "Chantiers illimités",
+      "Tout Pro inclus",
+      "Gantt & chemin critique",
+      "HSE & sécurité",
+      "API dédiée",
+      "Support prioritaire",
+    ],
+    cta: "Nous contacter",
+    highlight: false,
+    badge: null,
+  },
+];
+
+function formatPrice(price, annual) {
+  if (!price) return null;
+  const p = annual ? Math.round(price * 0.8) : price;
+  return p.toLocaleString('fr-FR');
+}
+
+export default function LandingPricing({ onGetStarted }) {
+  const [annual, setAnnual] = useState(false);
 
   return (
     <section id="pricing" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div className="text-center mb-16">
-          <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">
             Tarifs
           </span>
-          <h2 className="mt-3 text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
-            Gratuit pour commencer
+          <h2 className="mt-3 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
+            Des offres adaptées à{" "}
+            <span className="text-indigo-600">votre activité</span>
           </h2>
-          <p className="mt-4 text-gray-500 max-w-xl mx-auto">
-            L'application est pleinement fonctionnelle et gratuite. Des formules avancées
-            arrivent prochainement.
+          <p className="mt-5 text-lg text-gray-500 max-w-xl mx-auto">
+            Essai gratuit de 14 jours sur tous les plans. Sans carte bancaire.
           </p>
+
+          {/* Toggle mensuel / annuel */}
+          <div className="mt-8 inline-flex items-center gap-3 bg-gray-100 rounded-2xl p-1">
+            <button
+              onClick={() => setAnnual(false)}
+              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                !annual
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Mensuel
+            </button>
+            <button
+              onClick={() => setAnnual(true)}
+              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+                annual
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Annuel
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                -20%
+              </span>
+            </button>
+          </div>
         </div>
 
+        {/* Plans */}
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {plans.map((plan, index) => {
-            const Icon = plan.icon;
+            const price = formatPrice(plan.monthlyPrice, annual);
             return (
               <div
                 key={index}
-                className={`rounded-2xl p-8 border flex flex-col transition-all duration-200 ${
+                className={`relative rounded-3xl p-8 flex flex-col border transition-all duration-200 ${
                   plan.highlight
-                    ? 'border-blue-600 shadow-xl shadow-blue-100/40 bg-white'
-                    : 'border-gray-200 bg-gray-50/50 opacity-70'
+                    ? 'border-indigo-500 shadow-2xl shadow-indigo-100/50 bg-white scale-[1.02]'
+                    : 'border-gray-200 bg-white hover:shadow-lg hover:-translate-y-1'
                 }`}
               >
                 {/* Badge */}
-                <div className="mb-5 h-6">
-                  {plan.highlight && (
-                    <span className="inline-flex items-center text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-                      Disponible maintenant
+                {plan.badge && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span className="bg-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+                      {plan.badge}
                     </span>
-                  )}
-                  {!plan.available && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                      <Clock className="w-3 h-3" />
-                      Prochainement
-                    </span>
-                  )}
-                </div>
-
-                {/* Icon + Name */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    plan.available ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}>
-                    <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-                </div>
+                )}
 
-                <p className="text-sm text-gray-400 mb-5">{plan.description}</p>
+                {/* Name & desc */}
+                <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
+                <p className="text-sm text-gray-500 mb-6">{plan.description}</p>
 
                 {/* Price */}
                 <div className="mb-6">
-                  {plan.price !== null ? (
+                  {price ? (
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold text-gray-900">{plan.price}€</span>
-                      <span className="text-sm text-gray-400">/ mois</span>
+                      <span className="text-4xl font-extrabold text-gray-900">{price}</span>
+                      <span className="text-sm text-gray-400 ml-1">FCFA / mois</span>
                     </div>
                   ) : (
-                    <span className="text-3xl font-bold text-gray-200">—</span>
+                    <div>
+                      <span className="text-3xl font-extrabold text-gray-900">Sur devis</span>
+                    </div>
+                  )}
+                  {annual && price && (
+                    <p className="text-xs text-emerald-600 mt-1 font-semibold">
+                      Économisez 20% avec la facturation annuelle
+                    </p>
                   )}
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-2.5 mb-8 flex-1">
+                <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2.5">
-                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                        plan.available ? 'text-blue-600' : 'text-gray-300'
-                      }`} />
-                      <span className={`text-sm ${
-                        plan.available ? 'text-gray-700' : 'text-gray-400'
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        plan.highlight ? 'bg-indigo-100' : 'bg-gray-100'
                       }`}>
-                        {feature}
-                      </span>
+                        <Check className={`w-3 h-3 ${plan.highlight ? 'text-indigo-600' : 'text-gray-500'}`} />
+                      </div>
+                      <span className="text-sm text-gray-700">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 {/* CTA */}
                 <button
-                  onClick={plan.available ? onGetStarted : undefined}
-                  disabled={!plan.available}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors ${
-                    plan.available
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  onClick={plan.cta === "Commencer" ? onGetStarted : undefined}
+                  className={`w-full py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 ${
+                    plan.highlight
+                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:scale-[1.01]'
+                      : plan.cta === "Nous contacter"
+                        ? 'bg-white border-2 border-gray-200 text-gray-700 hover:border-indigo-300 hover:text-indigo-600'
+                        : 'bg-gray-900 hover:bg-gray-800 text-white'
                   }`}
                 >
                   {plan.cta}
@@ -154,8 +186,9 @@ export default function LandingPricing({ onGetStarted, isAuthenticated }) {
           })}
         </div>
 
+        {/* Footer note */}
         <p className="mt-10 text-center text-sm text-gray-400">
-          Les formules Pro et Entreprise sont en développement. L'offre gratuite est sans limitation de durée.
+          Essai gratuit de 14 jours sur tous les plans. Sans carte bancaire.
         </p>
       </div>
     </section>

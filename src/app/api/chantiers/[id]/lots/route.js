@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { BaseRepository } from '../../../../../../lib/repositories/base.repository.js';
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';

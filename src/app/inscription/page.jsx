@@ -126,7 +126,22 @@ export default function InscriptionPage() {
         return;
       }
 
-      router.push('/?registered=1');
+      // Envoyer le code OTP par email avant de rediriger
+      const userId = data.admin?.id_utilisateur;
+      const email = formData.adminEmail;
+
+      const otpRes = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, userId }),
+      });
+
+      if (!otpRes.ok) {
+        setError('Compte créé mais erreur lors de l\'envoi du code de vérification. Contactez le support.');
+        return;
+      }
+
+      router.push(`/verify-otp?email=${encodeURIComponent(email)}&userId=${userId}`);
     } catch (err) {
       setError('Erreur réseau, veuillez réessayer.');
     } finally {

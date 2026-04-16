@@ -103,8 +103,8 @@ async function handlePOST(request) {
 
     const [adminResult] = await connection.query(
       `INSERT INTO Utilisateur
-       (nom, prenom, email, mot_de_passe, provider, provider_id, id_role, statut, email_verified, id_entreprise)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (nom, prenom, email, mot_de_passe, provider, provider_id, id_role, id_role_entreprise, statut, email_verified, id_entreprise)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nomValidation.value,
         prenomValidation.value,
@@ -112,9 +112,10 @@ async function handlePOST(request) {
         hashedPassword,
         'credentials',
         null,
-        1,
+        2,           // id_role = 2 (Utilisateur) — réservé au super admin SGTEC d'avoir id_role = 1
+        1,           // id_role_entreprise = 1 (Admin de son entreprise)
         'actif',
-        1,
+        0,           // email_verified = 0, vérifié après OTP
         entrepriseId
       ]
     );
@@ -133,7 +134,8 @@ async function handlePOST(request) {
       nom: nomValidation.value,
       prenom: prenomValidation.value,
       email: emailValidation.value,
-      id_role: 1,
+      id_role: 2,
+      id_role_entreprise: 1,
       id_entreprise: entrepriseId
     };
   });

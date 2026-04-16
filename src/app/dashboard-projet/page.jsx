@@ -186,12 +186,12 @@ export default function DashboardProjetPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
           <div>
             <p className="text-sm font-medium text-blue-600 mb-1 capitalize">{today}</p>
-            <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tableau de bord</h1>
             {data?.entreprise_nom && (
               <p className="mt-1 text-gray-500 text-sm">{data.entreprise_nom}</p>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             <button
               onClick={() => router.push('/chantiers/nouveau')}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm shadow-blue-200"
@@ -312,87 +312,138 @@ export default function DashboardProjetPage() {
                   </button>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 text-left">
-                        <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Chantier</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Progression</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Budget</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tâches ⚠</th>
-                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dernier journal</th>
-                        <th className="px-4 py-3"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {chantiers.map(c => {
-                        const depPct = c.budget_prevu > 0 ? Math.round((parseFloat(c.total_depense) / parseFloat(c.budget_prevu)) * 100) : 0;
-                        const isEnRetard = c.date_fin_prevue && new Date(c.date_fin_prevue) < new Date() && !['termine','annule'].includes(c.statut);
-                        const isBudgetAlert = depPct >= 90;
-
-                        return (
-                          <tr
-                            key={c.id_chantier}
-                            onClick={() => router.push(`/chantiers/${c.id_chantier}`)}
-                            className="hover:bg-gray-50 cursor-pointer transition-colors"
-                          >
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-2">
-                                <div>
-                                  <p className="font-medium text-gray-900 flex items-center gap-1.5">
-                                    {c.nom}
-                                    {isEnRetard && <span className="w-2 h-2 rounded-full bg-red-500 inline-block" title="En retard" />}
-                                  </p>
-                                  {c.reference && <p className="text-xs text-gray-400">Réf. {c.reference}</p>}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUT_CLASSES[c.statut] || 'bg-gray-100 text-gray-600'}`}>
-                                {STATUT_LABELS[c.statut] || c.statut}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <div className="flex items-center gap-2 min-w-[80px]">
-                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-blue-500"
-                                    style={{ width: `${Math.min(parseFloat(c.progression) || 0, 100)}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-gray-500 w-8 text-right">{Math.round(parseFloat(c.progression) || 0)}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <p className={`text-xs font-medium ${isBudgetAlert ? 'text-red-600' : 'text-gray-700'}`}>
-                                {fmtCurrency(c.total_depense)}
+                <>
+                  {/* ── Mobile : cards empilées ── */}
+                  <div className="md:hidden divide-y divide-gray-100">
+                    {chantiers.map(c => {
+                      const depPct = c.budget_prevu > 0 ? Math.round((parseFloat(c.total_depense) / parseFloat(c.budget_prevu)) * 100) : 0;
+                      const isEnRetard = c.date_fin_prevue && new Date(c.date_fin_prevue) < new Date() && !['termine','annule'].includes(c.statut);
+                      const isBudgetAlert = depPct >= 90;
+                      return (
+                        <button
+                          key={c.id_chantier}
+                          onClick={() => router.push(`/chantiers/${c.id_chantier}`)}
+                          className="w-full text-left px-5 py-4 hover:bg-gray-50 transition-colors"
+                        >
+                          {/* Nom + statut */}
+                          <div className="flex items-start justify-between gap-2 mb-2.5">
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900 text-sm flex items-center gap-1.5">
+                                <span className="truncate">{c.nom}</span>
+                                {isEnRetard && (
+                                  <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="En retard" />
+                                )}
                               </p>
-                              <p className="text-xs text-gray-400">{c.budget_prevu ? `/ ${fmtCurrency(c.budget_prevu)}` : '—'}</p>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              {parseInt(c.taches_en_retard, 10) > 0 ? (
-                                <span className="inline-flex items-center rounded-full bg-red-100 text-red-600 px-2.5 py-1 text-xs font-semibold">
-                                  {c.taches_en_retard} en retard
+                              {c.reference && <p className="text-xs text-gray-400">Réf. {c.reference}</p>}
+                            </div>
+                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold flex-shrink-0 ${STATUT_CLASSES[c.statut] || 'bg-gray-100 text-gray-600'}`}>
+                              {STATUT_LABELS[c.statut] || c.statut}
+                            </span>
+                          </div>
+                          {/* Progression */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-blue-500"
+                                style={{ width: `${Math.min(parseFloat(c.progression) || 0, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500 flex-shrink-0">
+                              {Math.round(parseFloat(c.progression) || 0)}%
+                            </span>
+                          </div>
+                          {/* Budget */}
+                          <p className={`text-xs font-medium ${isBudgetAlert ? 'text-red-600' : 'text-gray-600'}`}>
+                            Budget : {fmtCurrency(c.total_depense)}
+                            {c.budget_prevu ? ` / ${fmtCurrency(c.budget_prevu)}` : ''}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── Desktop : tableau ── */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 text-left">
+                          <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Chantier</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Progression</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Budget</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tâches ⚠</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dernier journal</th>
+                          <th className="px-4 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {chantiers.map(c => {
+                          const depPct = c.budget_prevu > 0 ? Math.round((parseFloat(c.total_depense) / parseFloat(c.budget_prevu)) * 100) : 0;
+                          const isEnRetard = c.date_fin_prevue && new Date(c.date_fin_prevue) < new Date() && !['termine','annule'].includes(c.statut);
+                          const isBudgetAlert = depPct >= 90;
+                          return (
+                            <tr
+                              key={c.id_chantier}
+                              onClick={() => router.push(`/chantiers/${c.id_chantier}`)}
+                              className="hover:bg-gray-50 cursor-pointer transition-colors"
+                            >
+                              <td className="px-5 py-3.5">
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <p className="font-medium text-gray-900 flex items-center gap-1.5">
+                                      {c.nom}
+                                      {isEnRetard && <span className="w-2 h-2 rounded-full bg-red-500 inline-block" title="En retard" />}
+                                    </p>
+                                    {c.reference && <p className="text-xs text-gray-400">Réf. {c.reference}</p>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUT_CLASSES[c.statut] || 'bg-gray-100 text-gray-600'}`}>
+                                  {STATUT_LABELS[c.statut] || c.statut}
                                 </span>
-                              ) : (
-                                <span className="text-xs text-gray-400">{c.nombre_taches} tâches</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3.5 text-xs text-gray-400">
-                              {c.dernier_journal_date
-                                ? new Date(c.dernier_journal_date).toLocaleDateString('fr-FR')
-                                : '—'}
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <ChevronRight className="w-4 h-4 text-gray-300" />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <div className="flex items-center gap-2 min-w-[80px]">
+                                  <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full bg-blue-500"
+                                      style={{ width: `${Math.min(parseFloat(c.progression) || 0, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-gray-500 w-8 text-right">{Math.round(parseFloat(c.progression) || 0)}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <p className={`text-xs font-medium ${isBudgetAlert ? 'text-red-600' : 'text-gray-700'}`}>
+                                  {fmtCurrency(c.total_depense)}
+                                </p>
+                                <p className="text-xs text-gray-400">{c.budget_prevu ? `/ ${fmtCurrency(c.budget_prevu)}` : '—'}</p>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                {parseInt(c.taches_en_retard, 10) > 0 ? (
+                                  <span className="inline-flex items-center rounded-full bg-red-100 text-red-600 px-2.5 py-1 text-xs font-semibold">
+                                    {c.taches_en_retard} en retard
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-400">{c.nombre_taches} tâches</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3.5 text-xs text-gray-400">
+                                {c.dernier_journal_date
+                                  ? new Date(c.dernier_journal_date).toLocaleDateString('fr-FR')
+                                  : '—'}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <ChevronRight className="w-4 h-4 text-gray-300" />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
 
@@ -405,7 +456,7 @@ export default function DashboardProjetPage() {
               {chartData.length === 0 ? (
                 <p className="text-center text-gray-400 text-sm py-8">Aucune dépense enregistrée.</p>
               ) : (
-                <div className="flex items-end gap-3 h-36">
+                <div className="flex items-end gap-3 h-20 sm:h-36">
                   {chartData.map((b, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
                       <span className="text-xs font-semibold text-gray-700">

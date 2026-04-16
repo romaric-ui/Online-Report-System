@@ -1,10 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { invitationRepo } from '../../../../../../lib/repositories/invitation.repository.js';
 import { successResponse, errorResponse } from '../../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../../lib/tenant.js';
-import { AuthenticationError, AuthorizationError, ValidationError, NotFoundError } from '../../../../../../lib/errors/index.js';
-import { connectDB } from '../../../../../../lib/database.js';
+import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -14,26 +13,12 @@ const apiHandler = (handler) => async (request, context) => {
   }
 };
 
-async function requireAdmin(session, entrepriseId) {
-  const db = await connectDB();
-  const [rows] = await db.query(
-    `SELECT r.nom FROM Utilisateur u
-     INNER JOIN RoleEntreprise r ON u.id_role_entreprise = r.id_role_entreprise
-     WHERE u.id_utilisateur = ? AND u.id_entreprise = ?
-     LIMIT 1`,
-    [parseInt(session.user.id, 10), parseInt(entrepriseId, 10)]
-  );
-  if (!rows.length || rows[0].nom !== 'admin') {
-    throw new AuthorizationError('Accès réservé aux administrateurs');
-  }
-}
-
 async function handlePUT(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
-  await requireAdmin(session, entrepriseId);
+  requireRole(session, [1]); // admin entreprise uniquement
 
   const resolved = await params;
   const invId = parseInt(resolved.code, 10);

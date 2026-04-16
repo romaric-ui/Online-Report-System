@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/options';
 import { chantierRepo } from '../../../../lib/repositories/chantier.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../lib/api-response.js';
-import { requireTenant } from '../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../lib/tenant.js';
 import { AuthenticationError, ValidationError } from '../../../../lib/errors/index.js';
 
 const apiHandler = (handler) => async (request, context) => {
@@ -48,6 +48,7 @@ async function handlePOST(request) {
   }
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1, 2]); // admin entreprise + chef de chantier
   const body = await request.json();
   const {
     nom,

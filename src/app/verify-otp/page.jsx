@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import { Mail, ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function VerifyOTPPage() {
+function VerifyOTPContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -107,19 +106,8 @@ export default function VerifyOTPPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Connexion automatique après vérification
-        const signInResult = await signIn('credentials', {
-          redirect: false,
-          email,
-          password: searchParams.get('tempPassword') || '',
-        });
-
-        if (signInResult?.ok) {
-          router.push('/dashboard');
-        } else {
-          // Si la connexion auto échoue, rediriger vers la page de connexion
-          router.push('/?verified=true');
-        }
+        // Email vérifié — rediriger vers la page de connexion avec un message de confirmation
+        router.push('/?verified=1');
       } else {
         setError(data.error || 'Code invalide ou expiré');
         setOtp(['', '', '', '', '', '']);
@@ -240,5 +228,13 @@ export default function VerifyOTPPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOTPPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" /></div>}>
+      <VerifyOTPContent />
+    </Suspense>
   );
 }

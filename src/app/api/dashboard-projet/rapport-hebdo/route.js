@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
-import { chantierRepo } from '../../../../lib/repositories/chantier.repository.js';
-import { successResponse, errorResponse } from '../../../../lib/api-response.js';
-import { requireTenant } from '../../../../lib/tenant.js';
-import { AuthenticationError } from '../../../../lib/errors/index.js';
+import { authOptions } from '../../auth/[...nextauth]/options';
+import { chantierRepo } from '../../../../../lib/repositories/chantier.repository.js';
+import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
+import { requireTenant } from '../../../../../lib/tenant.js';
+import { AuthenticationError } from '../../../../../lib/errors/index.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {

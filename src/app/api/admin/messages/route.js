@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/options';
 import { messageRepo } from '../../../../../lib/repositories/message.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../../lib/api-response.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../lib/errors/index.js';

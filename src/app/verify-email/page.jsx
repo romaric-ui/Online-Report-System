@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Shield, ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -89,7 +89,7 @@ export default function VerifyEmailPage() {
       
       // Rediriger vers la page de connexion après 2 secondes
       setTimeout(() => {
-        router.push('/?verified=true');
+        router.push('/?login=true');
       }, 2000);
 
     } catch (err) {
@@ -220,5 +220,13 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" /></div>}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

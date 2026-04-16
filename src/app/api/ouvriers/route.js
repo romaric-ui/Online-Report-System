@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/options';
 import { ouvrierRepo } from '../../../../lib/repositories/ouvrier.repository.js';
 import { apiHandler, successResponse, createdResponse } from '../../../../lib/api-response.js';
-import { requireTenant } from '../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../lib/tenant.js';
 import { AuthenticationError, ValidationError } from '../../../../lib/errors/index.js';
 
 function parsePositiveInt(value, fallback) {
@@ -34,6 +34,7 @@ async function handlePOST(request) {
   }
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1]); // admin entreprise uniquement
   const body = await request.json();
   const { nom, prenom, telephone, poste, specialite, taux_horaire, date_embauche } = body;
 

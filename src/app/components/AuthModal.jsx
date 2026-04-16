@@ -95,8 +95,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
         if (sessionData?.user?.role === 'admin') {
           window.location.href = '/admin/dashboard';
         } else {
-          // L'utilisateur simple reste sur la page actuelle
-          window.location.reload();
+          window.location.href = '/dashboard-projet';
         }
       }
     } catch (error) {

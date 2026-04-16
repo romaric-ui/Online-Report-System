@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/options';
 import { materielRepo } from '../../../../../lib/repositories/materiel.repository.js';
 import { apiHandler, successResponse } from '../../../../../lib/api-response.js';
 import { requireTenant } from '../../../../../lib/tenant.js';

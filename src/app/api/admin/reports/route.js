@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/options';
 import { reportRepo } from '../../../../../lib/repositories/report.repository.js';
 import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
 import { AuthenticationError, AuthorizationError, ValidationError, NotFoundError } from '../../../../../lib/errors/index.js';

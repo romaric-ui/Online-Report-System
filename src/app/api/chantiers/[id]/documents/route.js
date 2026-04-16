@@ -2,11 +2,11 @@ import { getServerSession } from 'next-auth';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { documentRepo } from '../../../../../../lib/repositories/document.repository.js';
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError, NotFoundError } from '../../../../../../lib/errors/index.js';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 Mo
@@ -86,6 +86,7 @@ async function handlePOST(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1, 2]); // admin entreprise + chef de chantier
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
@@ -148,6 +149,7 @@ async function handleDELETE(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1, 2]); // admin entreprise + chef de chantier
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 

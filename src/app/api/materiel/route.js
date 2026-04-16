@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/options';
 import { materielRepo } from '../../../../lib/repositories/materiel.repository.js';
 import { apiHandler, successResponse, createdResponse } from '../../../../lib/api-response.js';
-import { requireTenant } from '../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../lib/tenant.js';
 import { AuthenticationError, ValidationError } from '../../../../lib/errors/index.js';
 
 function parsePositiveInt(value, fallback) {
@@ -31,6 +31,7 @@ async function handlePOST(request) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1]); // admin entreprise uniquement
   const body = await request.json();
   const {
     nom, categorie, reference, numero_serie, marque, etat,

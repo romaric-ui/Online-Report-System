@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { tacheRepo } from '../../../../../../lib/repositories/tache.repository.js';
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { calculateCPM } from '../../../../../../lib/algorithms/cpm.js';

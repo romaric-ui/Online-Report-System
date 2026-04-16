@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { budgetRepo } from '../../../../../../lib/repositories/budget.repository.js';
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { apiHandler, successResponse, createdResponse } from '../../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 async function parseChantierId(params) {
@@ -26,6 +26,7 @@ async function handleGET(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1, 2, 3]); // admin + chef de chantier + conducteur de travaux
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
@@ -38,6 +39,7 @@ async function handlePOST(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1]); // admin entreprise uniquement
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
@@ -65,6 +67,7 @@ async function handlePUT(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [1]); // admin entreprise uniquement
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 

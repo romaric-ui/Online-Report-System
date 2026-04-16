@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/options';
 import { userRepo } from '../../../../../lib/repositories/user.repository.js';
 import { reportRepo } from '../../../../../lib/repositories/report.repository.js';
 import { successResponse, errorResponse } from '../../../../../lib/api-response.js';

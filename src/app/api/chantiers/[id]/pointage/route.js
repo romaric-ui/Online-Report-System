@@ -1,10 +1,10 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '../../../auth/[...nextauth]/options';
 import { pointageRepo } from '../../../../../../lib/repositories/pointage.repository.js';
 import { ouvrierRepo } from '../../../../../../lib/repositories/ouvrier.repository.js';
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { apiHandler, successResponse, createdResponse } from '../../../../../../lib/api-response.js';
-import { requireTenant } from '../../../../../../lib/tenant.js';
+import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 async function parseChantierId(params) {
@@ -42,6 +42,7 @@ async function handleGET(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [2, 3]); // chef de chantier + conducteur de travaux
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
@@ -57,6 +58,7 @@ async function handlePOST(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  requireRole(session, [2, 3]); // chef de chantier + conducteur de travaux
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 

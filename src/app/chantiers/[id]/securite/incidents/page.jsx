@@ -12,20 +12,20 @@ const TYPE_INCIDENT_OPTIONS = [
 ];
 
 const GRAVITE_OPTIONS = [
-  { value: 'benin',      label: 'Bénin',       cls: 'text-emerald-700 bg-emerald-50' },
+  
   { value: 'moyen',      label: 'Moyen',       cls: 'text-yellow-700 bg-yellow-50' },
   { value: 'grave',      label: 'Grave',       cls: 'text-orange-700 bg-orange-50' },
   { value: 'tres_grave', label: 'Très grave',  cls: 'text-red-700 bg-red-50' },
 ];
 
 const GRAVITE_CLASSES = {
-  benin:      'bg-emerald-100 text-emerald-700',
+ 
   moyen:      'bg-yellow-100 text-yellow-700',
   grave:      'bg-orange-100 text-orange-700',
   tres_grave: 'bg-red-100 text-red-700',
 };
 
-const GRAVITE_LABELS = { benin: 'Bénin', moyen: 'Moyen', grave: 'Grave', tres_grave: 'Très grave' };
+const GRAVITE_LABELS = { moyen: 'Moyen', grave: 'Grave', tres_grave: 'Très grave' };
 
 const STATUT_OPTIONS = [
   { value: 'declare',    label: 'Déclaré' },

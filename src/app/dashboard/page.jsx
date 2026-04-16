@@ -36,11 +36,17 @@ export default function UserDashboard() {
       router.push('/');
     }
     if (status === 'authenticated') {
-      // Rediriger l'admin vers le dashboard projet (pas le super-admin SGTEC)
+      // Super admin SGTEC (id_role = 1) → /admin/dashboard
       if (session?.user?.role === 'admin') {
+        router.push('/admin/dashboard');
+        return;
+      }
+      // Admin entreprise (id_role = 2, id_role_entreprise = 1) → /dashboard-projet
+      if (session?.user?.roleEntreprise === 1) {
         router.push('/dashboard-projet');
         return;
       }
+      // Autres membres (chef chantier, conducteur, ouvrier) → restent ici
       fetchReports();
     }
   }, [status, router, session]);

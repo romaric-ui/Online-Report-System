@@ -22,11 +22,15 @@ export default function Home() {
   const [pendingAction, setPendingAction] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Vérifier si on doit ouvrir le modal de connexion (pour admin)
+  // Vérifier si on doit ouvrir le modal de connexion (pour admin ou après vérification email)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'login') {
       setShowAuthModal(true);
+    }
+    if (params.get('verified') === '1') {
+      setShowAuthModal(true);
+      setToast({ message: 'Compte vérifié ! Vous pouvez maintenant vous connecter.', type: 'success' });
     }
   }, []);
 

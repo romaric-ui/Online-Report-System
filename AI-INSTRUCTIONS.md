@@ -221,7 +221,7 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 9E.1 — Table InvitationEntreprise + RoleEntreprise + migration SQL (database/migrations/011_invitations.sql)
 - [x] 9E.2 — Repository invitation + API invitations (envoyer, accepter, annuler, lister) + API equipe-projet (membres, rôles)
 - [x] 9E.3 — Page /dashboard-projet/equipe + page publique /invitation/[code] + bouton "Mon équipe" dans dashboard
-- [ ] 9E.4 — Contrôle d'accès par rôle dans les routes API
+- [x] 9E.4 — Contrôle d'accès par rôle dans les routes API
 
 ### Sprint 10 — Abonnements & Paiement
 - [ ] 10.1 — Tables Plan, Abonnement
