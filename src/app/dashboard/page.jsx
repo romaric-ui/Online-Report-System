@@ -1,13 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  FileText, Plus, Eye, Download, Edit2, Trash2, 
+import {
+  FileText, Plus, Eye, Download, Edit2, Trash2,
   Calendar, Clock, User, Building, Search, Filter,
   ChevronLeft, ChevronRight, CheckCircle, XCircle,
-  AlertCircle, BarChart3, TrendingUp, Home, LogOut
+  AlertCircle, BarChart3, TrendingUp,
 } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 
 export default function UserDashboard() {
   const { data: session, status } = useSession();
@@ -191,43 +192,7 @@ export default function UserDashboard() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">S</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  SGTEC Dashboard
-                </h1>
-                <p className="text-sm text-gray-600">Bienvenue, {session?.user?.name}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.push('/')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <Home className="w-4 h-4" />
-                <span className="hidden md:inline">Accueil</span>
-              </button>
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all shadow-lg"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden md:inline">Déconnexion</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
+    <AppLayout>
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -490,6 +455,6 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

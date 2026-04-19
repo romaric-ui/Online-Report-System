@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Search, Plus, MapPin, CalendarDays, Users, ClipboardList } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 
 const STATUS_LABELS = {
   planifie: 'Planifié',
@@ -78,7 +79,7 @@ export default function ChantiersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <AppLayout>
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <div>
@@ -191,6 +192,6 @@ export default function ChantiersPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

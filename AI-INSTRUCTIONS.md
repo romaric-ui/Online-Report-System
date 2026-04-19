@@ -223,6 +223,14 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 9E.3 — Page /dashboard-projet/equipe + page publique /invitation/[code] + bouton "Mon équipe" dans dashboard
 - [x] 9E.4 — Contrôle d'accès par rôle dans les routes API
 
+### Sprint 9F — Corrections & Améliorations UX
+- [x] 9F.1 — Navigation : utilisateur connecté redirigé vers dashboard (pas de landing page)
+- [x] 9F.2 — Layout avec sidebar à gauche (style Archireport) + tabs chantier
+- [x] 9F.3 — Page profil (modifier infos personnelles, entreprise, photo, mot de passe)
+- [x] 9F.4 — Redesign dashboard projet (KPI animés, vue chantiers en cards, activité récente, performance équipe)
+- [ ] 9F.5 — Compléter module HSE (gestion stock, magasinage, vérifications périodiques, enlèvement stockage)
+- [ ] 9F.6 — Photo profil affichée immédiatement après upload (sans attendre reconnexion)
+
 ### Sprint 10 — Abonnements & Paiement
 - [ ] 10.1 — Tables Plan, Abonnement
 - [ ] 10.2 — Middleware plan-guard (vérification limites)

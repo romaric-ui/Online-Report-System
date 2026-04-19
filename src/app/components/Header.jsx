@@ -54,7 +54,7 @@ export default function Header({ user, onLogout, onShowAuth }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 group">
+          <a href={isLoggedIn ? (session?.user?.roleEntreprise === 1 || session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
             <img 
               src="/logo_couleur.png" 
               alt="SGTEC" 

@@ -2,6 +2,7 @@
 import "./globals.css";
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Header from "./components/Header";
 import AuthModal from "./components/AuthModal";
 import Toast from "./components/Toast";
@@ -15,14 +16,26 @@ import LandingTestimonials from "./components/LandingTestimonials";
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // États d'authentification
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Vérifier si on doit ouvrir le modal de connexion (pour admin ou après vérification email)
+  // Rediriger les utilisateurs connectés vers leur dashboard
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      if (session.user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (session.user.roleEntreprise === 1) {
+        router.push('/dashboard-projet');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [status, session, router]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'login') {
@@ -34,7 +47,6 @@ export default function Home() {
     }
   }, []);
 
-  // Synchroniser l'état user avec NextAuth session
   useEffect(() => {
     if (session?.user) {
       const userData = {
@@ -53,30 +65,21 @@ export default function Home() {
     }
   }, [session, status]);
 
-  // Fonction utilitaire pour afficher les toasts
-  const showToast = useCallback((toastData) => {
-    setToast(toastData);
-    setTimeout(() => setToast(null), 4000);
-  }, []);
-
-  // Fonctions d'authentification
   const handleLogin = () => {
     setShowAuthModal(false);
-    if (pendingAction) {
-      setPendingAction(null);
-    }
+    if (pendingAction) setPendingAction(null);
   };
 
   const handleLogout = () => {
     setPendingAction(null);
   };
 
-  // Retourne l'URL du dashboard selon le rôle
   const getDashboardUrl = useCallback(() => {
-    return session?.user?.role === 'admin' ? '/dashboard-projet' : '/dashboard';
+    if (session?.user?.role === 'admin') return '/admin/dashboard';
+    if (session?.user?.roleEntreprise === 1) return '/dashboard-projet';
+    return '/dashboard';
   }, [session]);
 
-  // Helper pour ouvrir le modal ou rediriger vers le dashboard
   const handleGetStarted = useCallback(() => {
     if (status === 'authenticated' && session?.user) {
       window.location.href = getDashboardUrl();
@@ -93,34 +96,45 @@ export default function Home() {
     }
   }, [status, session, getDashboardUrl]);
 
+  // Spinner pendant le chargement de la session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Ne rien afficher pendant la redirection
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
-      <LandingHero 
+      <LandingHero
         onGetStarted={handleGetStarted}
-        isAuthenticated={status === 'authenticated'}
+        isAuthenticated={false}
       />
       <LandingFeatures />
       <LandingTestimonials />
       <LandingPricing
-        onGetStarted={() => {
-          if (status === 'authenticated' && session?.user) {
-            window.location.href = getDashboardUrl();
-          } else {
-            setShowAuthModal(true);
-          }
-        }}
-        isAuthenticated={status === 'authenticated'}
+        onGetStarted={() => setShowAuthModal(true)}
+        isAuthenticated={false}
       />
       <LandingFAQ />
-      <LandingCTA 
+      <LandingCTA
         onGetStarted={handleGetStarted}
-        isAuthenticated={status === 'authenticated'}
+        isAuthenticated={false}
       />
       <LandingFooter />
-      
-      {/* Modal d'authentification */}
-      <AuthModal 
+
+      <AuthModal
         isOpen={showAuthModal}
         onClose={() => {
           setShowAuthModal(false);
@@ -128,8 +142,7 @@ export default function Home() {
         }}
         onLogin={handleLogin}
       />
-      
-      {/* Notification Toast */}
+
       {toast && (
         <Toast
           message={toast.message}

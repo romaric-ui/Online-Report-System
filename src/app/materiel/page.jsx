@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Search, Plus, Wrench, X, Save } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 
 const CATEGORIE_LABELS = {
   outil: 'Outil',
@@ -197,7 +198,7 @@ export default function MaterielPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <AppLayout>
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <div>
@@ -303,6 +304,6 @@ export default function MaterielPage() {
           onSaved={() => { setSelected(null); fetchMateriel(); }}
         />
       )}
-    </div>
+    </AppLayout>
   );
 }

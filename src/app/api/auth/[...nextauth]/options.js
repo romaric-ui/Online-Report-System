@@ -103,7 +103,8 @@ export const authOptions = {
             token.isGoogleUser = dbUser.provider === 'google';
             token.role = dbUser.id_role === 1 ? 'admin' : 'user';
             token.entrepriseId = dbUser.id_entreprise;
-            token.roleEntreprise = dbUser.id_role_entreprise;
+            token.roleEntreprise = dbUser.id_role_entreprise != null ? parseInt(dbUser.id_role_entreprise, 10) : null;
+            token.photoUrl = dbUser.photo_url || null;
           }
         } catch (error) {
           console.error('Erreur lors de la récupération des données utilisateur:', error);
@@ -121,6 +122,7 @@ export const authOptions = {
         session.user.isGoogleUser = token.isGoogleUser;
         session.user.entrepriseId = token.entrepriseId;
         session.user.roleEntreprise = token.roleEntreprise;
+        session.user.photoUrl = token.photoUrl || null;
       }
       return session;
     }
