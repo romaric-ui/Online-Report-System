@@ -228,7 +228,7 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 9F.2 — Layout avec sidebar à gauche (style Archireport) + tabs chantier
 - [x] 9F.3 — Page profil (modifier infos personnelles, entreprise, photo, mot de passe)
 - [x] 9F.4 — Redesign dashboard projet (KPI animés, vue chantiers en cards, activité récente, performance équipe)
-- [ ] 9F.5 — Compléter module HSE (gestion stock, magasinage, vérifications périodiques, enlèvement stockage)
+- [x] 9F.5 — Compléter module HSE (gestion stock, magasinage, vérifications périodiques, enlèvement stockage)
 - [ ] 9F.6 — Photo profil affichée immédiatement après upload (sans attendre reconnexion)
 
 ### Sprint 10 — Abonnements & Paiement

@@ -3,7 +3,7 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, ShieldCheck, AlertTriangle, ClipboardList, Calendar, PlusCircle } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, AlertTriangle, ClipboardList, Calendar, PlusCircle, Package, ChevronRight } from 'lucide-react';
 
 const TYPE_CHECKLIST_LABELS = {
   quotidienne: 'Quotidienne',
@@ -57,10 +57,11 @@ export default function SecuriteDashboardPage({ params: paramsPromise }) {
   const router = useRouter();
   const { status } = useSession();
 
-  const [checklists, setChecklists] = useState([]);
-  const [incidents, setIncidents]   = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState('');
+  const [checklists, setChecklists]   = useState([]);
+  const [incidents, setIncidents]     = useState([]);
+  const [stockAlertes, setStockAlertes] = useState({ ruptures: 0, verificationsDs: 0, perimes: 0 });
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -72,15 +73,17 @@ export default function SecuriteDashboardPage({ params: paramsPromise }) {
     setLoading(true);
     setError('');
     try {
-      const [resC, resI] = await Promise.all([
+      const [resC, resI, resS] = await Promise.all([
         fetch(`/api/chantiers/${id}/securite/checklists?limit=100`),
         fetch(`/api/chantiers/${id}/securite/incidents?limit=100`),
+        fetch(`/api/chantiers/${id}/securite/stock`),
       ]);
-      const [jC, jI] = await Promise.all([resC.json(), resI.json()]);
+      const [jC, jI, jS] = await Promise.all([resC.json(), resI.json(), resS.json()]);
       if (!resC.ok || !jC.success) throw new Error(jC.error?.message || 'Erreur checklists');
       if (!resI.ok || !jI.success) throw new Error(jI.error?.message || 'Erreur incidents');
       setChecklists(jC.data || []);
       setIncidents(jI.data || []);
+      if (jS.success) setStockAlertes(jS.data?.alertes || { ruptures: 0, verificationsDs: 0, perimes: 0 });
     } catch (err) {
       setError(err.message || 'Erreur de chargement');
     } finally {
@@ -171,6 +174,42 @@ export default function SecuriteDashboardPage({ params: paramsPromise }) {
                   <span className="text-sm font-medium text-slate-500">Checklists ce mois</span>
                 </div>
                 <p className="text-2xl font-bold text-slate-900">{stats.checklistsMois}</p>
+              </div>
+            </div>
+
+            {/* ── Section Stock sécurité ── */}
+            <div className="rounded-[2rem] bg-white p-8 shadow-xl border border-slate-200 mb-6">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-3xl bg-amber-500 p-3 text-white shadow-md">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">Stock sécurité</h2>
+                    <p className="text-sm text-slate-500">EPI, extincteurs, signalisation…</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/chantiers/${id}/securite/stock`)}
+                  className="inline-flex items-center gap-2 rounded-3xl bg-amber-500 px-4 py-2.5 text-white text-sm font-semibold hover:bg-amber-600 transition"
+                >
+                  Gérer le stock <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className={`rounded-2xl p-4 text-center border ${stockAlertes.ruptures > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <p className={`text-2xl font-bold ${stockAlertes.ruptures > 0 ? 'text-red-600' : 'text-slate-700'}`}>{stockAlertes.ruptures}</p>
+                  <p className="text-xs text-slate-500 mt-1">En rupture</p>
+                </div>
+                <div className={`rounded-2xl p-4 text-center border ${stockAlertes.verificationsDs > 0 ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <p className={`text-2xl font-bold ${stockAlertes.verificationsDs > 0 ? 'text-orange-600' : 'text-slate-700'}`}>{stockAlertes.verificationsDs}</p>
+                  <p className="text-xs text-slate-500 mt-1">Vérif. dues</p>
+                </div>
+                <div className={`rounded-2xl p-4 text-center border ${stockAlertes.perimes > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <p className={`text-2xl font-bold ${stockAlertes.perimes > 0 ? 'text-yellow-600' : 'text-slate-700'}`}>{stockAlertes.perimes}</p>
+                  <p className="text-xs text-slate-500 mt-1">Périmés</p>
+                </div>
               </div>
             </div>
 
