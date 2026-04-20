@@ -4,6 +4,7 @@ import { chantierRepo } from '../../../../../../lib/repositories/chantier.reposi
 import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
 import { requireTenant } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
+import { checkFeature } from '../../../../../../lib/plan-guard.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -41,6 +42,7 @@ async function handleGET(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  await checkFeature(entrepriseId, 'chat');
   const chantierId   = await parseChantierId(params);
 
   const chantier = await chantierRepo.findById(chantierId);

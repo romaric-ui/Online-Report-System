@@ -232,10 +232,12 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [ ] 9F.6 — Photo profil affichée immédiatement après upload (sans attendre reconnexion)
 
 ### Sprint 10 — Abonnements & Paiement
-- [ ] 10.1 — Tables Plan, Abonnement
-- [ ] 10.2 — Middleware plan-guard (vérification limites)
-- [ ] 10.3 — Stripe Checkout + Webhooks
-- [ ] 10.4 — Mettre à jour LandingPricing.jsx avec vrais prix
+- [x] 10.1 — Migration SQL : tables Plan + Abonnement + seed (014_abonnements.sql)
+- [x] 10.2 — Middleware plan-guard : checkPlanLimit, checkFeature, getAbonnement
+- [x] 10.3 — Vérifications plan dans routes chantiers, invitations, équipe, matériel, budget, chat
+- [x] 10.4 — Page /abonnement : plan actuel, barre essai, 3 cards avec toggle mensuel/annuel
+- [x] 10.5 — LandingPricing.jsx mis à jour : vrais prix (29€/79€), toggle annuel, 2 mois offerts, CTA /inscription
+- [ ] 10.6 — Stripe Checkout + Webhooks (activation abonnement)
 
 ### Sprint 11 — Dashboard Avancé & Finalisation
 - [ ] 11.1 — Dashboard global enrichi

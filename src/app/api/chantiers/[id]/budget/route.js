@@ -5,6 +5,7 @@ import { chantierRepo } from '../../../../../../lib/repositories/chantier.reposi
 import { apiHandler, successResponse, createdResponse } from '../../../../../../lib/api-response.js';
 import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
+import { checkFeature } from '../../../../../../lib/plan-guard.js';
 
 async function parseChantierId(params) {
   const resolvedParams = await params;
@@ -27,6 +28,7 @@ async function handleGET(request, { params }) {
 
   const entrepriseId = requireTenant(session);
   requireRole(session, [1, 2, 3]); // admin + chef de chantier + conducteur de travaux
+  await checkFeature(entrepriseId, 'budget');
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 

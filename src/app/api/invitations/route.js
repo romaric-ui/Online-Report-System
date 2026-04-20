@@ -5,6 +5,7 @@ import { successResponse, createdResponse, errorResponse } from '../../../../lib
 import { requireTenant, requireRole } from '../../../../lib/tenant.js';
 import { sendInvitationEmail } from '../../../../lib/email-service.js';
 import { AuthenticationError, ValidationError, ConflictError } from '../../../../lib/errors/index.js';
+import { checkPlanLimit } from '../../../../lib/plan-guard.js';
 import { connectDB } from '../../../../lib/database.js';
 import crypto from 'crypto';
 
@@ -37,7 +38,7 @@ async function handlePOST(request) {
 
   const entrepriseId = requireTenant(session);
   requireRole(session, [1]); // admin entreprise uniquement
-
+  await checkPlanLimit(entrepriseId, 'utilisateur');
   const body = await request.json();
   const email = body.email?.trim()?.toLowerCase();
   if (!email) throw new ValidationError('Email requis');

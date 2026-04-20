@@ -4,6 +4,7 @@ import { chantierRepo } from '../../../../lib/repositories/chantier.repository.j
 import { successResponse, createdResponse, errorResponse } from '../../../../lib/api-response.js';
 import { requireTenant, requireRole } from '../../../../lib/tenant.js';
 import { AuthenticationError, ValidationError } from '../../../../lib/errors/index.js';
+import { checkPlanLimit } from '../../../../lib/plan-guard.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -49,6 +50,7 @@ async function handlePOST(request) {
 
   const entrepriseId = requireTenant(session);
   requireRole(session, [1, 2]); // admin entreprise + chef de chantier
+  await checkPlanLimit(entrepriseId, 'chantier');
   const body = await request.json();
   const {
     nom,

@@ -5,6 +5,7 @@ import { chantierRepo } from '../../../../../../lib/repositories/chantier.reposi
 import { apiHandler, successResponse, createdResponse } from '../../../../../../lib/api-response.js';
 import { requireTenant } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
+import { checkFeature } from '../../../../../../lib/plan-guard.js';
 import { connectDB } from '../../../../../../lib/database.js';
 
 async function parseChantierId(params) {
@@ -27,6 +28,7 @@ async function handleGET(request, { params }) {
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 
   const entrepriseId = requireTenant(session);
+  await checkFeature(entrepriseId, 'materiel');
   const chantierId = await parseChantierId(params);
   await verifyChantierEntreprise(chantierId, entrepriseId);
 
