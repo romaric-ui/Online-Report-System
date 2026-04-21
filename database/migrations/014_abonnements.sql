@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS Plan (
 );
 
 INSERT INTO Plan (nom, slug, prix_mensuel, prix_annuel, max_utilisateurs, max_chantiers, stockage_go, fonctionnalites) VALUES
-('Essentiel', 'essentiel', 29.00, 290.00, 1, 2, 2, '["chantiers","journal","photos","taches","rapports","documents"]'),
+('Essentiel', 'essentiel', 29.00, 290.00, 1, 5, 2, '["chantiers","journal","photos","taches","rapports","documents"]'),
 ('Pro', 'pro', 79.00, 790.00, 5, 15, 10, '["chantiers","journal","photos","taches","rapports","documents","equipes","pointage","materiel","budget","chat","invitations"]'),
 ('Enterprise', 'enterprise', 0.00, 0.00, 999, 999, 100, '["chantiers","journal","photos","taches","rapports","documents","equipes","pointage","materiel","budget","chat","invitations","gantt","hse","api","support_prioritaire"]');
 

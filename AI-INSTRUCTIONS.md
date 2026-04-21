@@ -237,7 +237,7 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 - [x] 10.3 — Vérifications plan dans routes chantiers, invitations, équipe, matériel, budget, chat
 - [x] 10.4 — Page /abonnement : plan actuel, barre essai, 3 cards avec toggle mensuel/annuel
 - [x] 10.5 — LandingPricing.jsx mis à jour : vrais prix (29€/79€), toggle annuel, 2 mois offerts, CTA /inscription
-- [ ] 10.6 — Stripe Checkout + Webhooks (activation abonnement)
+- [x] 10.6 — Stripe Checkout + Webhooks (checkout, webhook, cancel, page abonnement mise à jour)
 
 ### Sprint 11 — Dashboard Avancé & Finalisation
 - [ ] 11.1 — Dashboard global enrichi

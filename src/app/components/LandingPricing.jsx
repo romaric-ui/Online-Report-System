@@ -12,7 +12,7 @@ const PLANS = [
     icon:        Zap,
     description: 'Parfait pour démarrer votre digitalisation.',
     max_utilisateurs: '1 utilisateur',
-    max_chantiers:    '2 chantiers actifs',
+    max_chantiers:    '5 chantiers actifs',
     stockage:         '2 Go de stockage',
     features: [
       'Chantiers & journal de chantier',
