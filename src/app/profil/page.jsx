@@ -156,14 +156,14 @@ export default function ProfilPage() {
 
   const togglePwd = (field) => setShowPwd(prev => ({ ...prev, [field]: !prev[field] }));
 
-  const inputClass = 'w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-400 focus:bg-white transition';
-  const labelClass = 'block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide';
+  const inputClass = 'input-neu';
+  const labelClass = 'input-neu-label';
 
   if (loading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
         </div>
       </AppLayout>
     );
@@ -171,37 +171,34 @@ export default function ProfilPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
 
         {/* ── Section infos personnelles ── */}
         <form onSubmit={handleSubmit}>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Mon profil</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Modifier mes informations personnelles</p>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mon profil</h1>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Modifier mes informations personnelles</p>
             </div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition shadow disabled:opacity-60"
-            >
+            <button type="submit" disabled={saving} className="btn btn-primary w-full sm:w-auto">
               <Check className="w-4 h-4" />
               {saving ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+          <div className="rounded-2xl p-6 mb-6" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
             <div className="flex items-center gap-2 mb-6">
-              <User className="w-5 h-5 text-indigo-500" />
-              <h2 className="text-base font-semibold text-gray-900">Informations personnelles</h2>
+              <User className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+              <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Informations personnelles</h2>
             </div>
 
             {/* Avatar */}
-            <div className="flex items-center gap-6 mb-6 pb-6 border-b border-gray-100">
+            <div className="flex items-center gap-6 mb-6 pb-6" style={{ borderBottom: '1px solid rgba(148,163,184,0.15)' }}>
               <div className="relative shrink-0">
                 {/* Cercle photo */}
                 <div
-                  className="w-24 h-24 rounded-full overflow-hidden cursor-pointer ring-4 ring-indigo-100"
+                  className="w-24 h-24 rounded-full overflow-hidden cursor-pointer"
+                  style={{ boxShadow: 'var(--shadow-neu-raised)' }}
                   onClick={() => avatarInputRef.current?.click()}
                 >
                   {avatarUrl ? (
@@ -224,7 +221,8 @@ export default function ProfilPage() {
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-white shadow-md transition disabled:opacity-60"
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center text-white transition disabled:opacity-60"
+                  style={{ background: 'var(--color-primary)', boxShadow: '0 2px 8px rgba(79,70,229,0.4)' }}
                   title="Changer la photo"
                 >
                   {uploadingAvatar
@@ -244,18 +242,19 @@ export default function ProfilPage() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                   {form.prenom} {form.nom}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">{session?.user?.email}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{session?.user?.email}</p>
                 <button
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
-                  className="mt-2 text-xs text-indigo-600 hover:underline font-medium"
+                  className="mt-2 text-xs font-medium hover:underline"
+                  style={{ color: 'var(--color-primary)' }}
                 >
                   Changer la photo
                 </button>
-                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP — max 5 Mo</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>JPG, PNG, WEBP — max 5 Mo</p>
               </div>
             </div>
 
@@ -278,10 +277,10 @@ export default function ProfilPage() {
 
           {/* Section entreprise */}
           {isAdmin && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div className="rounded-2xl p-6 mb-6" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
               <div className="flex items-center gap-2 mb-5">
-                <Building2 className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-base font-semibold text-gray-900">Mon entreprise</h2>
+                <Building2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Mon entreprise</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -290,7 +289,7 @@ export default function ProfilPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Adresse</label>
-                  <textarea name="entreprise_adresse" value={form.entreprise_adresse} onChange={handleChange} rows={2} className={inputClass} placeholder="Adresse complète" />
+                  <textarea name="entreprise_adresse" value={form.entreprise_adresse} onChange={handleChange} rows={2} className="textarea-neu" placeholder="Adresse complète" />
                 </div>
                 <div>
                   <label className={labelClass}>Email de contact</label>
@@ -310,26 +309,26 @@ export default function ProfilPage() {
 
           {/* Section logo */}
           {isAdmin && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+            <div className="rounded-2xl p-6 mb-6" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
               <div className="flex items-center gap-2 mb-5">
-                <Upload className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-base font-semibold text-gray-900">Logo de l'entreprise</h2>
+                <Upload className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Logo de l'entreprise</h2>
               </div>
               <div className="flex items-center gap-6">
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Logo entreprise" className="w-20 h-20 rounded-xl object-contain border border-gray-200 bg-gray-50 p-1" />
+                  <img src={logoPreview} alt="Logo entreprise" className="w-20 h-20 rounded-xl object-contain p-1" style={{ boxShadow: 'var(--shadow-neu-flat)', background: 'var(--bg-elevated)' }} />
                 ) : (
-                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
+                  <div className="w-20 h-20 rounded-xl flex items-center justify-center" style={{ boxShadow: 'var(--shadow-neu-pressed)', background: 'var(--bg-base)', color: 'var(--color-text-muted)' }}>
                     <Building2 className="w-8 h-8" />
                   </div>
                 )}
                 <div>
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium cursor-pointer transition">
+                  <label className="btn btn-soft text-sm cursor-pointer">
                     <Upload className="w-4 h-4" />
                     Choisir un logo
                     <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                   </label>
-                  <p className="text-xs text-gray-400 mt-2">PNG, JPG — max 2 Mo</p>
+                  <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>PNG, JPG — max 2 Mo</p>
                 </div>
               </div>
             </div>
@@ -338,32 +337,28 @@ export default function ProfilPage() {
 
         {/* ── Section changement de mot de passe (formulaire séparé) ── */}
         {session?.user?.isGoogleUser ? (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex items-center gap-3">
+          <div className="rounded-2xl p-6 flex items-center gap-3" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 shrink-0" />
-            <p className="text-sm text-gray-500">
-              Vous êtes connecté via <span className="font-semibold text-gray-700">Google</span>. Votre mot de passe est géré par Google.
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              Vous êtes connecté via <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Google</span>. Votre mot de passe est géré par Google.
             </p>
           </div>
         ) : (
         <form onSubmit={handlePasswordSubmit}>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="rounded-2xl p-6" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <Lock className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-base font-semibold text-gray-900">Modifier mon mot de passe</h2>
+                <Lock className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
+                <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Modifier mon mot de passe</h2>
               </div>
-              <button
-                type="submit"
-                disabled={savingPwd}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60"
-              >
+              <button type="submit" disabled={savingPwd} className="btn btn-primary">
                 <Check className="w-4 h-4" />
                 {savingPwd ? 'Modification...' : 'Modifier'}
               </button>
             </div>
 
             {pwdError && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <div className="mb-4 rounded-xl p-4 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 {pwdError}
               </div>
             )}
@@ -372,8 +367,8 @@ export default function ProfilPage() {
               <div>
                 <label className={labelClass}>Mot de passe actuel</label>
                 <div className="relative">
-                  <input value={pwd.ancien} onChange={(e) => setPwd(p => ({ ...p, ancien: e.target.value }))} type={showPwd.ancien ? 'text' : 'password'} className={inputClass + ' pr-11'} placeholder="Votre mot de passe actuel" autoComplete="current-password" />
-                  <button type="button" onClick={() => togglePwd('ancien')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <input value={pwd.ancien} onChange={(e) => setPwd(p => ({ ...p, ancien: e.target.value }))} type={showPwd.ancien ? 'text' : 'password'} className="input-neu" style={{ paddingRight: 44 }} placeholder="Votre mot de passe actuel" autoComplete="current-password" />
+                  <button type="button" onClick={() => togglePwd('ancien')} className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
                     {showPwd.ancien ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -382,8 +377,8 @@ export default function ProfilPage() {
               <div>
                 <label className={labelClass}>Nouveau mot de passe</label>
                 <div className="relative">
-                  <input value={pwd.nouveau} onChange={(e) => setPwd(p => ({ ...p, nouveau: e.target.value }))} type={showPwd.nouveau ? 'text' : 'password'} className={inputClass + ' pr-11'} placeholder="Minimum 8 caractères" autoComplete="new-password" />
-                  <button type="button" onClick={() => togglePwd('nouveau')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <input value={pwd.nouveau} onChange={(e) => setPwd(p => ({ ...p, nouveau: e.target.value }))} type={showPwd.nouveau ? 'text' : 'password'} className="input-neu" style={{ paddingRight: 44 }} placeholder="Minimum 8 caractères" autoComplete="new-password" />
+                  <button type="button" onClick={() => togglePwd('nouveau')} className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
                     {showPwd.nouveau ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -394,7 +389,7 @@ export default function ProfilPage() {
                         <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${pwd.nouveau.length >= i * 3 ? pwd.nouveau.length >= 12 ? 'bg-emerald-500' : pwd.nouveau.length >= 8 ? 'bg-yellow-400' : 'bg-red-400' : 'bg-gray-200'}`} />
                       ))}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0">
+                    <span className="text-xs shrink-0" style={{ color: 'var(--color-text-muted)' }}>
                       {pwd.nouveau.length < 8 ? 'Trop court' : pwd.nouveau.length < 12 ? 'Acceptable' : 'Fort'}
                     </span>
                   </div>
@@ -408,16 +403,17 @@ export default function ProfilPage() {
                     value={pwd.confirmer}
                     onChange={(e) => setPwd(p => ({ ...p, confirmer: e.target.value }))}
                     type={showPwd.confirmer ? 'text' : 'password'}
-                    className={`${inputClass} pr-11 ${pwd.confirmer.length > 0 ? pwd.confirmer === pwd.nouveau ? 'border-emerald-400' : 'border-red-400' : ''}`}
+                    className="input-neu"
+                    style={{ paddingRight: 44 }}
                     placeholder="Répétez le nouveau mot de passe"
                     autoComplete="new-password"
                   />
-                  <button type="button" onClick={() => togglePwd('confirmer')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => togglePwd('confirmer')} className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
                     {showPwd.confirmer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                {pwd.confirmer.length > 0 && pwd.confirmer !== pwd.nouveau && <p className="mt-1 text-xs text-red-500">Les mots de passe ne correspondent pas</p>}
-                {pwd.confirmer.length > 0 && pwd.confirmer === pwd.nouveau && <p className="mt-1 text-xs text-emerald-600">Les mots de passe correspondent ✓</p>}
+                {pwd.confirmer.length > 0 && pwd.confirmer !== pwd.nouveau && <p className="mt-1 text-xs" style={{ color: 'var(--color-danger)' }}>Les mots de passe ne correspondent pas</p>}
+                {pwd.confirmer.length > 0 && pwd.confirmer === pwd.nouveau && <p className="mt-1 text-xs" style={{ color: 'var(--color-success)' }}>Les mots de passe correspondent ✓</p>}
               </div>
             </div>
           </div>
@@ -426,7 +422,8 @@ export default function ProfilPage() {
       </div>
 
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === 'error' ? 'bg-red-600' : 'bg-emerald-600'}`}>
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl text-sm font-medium text-white transition-all"
+          style={{ background: toast.type === 'error' ? 'var(--color-danger)' : 'var(--color-success)', boxShadow: 'var(--shadow-neu-raised)' }}>
           {toast.message}
         </div>
       )}

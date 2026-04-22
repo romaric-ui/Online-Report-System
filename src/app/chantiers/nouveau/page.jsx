@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { PlusCircle, ArrowLeft, Building2, MapPin, CalendarDays, DollarSign } from 'lucide-react';
+import { PlusCircle, ArrowLeft, DollarSign } from 'lucide-react';
 
 const PAYS = ['France', 'Belgique', 'Suisse', 'Luxembourg', 'Canada', 'Espagne', 'Italie'];
 
@@ -29,39 +29,28 @@ export default function NouveauChantierPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (status === 'unauthenticated') {
-      router.push('/');
-    }
+    if (status === 'unauthenticated') router.push('/');
   }, [status, router]);
 
-  const handleChange = (field) => (event) => {
-    setValues((prev) => ({ ...prev, [field]: event.target.value }));
-  };
+  const handleChange = (field) => (e) => setValues((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!values.nom.trim()) {
-      setError('Le nom du chantier est requis.');
-      return;
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!values.nom.trim()) { setError('Le nom du chantier est requis.'); return; }
     if (values.date_debut && values.date_fin_prevue && values.date_fin_prevue < values.date_debut) {
       setError('La date de fin doit être supérieure ou égale à la date de début.');
       return;
     }
     setError('');
     setLoading(true);
-
     try {
-      const response = await fetch('/api/chantiers', {
+      const res = await fetch('/api/chantiers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error?.message || 'Erreur lors de la création du chantier');
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error?.message || 'Erreur lors de la création du chantier');
       router.push(`/chantiers/${result.data.id_chantier}`);
     } catch (err) {
       setError(err.message || 'Erreur inattendue');
@@ -71,171 +60,113 @@ export default function NouveauChantierPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen py-8" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-5xl mx-auto px-6">
         <button
           type="button"
           onClick={() => router.push('/chantiers')}
-          className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 mb-6"
+          className="inline-flex items-center gap-2 mb-6 text-sm font-medium transition hover:opacity-70"
+          style={{ color: 'var(--color-text-secondary)' }}
         >
           <ArrowLeft className="w-4 h-4" /> Retour à la liste
         </button>
 
-        <div className="rounded-[2rem] bg-white p-8 shadow-lg border border-slate-200">
+        <div className="rounded-2xl p-8" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
           <div className="flex items-center gap-4 mb-8">
-            <div className="rounded-3xl bg-indigo-600 p-4 text-white shadow-md">
+            <div className="rounded-2xl p-4 text-white" style={{ background: 'linear-gradient(145deg, #6366F1, #4F46E5)', boxShadow: '6px 6px 12px rgba(79,70,229,0.35)' }}>
               <PlusCircle className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Nouveau chantier</h1>
-              <p className="mt-2 text-sm text-slate-500">Renseignez les informations du chantier pour le créer.</p>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Nouveau chantier</h1>
+              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>Renseignez les informations du chantier pour le créer.</p>
             </div>
           </div>
 
-          {error ? (
-            <div className="rounded-3xl bg-red-50 border border-red-200 p-4 text-red-700 mb-6">{error}</div>
-          ) : null}
+          {error && (
+            <div className="rounded-xl p-4 mb-6 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="grid gap-6">
             <div className="grid gap-6 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Nom du chantier *</span>
-                <input
-                  value={values.nom}
-                  onChange={handleChange('nom')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                  required
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Nom du chantier *</span>
+                <input value={values.nom} onChange={handleChange('nom')} className="input-neu" required />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Référence</span>
-                <input
-                  value={values.reference}
-                  onChange={handleChange('reference')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Référence</span>
+                <input value={values.reference} onChange={handleChange('reference')} className="input-neu" />
               </label>
             </div>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Description</span>
-              <textarea
-                value={values.description}
-                onChange={handleChange('description')}
-                rows={4}
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-              />
+            <label className="space-y-1.5">
+              <span className="input-neu-label">Description</span>
+              <textarea value={values.description} onChange={handleChange('description')} rows={4} className="textarea-neu" />
             </label>
 
             <div className="grid gap-6 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Client</span>
-                <input
-                  value={values.client_nom}
-                  onChange={handleChange('client_nom')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Client</span>
+                <input value={values.client_nom} onChange={handleChange('client_nom')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Téléphone client</span>
-                <input
-                  type="tel"
-                  value={values.client_telephone}
-                  onChange={handleChange('client_telephone')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Téléphone client</span>
+                <input type="tel" value={values.client_telephone} onChange={handleChange('client_telephone')} className="input-neu" />
               </label>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Email client</span>
-                <input
-                  type="email"
-                  value={values.client_email}
-                  onChange={handleChange('client_email')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Email client</span>
+                <input type="email" value={values.client_email} onChange={handleChange('client_email')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Adresse</span>
-                <input
-                  value={values.adresse}
-                  onChange={handleChange('adresse')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Adresse</span>
+                <input value={values.adresse} onChange={handleChange('adresse')} className="input-neu" />
               </label>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-3">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Ville</span>
-                <input
-                  value={values.ville}
-                  onChange={handleChange('ville')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Ville</span>
+                <input value={values.ville} onChange={handleChange('ville')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Pays</span>
-                <select
-                  value={values.pays}
-                  onChange={handleChange('pays')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                >
-                  {PAYS.map((pays) => (
-                    <option key={pays} value={pays}>{pays}</option>
-                  ))}
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Pays</span>
+                <select value={values.pays} onChange={handleChange('pays')} className="select-neu">
+                  {PAYS.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Budget prévu</span>
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Budget prévu</span>
                 <div className="relative">
-                  <DollarSign className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="number"
-                    value={values.budget_prevu}
-                    onChange={handleChange('budget_prevu')}
-                    className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-12 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                  />
+                  <DollarSign className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+                  <input type="number" value={values.budget_prevu} onChange={handleChange('budget_prevu')} className="input-neu" style={{ paddingLeft: 40 }} />
                 </div>
               </label>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Date de début</span>
-                <input
-                  type="date"
-                  value={values.date_debut}
-                  onChange={handleChange('date_debut')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Date de début</span>
+                <input type="date" value={values.date_debut} onChange={handleChange('date_debut')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Date fin prévue</span>
-                <input
-                  type="date"
-                  value={values.date_fin_prevue}
-                  onChange={handleChange('date_fin_prevue')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Date fin prévue</span>
+                <input type="date" value={values.date_fin_prevue} onChange={handleChange('date_fin_prevue')} className="input-neu" />
               </label>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-2">
               <button
                 type="button"
                 onClick={() => router.push('/chantiers')}
-                className="rounded-3xl border border-slate-200 px-6 py-3 text-slate-700 hover:bg-slate-100 transition"
+                className="btn btn-soft px-6 py-3"
               >
                 Annuler
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center rounded-3xl bg-indigo-600 px-8 py-3 text-white font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-60"
-              >
+              <button type="submit" disabled={loading} className="btn btn-primary">
                 {loading ? 'Création...' : 'Créer le chantier'}
               </button>
             </div>

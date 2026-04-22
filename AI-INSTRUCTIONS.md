@@ -154,96 +154,88 @@ Role → Utilisateur → Rapport → DonneesFormulaire
 > Met à jour cette section après chaque étape complétée.
 > Remplace [ ] par [x] quand l'étape est terminée.
 
-### Sprint 1 — Nettoyage & Fondations
-- [x] 1.1 — Unifier la connexion DB
-- [x] 1.2 — Classes d'erreurs (lib/errors/index.js)
-- [x] 1.3 — Logger (lib/logger.js)
-- [x] 1.4 — Réponses API standardisées (lib/api-response.js)
-- [x] 1.5 — BaseRepository (lib/repositories/base.repository.js)
-- [x] 1.6 — Repositories spécifiques (user, report, notification, message)
-- [ ] 1.7 — Migrer api/reports/route.js
-- [ ] 1.8 — Migrer toutes les autres routes API
-- [ ] 1.9 — Migrer NextAuth vers UserRepository
+### Sprint 1 — Fondations ✅ COMPLET
+### Sprint 2 — Multi-tenant ✅ COMPLET
+### Sprint 3 — Chantiers ✅ COMPLET
+### Sprint 4 — Équipes ✅ COMPLET
+### Sprint 5 — Matériel ✅ COMPLET
+### Sprint 6 — Budget ✅ COMPLET
+### Sprint 7 — Gantt ✅ COMPLET
+### Sprint 8 — HSE ✅ COMPLET
+### Sprint 9A — Dashboard Projet ✅ COMPLET
+### Sprint 9B — Documents ✅ COMPLET
+### Sprint 9C — Rapports automatiques ⏸ EN PAUSE
+### Sprint 9D — Chat ✅ COMPLET
+### Sprint 9E — Invitations & Rôles ✅ COMPLET (9E.1 à 9E.4)
 
-### Sprint 2 — Multi-tenant & Entreprises
-- [x] 2.1 — Table Entreprise + colonnes id_entreprise
-- [x] 2.2 — Helper tenant + mise à jour repositories
-- [x] 2.3 — Page et API inscription entreprise
-
-### Sprint 3 — Gestion des Chantiers
-- [x] 3.1 — Tables Chantier, Lot, JournalChantier, PhotoChantier, Tache
-- [x] 3.2 — Repository + 6 routes API chantier
-- [x] 3.3 — 6 pages UI chantier
-- [x] 3.4 — Lier rapports aux chantiers
-- [x] 3.5 — Mettre à jour Header (lien Chantiers)
-
-### Sprint 4 — Gestion des Équipes
-- [x] 4.1 — Tables Ouvrier, AffectationChantier, Pointage
-- [x] 4.2 — Repository + API équipes
-- [x] 4.3 — Pages ouvriers, affectation, pointage
-
-### Sprint 5 — Gestion du Matériel
-- [x] 5.1 — Tables Materiel, AffectationMateriel
-- [x] 5.2 — Repository + API + Pages matériel
-
-### Sprint 6 — Budget & Dépenses
-- [x] 6.1 — Tables BudgetChantier, Depense
-- [x] 6.2 — Repository + API + Page budget
-
-### Sprint 7 — Planification Gantt
-- [x] 7.1 — Étendre table Tache + DependanceTache + Jalon
-- [x] 7.2 — Algorithme CPM (lib/algorithms/cpm.js)
-- [x] 7.3 — API + Page Gantt interactive
-
-### Sprint 8 — Module HSE Sécurité
-- [x] 8.1 — Tables ChecklistSecurite, ItemChecklist, IncidentSecurite
-- [x] 8.2 — API + Pages sécurité
-
-### Sprint 9A — Dashboard Projet
-- [x] 9A.1 — API dashboard projet (KPIs, alertes, activité, budget)
-- [x] 9A.2 — Page dashboard projet + mise à jour Header
-
-### Sprint 9B — Gestion des Documents
-- [x] 9B.1 — Table DocumentChantier + migration SQL
-- [x] 9B.2 — Repository + API documents (upload, liste, suppression)
-- [x] 9B.3 — Page documents (drag & drop, filtres, tableau)
-
-### Sprint 9C — Rapports Automatiques
-- [~] 9C.1 — API rapport chantier + API résumé hebdo (en pause — à revoir)
-- [~] 9C.2 — Pages rapport chantier + résumé hebdo + boutons (en pause — à revoir)
-
-### Sprint 9D — Communication / Chat
-- [x] 9D.1 — Tables ChatMessage, Conversation + migration SQL (database/migrations/010_chat.sql)
-- [x] 9D.2 — API chat GET + POST (/api/chantiers/[id]/chat)
-- [x] 9D.3 — Page chat par chantier + bouton Discussion dans fiche chantier
-
-### Sprint 9E — Invitations & Rôles entreprise
-- [x] 9E.1 — Table InvitationEntreprise + RoleEntreprise + migration SQL (database/migrations/011_invitations.sql)
-- [x] 9E.2 — Repository invitation + API invitations (envoyer, accepter, annuler, lister) + API equipe-projet (membres, rôles)
-- [x] 9E.3 — Page /dashboard-projet/equipe + page publique /invitation/[code] + bouton "Mon équipe" dans dashboard
-- [x] 9E.4 — Contrôle d'accès par rôle dans les routes API
-
-### Sprint 9F — Corrections & Améliorations UX
-- [x] 9F.1 — Navigation : utilisateur connecté redirigé vers dashboard (pas de landing page)
-- [x] 9F.2 — Layout avec sidebar à gauche (style Archireport) + tabs chantier
-- [x] 9F.3 — Page profil (modifier infos personnelles, entreprise, photo, mot de passe)
-- [x] 9F.4 — Redesign dashboard projet (KPI animés, vue chantiers en cards, activité récente, performance équipe)
-- [x] 9F.5 — Compléter module HSE (gestion stock, magasinage, vérifications périodiques, enlèvement stockage)
-- [ ] 9F.6 — Photo profil affichée immédiatement après upload (sans attendre reconnexion)
+### Sprint 9F — Corrections & UX
+- [x] 9F.1 — Redirection utilisateur connecté vers dashboard
+- [x] 9F.2 — Sidebar Archireport + tabs chantier
+- [x] 9F.3 — Page profil (infos, photo, mot de passe)
+- [x] 9F.4 — Redesign dashboard projet (KPIs animés, cards)
+- [x] 9F.5 — Module HSE complet (stock, vérifications, mouvements)
+- [x] 9F.6 — Photo profil mise à jour immédiatement
+- [x] 9F.7 — Admin SGTEC séparé (/admin-login + lien footer)
+- [x] 9F.8 — Redirection post-inscription vers /dashboard-projet
 
 ### Sprint 10 — Abonnements & Paiement
-- [x] 10.1 — Migration SQL : tables Plan + Abonnement + seed (014_abonnements.sql)
-- [x] 10.2 — Middleware plan-guard : checkPlanLimit, checkFeature, getAbonnement
-- [x] 10.3 — Vérifications plan dans routes chantiers, invitations, équipe, matériel, budget, chat
-- [x] 10.4 — Page /abonnement : plan actuel, barre essai, 3 cards avec toggle mensuel/annuel
-- [x] 10.5 — LandingPricing.jsx mis à jour : vrais prix (29€/79€), toggle annuel, 2 mois offerts, CTA /inscription
-- [x] 10.6 — Stripe Checkout + Webhooks (checkout, webhook, cancel, page abonnement mise à jour)
+- [x] 10.1 — Tables Plan + Abonnement (014_abonnements.sql)
+- [x] 10.2 — plan-guard.js (checkPlanLimit, checkFeature)
+- [x] 10.3 — Vérifications plan dans routes API
+- [x] 10.4 — Page /abonnement (plan actuel, cards, toggle)
+- [x] 10.5 — LandingPricing.jsx (29€/79€, toggle annuel)
+- [x] 10.6 — Stripe Checkout + Webhooks + Cancel
+- [x] 10.7 — Plan Essentiel : 5 chantiers max, essai gratuit = 1 chantier
 
-### Sprint 11 — Dashboard Avancé & Finalisation
-- [ ] 11.1 — Dashboard global enrichi
-- [ ] 11.2 — Navigation complète
-- [ ] 11.3 — Validations obligatoires sur les formulaires
-- [ ] 11.4 — Tests (vitest + playwright)
+### Sprint 9G — Design System & Landing Redesign
+- [x] 9G.1 — Landing page redesignée (vidéo BG, dark navy, jaune, animations scroll)
+- [x] 9G.2 — LandingFeatureShowcase (3 blocs alternés avec illustrations CSS)
+- [x] 9G.3 — Système de design : variables CSS + neumorphism + mode nuit
+- [x] 9G.4 — Boutons et inputs style soft UI dans toute l'app
+
+### Sprint 11 — Finalisation
+- [ ] 11.1 — Validations obligatoires sur tous les formulaires
+- [ ] 11.2 — Navigation complète et cohérente
+- [ ] 11.3 — Tests (vitest + playwright)
+- [ ] 11.4 — Déploiement production
+
+
+## MIGRATIONS SQL À EXÉCUTER DANS L'ORDRE
+
+```
+001_entreprises.sql
+002_chantiers.sql
+003_rapport_chantier.sql
+004_equipes.sql
+005_materiel.sql
+006_budget.sql
+007_planification.sql
+008_hse.sql
+009_documents.sql
+010_chat.sql
+011_invitations.sql
+012_user_avatar.sql
+013_hse_stock.sql
+014_abonnements.sql
+```
+
+
+## VARIABLES D'ENVIRONNEMENT REQUISES
+
+```
+DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
+NEXTAUTH_URL, NEXTAUTH_SECRET
+GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+EMAIL_USER, EMAIL_PASSWORD, EMAIL_FROM_NAME
+STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+STRIPE_PRICE_ESSENTIEL_MENSUEL, STRIPE_PRICE_ESSENTIEL_ANNUEL
+STRIPE_PRICE_PRO_MENSUEL, STRIPE_PRICE_PRO_ANNUEL
+```
+
+
+## ÉTAT ACTUEL — PROCHAINE ÉTAPE
+
+Sprint 11.1 — Validations obligatoires sur tous les formulaires
 
 
 ## DÉTAIL DES SPRINTS

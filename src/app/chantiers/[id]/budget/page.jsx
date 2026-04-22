@@ -195,11 +195,11 @@ export default function ChantierBudgetPage({ params: paramsPromise }) {
   const devise = synthese?.devise ?? 'XOF';
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="min-h-screen bg-slate-50 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">Budget & Dépenses</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Budget & Dépenses</h1>
             <p className="mt-2 text-slate-500">Suivez les dépenses et l'avancement budgétaire du chantier.</p>
           </div>
           <button type="button" onClick={() => router.push(`/chantiers/${id}`)} className="inline-flex items-center gap-2 rounded-3xl bg-slate-100 px-5 py-3 text-slate-700 hover:bg-slate-200 transition">
@@ -257,7 +257,7 @@ export default function ChantierBudgetPage({ params: paramsPromise }) {
             ) : (
               <>
                 {/* Cards de synthèse */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
                   <div className="rounded-[2rem] bg-white p-6 shadow-xl border border-slate-200">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="rounded-2xl bg-emerald-100 p-2.5 text-emerald-700"><Wallet className="w-5 h-5" /></div>

@@ -58,104 +58,78 @@ export default function NouvelOuvrierPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen py-8" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-2xl mx-auto px-6">
         <button
           type="button"
           onClick={() => router.push('/equipes')}
-          className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 mb-6"
+          className="inline-flex items-center gap-2 mb-6 text-sm font-medium transition hover:opacity-70"
+          style={{ color: 'var(--color-text-secondary)' }}
         >
           <ArrowLeft className="w-4 h-4" /> Retour à la liste
         </button>
 
-        <div className="rounded-[2rem] bg-white p-8 shadow-lg border border-slate-200">
+        <div className="rounded-2xl p-8" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
           <div className="flex items-center gap-4 mb-8">
-            <div className="rounded-3xl bg-indigo-600 p-4 text-white shadow-md">
+            <div className="rounded-2xl p-4 text-white" style={{ background: 'linear-gradient(145deg, #6366F1, #4F46E5)', boxShadow: '6px 6px 12px rgba(79,70,229,0.35)' }}>
               <UserPlus className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Ajouter un ouvrier</h1>
-              <p className="mt-1 text-sm text-slate-500">Renseignez les informations de l'ouvrier.</p>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Ajouter un ouvrier</h1>
+              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>Renseignez les informations de l'ouvrier.</p>
             </div>
           </div>
 
-          {error && <div className="rounded-3xl bg-red-50 border border-red-200 p-4 text-red-700 mb-6">{error}</div>}
+          {error && (
+            <div className="rounded-xl p-4 mb-6 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="grid gap-5">
             <div className="grid gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Nom *</span>
-                <input
-                  value={values.nom}
-                  onChange={handleChange('nom')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                  required
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Nom *</span>
+                <input value={values.nom} onChange={handleChange('nom')} className="input-neu" required />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Prénom *</span>
-                <input
-                  value={values.prenom}
-                  onChange={handleChange('prenom')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                  required
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Prénom *</span>
+                <input value={values.prenom} onChange={handleChange('prenom')} className="input-neu" required />
               </label>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Téléphone</span>
-                <input
-                  type="tel"
-                  value={values.telephone}
-                  onChange={handleChange('telephone')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Téléphone</span>
+                <input type="tel" value={values.telephone} onChange={handleChange('telephone')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Poste</span>
-                <select
-                  value={values.poste}
-                  onChange={handleChange('poste')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                >
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Poste</span>
+                <select value={values.poste} onChange={handleChange('poste')} className="select-neu">
                   <option value="">— Sélectionner —</option>
                   {POSTES.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </label>
             </div>
 
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Spécialité</span>
+            <label className="space-y-1.5">
+              <span className="input-neu-label">Spécialité</span>
               <input
                 value={values.specialite}
                 onChange={handleChange('specialite')}
                 placeholder="Ex : Carrelage grande surface, Électricité industrielle..."
-                className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
+                className="input-neu"
               />
             </label>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Taux horaire (€)</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={values.taux_horaire}
-                  onChange={handleChange('taux_horaire')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Taux horaire (€)</span>
+                <input type="number" step="0.01" min="0" value={values.taux_horaire} onChange={handleChange('taux_horaire')} className="input-neu" />
               </label>
-              <label className="space-y-2">
-                <span className="text-sm font-medium text-slate-700">Date d'embauche</span>
-                <input
-                  type="date"
-                  value={values.date_embauche}
-                  onChange={handleChange('date_embauche')}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-indigo-500"
-                />
+              <label className="space-y-1.5">
+                <span className="input-neu-label">Date d'embauche</span>
+                <input type="date" value={values.date_embauche} onChange={handleChange('date_embauche')} className="input-neu" />
               </label>
             </div>
 
@@ -163,15 +137,11 @@ export default function NouvelOuvrierPage() {
               <button
                 type="button"
                 onClick={() => router.push('/equipes')}
-                className="rounded-3xl border border-slate-200 px-6 py-3 text-slate-700 hover:bg-slate-100 transition"
+                className="btn btn-soft px-6 py-3"
               >
                 Annuler
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-3xl bg-indigo-600 px-8 py-3 text-white font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-60"
-              >
+              <button type="submit" disabled={loading} className="btn btn-primary">
                 {loading ? "Ajout en cours..." : "Ajouter l'ouvrier"}
               </button>
             </div>

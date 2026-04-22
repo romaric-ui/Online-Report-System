@@ -1,13 +1,13 @@
-"use client";
-import { useState } from 'react';
+'use client';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import MessageModal from './MessageModal';
 
-const faqs = [
+const FAQS = [
   {
     q: "Comment fonctionne l'essai gratuit ?",
-    a: "Vous avez 14 jours pour tester toutes les fonctionnalités du plan Pro. Aucune carte bancaire requise.",
+    a: "Vous avez 7 jours pour tester SGTEC. Carte bancaire requise à l'inscription, mais vous ne serez débité qu'après la période d'essai.",
   },
   {
     q: "L'application fonctionne-t-elle hors connexion ?",
@@ -15,28 +15,45 @@ const faqs = [
   },
   {
     q: "Comment inviter mon équipe ?",
-    a: "Depuis votre dashboard, envoyez une invitation par email ou partagez un lien. Vos collaborateurs créent leur compte et rejoignent votre entreprise.",
+    a: "Depuis votre tableau de bord, envoyez des invitations par email. Vos collaborateurs créent leur compte et rejoignent votre espace entreprise automatiquement.",
   },
   {
     q: "Mes données sont-elles sécurisées ?",
-    a: "Oui. Chiffrement des mots de passe, sessions sécurisées, et isolation complète des données entre entreprises.",
+    a: "Oui. Chiffrement des mots de passe, sessions sécurisées JWT, et isolation complète des données entre entreprises.",
   },
   {
     q: "Puis-je exporter mes rapports ?",
-    a: "Oui, tous les rapports sont exportables en PDF professionnel avec votre logo et mise en page personnalisée.",
+    a: "Oui, tous les rapports sont exportables en PDF professionnel avec votre logo et une mise en page personnalisable.",
   },
   {
     q: "Comment fonctionne le pointage ?",
-    a: "Le chef de chantier pointe les ouvriers chaque jour depuis l'application. Les heures sont calculées automatiquement.",
+    a: "Le chef de chantier pointe les ouvriers chaque jour depuis l'application. Les heures et présences sont calculées automatiquement.",
   },
 ];
+
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
 
 export default function LandingFAQ() {
   const { data: session, status } = useSession();
   const [openIndex, setOpenIndex] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
+  const [headerRef, headerVisible] = useInView(0.2);
 
-  const toggle = (index) => setOpenIndex(openIndex === index ? null : index);
+  const toggle = (i) => setOpenIndex(openIndex === i ? null : i);
 
   const handleContact = (e) => {
     e.preventDefault();
@@ -48,66 +65,69 @@ export default function LandingFAQ() {
   };
 
   return (
-    <section id="faq" className="py-24 bg-gray-50">
+    <section id="faq" className="py-24" style={{ background: '#F8FAFC' }}>
       <style>{`
         .faq-body {
           display: grid;
           grid-template-rows: 0fr;
-          transition: grid-template-rows .3s ease;
+          transition: grid-template-rows .35s ease;
         }
-        .faq-body.open {
-          grid-template-rows: 1fr;
-        }
-        .faq-inner {
-          overflow: hidden;
-        }
+        .faq-body.open { grid-template-rows: 1fr; }
+        .faq-inner { overflow: hidden; }
       `}</style>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-14">
-          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">FAQ</span>
-          <h2 className="mt-3 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-            Questions <span className="text-indigo-600">fréquentes</span>
+        <div
+          ref={headerRef}
+          className="text-center mb-14"
+          style={{
+            opacity: headerVisible ? 1 : 0,
+            transform: headerVisible ? 'translateY(0)' : 'translateY(24px)',
+            transition: 'opacity .7s ease, transform .7s ease',
+          }}
+        >
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#F59E0B' }}>FAQ</span>
+          <h2 className="mt-3 text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+            Questions fréquentes
           </h2>
-          <p className="mt-5 text-lg text-gray-500">
+          <div className="mt-4 mx-auto w-16 h-1.5 rounded-full" style={{ background: '#F59E0B' }} />
+          <p className="mt-6 text-lg text-gray-500">
             Tout ce que vous devez savoir avant de vous lancer.
           </p>
         </div>
 
         {/* Accordion */}
         <div className="space-y-3">
-          {faqs.map((item, index) => (
+          {FAQS.map((item, i) => (
             <div
-              key={index}
+              key={i}
               className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
-                openIndex === index
-                  ? 'border-indigo-200 bg-white shadow-md'
-                  : 'border-gray-200 bg-white hover:border-indigo-100 hover:shadow-sm'
+                openIndex === i ? 'border-yellow-300 bg-white shadow-lg' : 'border-gray-200 bg-white hover:border-yellow-200 hover:shadow-sm'
               }`}
             >
               <button
-                onClick={() => toggle(index)}
+                onClick={() => toggle(i)}
                 className="w-full px-6 py-5 text-left flex items-center justify-between gap-4"
               >
-                <span className={`font-semibold text-sm leading-snug ${
-                  openIndex === index ? 'text-indigo-700' : 'text-gray-800'
-                }`}>
+                <span className={`font-semibold text-sm leading-snug ${openIndex === i ? 'text-gray-900' : 'text-gray-800'}`}>
                   {item.q}
                 </span>
-                <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-colors duration-200 ${
-                  openIndex === index ? 'bg-indigo-600' : 'bg-gray-100'
-                }`}>
-                  {openIndex === index
+                <div
+                  className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-colors duration-200"
+                  style={{
+                    background: openIndex === i ? '#F59E0B' : '#f1f5f9',
+                  }}
+                >
+                  {openIndex === i
                     ? <Minus className="w-3.5 h-3.5 text-white" />
-                    : <Plus className="w-3.5 h-3.5 text-gray-500" />
-                  }
+                    : <Plus className="w-3.5 h-3.5 text-gray-500" />}
                 </div>
               </button>
 
-              <div className={`faq-body ${openIndex === index ? 'open' : ''}`}>
+              <div className={`faq-body ${openIndex === i ? 'open' : ''}`}>
                 <div className="faq-inner">
-                  <div className="px-6 pb-5 pt-0">
+                  <div className="px-6 pb-5">
                     <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
                   </div>
                 </div>
@@ -117,17 +137,15 @@ export default function LandingFAQ() {
         </div>
 
         {/* Contact CTA */}
-        <div className="mt-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+        <div className="mt-12 text-center rounded-3xl p-8 border"
+          style={{ background: 'white', borderColor: '#e2e8f0' }}>
           <p className="text-base font-bold text-gray-900 mb-1">Vous avez une autre question ?</p>
           <p className="text-sm text-gray-400 mb-5">Notre équipe vous répond en moins de 24 h.</p>
           <button
             onClick={handleContact}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
+            style={{ background: '#F59E0B', color: '#0F172A' }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
             Envoyez-nous un message
           </button>
         </div>

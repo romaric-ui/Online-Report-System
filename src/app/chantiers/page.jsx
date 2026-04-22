@@ -80,23 +80,23 @@ export default function ChantiersPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">Mes Chantiers</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Mes Chantiers</h1>
             <p className="mt-2 text-sm text-slate-600">Suivez vos chantiers en cours et accédez rapidement aux détails.</p>
           </div>
           <button
             type="button"
             onClick={() => router.push('/chantiers/nouveau')}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-white font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-white font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition text-sm"
           >
             <Plus className="w-4 h-4" />
             Nouveau chantier
           </button>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.5fr_0.5fr] mb-8">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.5fr_0.5fr] mb-6 sm:mb-8">
           <div className="rounded-3xl bg-white p-5 shadow-sm border border-slate-200 flex items-center gap-3">
             <Search className="w-5 h-5 text-slate-400" />
             <input

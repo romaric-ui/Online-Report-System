@@ -8,6 +8,7 @@ import AuthModal from "./components/AuthModal";
 import Toast from "./components/Toast";
 import LandingHero from "./components/LandingHero";
 import LandingFeatures from "./components/LandingFeatures";
+import LandingFeatureShowcase from "./components/LandingFeatureShowcase";
 import LandingPricing from "./components/LandingPricing";
 import LandingFAQ from "./components/LandingFAQ";
 import LandingCTA from "./components/LandingCTA";
@@ -122,6 +123,7 @@ export default function Home() {
         isAuthenticated={false}
       />
       <LandingFeatures />
+      <LandingFeatureShowcase />
       <LandingTestimonials />
       <LandingPricing
         onGetStarted={() => setShowAuthModal(true)}

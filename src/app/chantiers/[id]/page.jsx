@@ -119,7 +119,7 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
       </div>
 
       {/* Contenu */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
         {loading ? (
           <div className="flex items-center justify-center h-64 text-slate-600">Chargement du chantier...</div>
         ) : error ? (
@@ -127,14 +127,14 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
         ) : chantier ? (
           <>
             {/* En-tête */}
-            <div className="flex items-start justify-between gap-4 mb-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="rounded-xl bg-indigo-600 p-3 text-white shadow-md">
                     <Grid className="w-5 h-5" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-slate-900">{chantier.nom}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{chantier.nom}</h1>
                     <p className="text-sm text-slate-500">Réf. {chantier.reference || '—'}</p>
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
             </div>
 
             {/* Stats */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 xl:grid-cols-4 mb-5 sm:mb-6">
               <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-2 text-slate-500 mb-2"><FileText className="w-4 h-4" /><span className="text-xs font-medium">Tâches totales</span></div>
                 <p className="text-3xl font-bold text-slate-900">{chantier.tache_count ?? 0}</p>

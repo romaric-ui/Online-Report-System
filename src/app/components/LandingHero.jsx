@@ -1,191 +1,230 @@
-"use client";
-import { ArrowRight, Play } from 'lucide-react';
+'use client';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 
-export default function LandingHero({ onGetStarted, isAuthenticated }) {
+const STATS = [
+  { value: '500+', label: 'Chantiers gérés' },
+  { value: '2 000+', label: 'Rapports générés' },
+  { value: '98%', label: 'Satisfaction client' },
+];
+
+export default function LandingHero({ onGetStarted }) {
+
   return (
-    <section className="bg-white pt-20 pb-28 overflow-hidden">
+    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
       <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(24px); }
+        @keyframes heroFadeUp {
+          from { opacity: 0; transform: translateY(32px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
+        @keyframes heroBadgePop {
+          from { opacity: 0; transform: scale(.85); }
+          to   { opacity: 1; transform: scale(1); }
         }
-        @keyframes floatY {
-          0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-8px); }
+        @keyframes heroFloat {
+          0%,100% { transform: translateY(0); }
+          50%      { transform: translateY(-10px); }
         }
-        .hero-title    { animation: fadeInUp .7s ease both; }
-        .hero-sub      { animation: fadeInUp .7s .15s ease both; }
-        .hero-btns     { animation: fadeInUp .7s .3s ease both; }
-        .hero-stats    { animation: fadeInUp .7s .45s ease both; }
-        .hero-mockup   { animation: fadeIn .9s .2s ease both; }
-        .hero-float    { animation: floatY 4s ease-in-out infinite; }
+        @keyframes heroGlow {
+          0%,100% { opacity: .6; }
+          50%      { opacity: 1; }
+        }
+        @keyframes heroPulse {
+          0%,100% { transform: scale(1); opacity: 1; }
+          50%      { transform: scale(1.15); opacity: .7; }
+        }
+        .h-badge  { animation: heroBadgePop .6s ease both; }
+        .h-title  { animation: heroFadeUp  .75s .1s ease both; }
+        .h-sub    { animation: heroFadeUp  .75s .25s ease both; }
+        .h-btns   { animation: heroFadeUp  .75s .4s ease both; }
+        .h-stats  { animation: heroFadeUp  .75s .55s ease both; }
+        .h-card   { animation: heroFadeUp  .9s .3s ease both; }
+        .h-float  { animation: heroFloat 5s ease-in-out infinite; }
+        .h-glow   { animation: heroGlow 3s ease-in-out infinite; }
+        .h-pulse  { animation: heroPulse 2s ease-in-out infinite; }
       `}</style>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── Video / dark overlay ── */}
+      <div className="absolute inset-0 z-0">
+        <video
+          autoPlay muted loop playsInline
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
+        >
+          <source src="/videos/chantier.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(15,23,42,.45) 0%, rgba(15,23,42,.35) 60%, rgba(30,41,59,.25) 100%)' }} />
+        {/* Yellow glow orb */}
+        <div className="h-glow absolute top-1/3 right-1/4 w-96 h-96 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(245,158,11,.18) 0%, transparent 70%)' }} />
+      </div>
+
+      {/* ── Content ── */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-          {/* ── Left ── */}
-          <div className="space-y-8">
+          {/* Left */}
+          <div>
             {/* Badge */}
-            <div className="hero-title inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+            <div className="h-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-6"
+              style={{ background: 'rgba(245,158,11,.12)', borderColor: 'rgba(245,158,11,.35)' }}>
+              <span className="h-pulse w-2 h-2 rounded-full" style={{ background: '#F59E0B', display:'inline-block', width:8, height:8 }} />
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#F59E0B' }}>
                 Plateforme SaaS BTP
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="hero-title text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.08] tracking-tight">
-              Pilotez vos chantiers.{" "}
-              <span className="text-indigo-600">Maîtrisez</span>{" "}
-              vos projets.
+            <h1 className="h-title text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white mb-6">
+              Pilotez vos<br />
+              chantiers.{' '}
+              <span style={{ color: '#F59E0B' }}>Sans</span><br />
+              compromis.
             </h1>
 
             {/* Subtitle */}
-            <p className="hero-sub text-lg text-gray-500 leading-relaxed max-w-lg">
-              La plateforme tout-en-un pour les professionnels du BTP. Suivi en temps réel,
-              gestion d'équipes, budget, planning et sécurité — depuis votre bureau ou le terrain.
+            <p className="h-sub text-lg leading-relaxed mb-8 max-w-lg" style={{ color: '#94a3b8' }}>
+              La plateforme tout-en-un pour les pros du BTP. Suivi en temps réel,
+              gestion d'équipes, budget, planning et sécurité — depuis le terrain.
             </p>
 
             {/* Buttons */}
-            <div className="hero-btns flex flex-col sm:flex-row gap-3">
+            <div className="h-btns flex flex-col sm:flex-row gap-3 mb-12">
               <button
                 onClick={onGetStarted}
-                className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold text-sm transition-all duration-200 shadow-lg shadow-indigo-200 hover:scale-[1.02]"
+                className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]"
+                style={{ background: '#F59E0B', color: '#0F172A' }}
               >
-                {isAuthenticated ? "Accéder au dashboard" : "Démarrer gratuitement"}
+                Démarrer gratuitement
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
+                style={{ background: 'rgba(255,255,255,.08)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,.15)' }}
               >
-                <Play className="w-4 h-4" />
-                Voir la démo
+                Voir les fonctionnalités
               </button>
             </div>
 
-            {/* Mini stats */}
-            <div className="hero-stats flex flex-wrap gap-8 pt-4 border-t border-gray-100">
-              {[
-                { value: "500+", label: "chantiers gérés" },
-                { value: "2 000+", label: "rapports générés" },
-                { value: "98%", label: "de satisfaction" },
-              ].map(({ value, label }) => (
-                <div key={label} className="flex flex-col">
-                  <span className="text-2xl font-extrabold text-indigo-600">{value}</span>
-                  <span className="text-xs text-gray-500 mt-0.5">{label}</span>
+            {/* Stats */}
+            <div className="h-stats flex flex-wrap gap-8 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,.1)' }}>
+              {STATS.map(({ value, label }) => (
+                <div key={label}>
+                  <div className="text-3xl font-black" style={{ color: '#F59E0B' }}>{value}</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#64748b' }}>{label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── Right — CSS dashboard illustration ── */}
-          <div className="hidden lg:block relative hero-mockup">
-            <div className="hero-float">
-              {/* Main card */}
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
-                {/* Topbar */}
-                <div className="px-5 py-3.5 bg-indigo-600 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-300" />
-                  </div>
-                  <span className="text-xs font-semibold text-indigo-100">Dashboard SGTEC</span>
-                  <div className="w-6 h-6 rounded-full bg-white/20" />
-                </div>
-
-                <div className="p-5 space-y-4 bg-gray-50">
-                  {/* KPI row */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: "Chantiers actifs", value: "12", color: "bg-indigo-500", light: "bg-indigo-50" },
-                      { label: "Budget consommé", value: "68%", color: "bg-emerald-500", light: "bg-emerald-50" },
-                      { label: "Incidents HSE", value: "2", color: "bg-amber-500", light: "bg-amber-50" },
-                    ].map(({ label, value, color, light }) => (
-                      <div key={label} className={`${light} rounded-2xl p-3 border border-white`}>
-                        <p className="text-xs text-gray-500 mb-1">{label}</p>
-                        <p className={`text-2xl font-extrabold ${color.replace('bg-', 'text-')}`}>{value}</p>
-                      </div>
-                    ))}
+          {/* Right — Dashboard mockup */}
+          <div className="hidden lg:block h-card">
+            <div className="h-float">
+              <div className="relative">
+                {/* Main card */}
+                <div className="rounded-2xl overflow-hidden border shadow-2xl"
+                  style={{ background: '#0F172A', borderColor: 'rgba(255,255,255,.1)' }}>
+                  {/* Topbar */}
+                  <div className="flex items-center justify-between px-5 py-3.5"
+                    style={{ background: '#1E293B', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+                    <div className="flex gap-1.5">
+                      {['#ef4444','#f59e0b','#22c55e'].map((c,i) => (
+                        <div key={i} style={{ width:10, height:10, borderRadius:'50%', background:c }} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color:'#64748b' }}>SGTEC · Dashboard</span>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ background: '#F59E0B', color:'#0F172A' }}>R</div>
                   </div>
 
-                  {/* Gantt-like bar */}
-                  <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 mb-3">Planning semaine</p>
-                    <div className="space-y-2">
+                  <div className="p-5 space-y-4">
+                    {/* KPI row */}
+                    <div className="grid grid-cols-3 gap-3">
                       {[
-                        { label: "Fondations", w: "w-3/4", color: "bg-indigo-500" },
-                        { label: "Gros œuvre", w: "w-1/2", color: "bg-indigo-300" },
-                        { label: "Charpente",  w: "w-1/4", color: "bg-emerald-400" },
-                      ].map(({ label, w, color }) => (
-                        <div key={label} className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400 w-20 flex-shrink-0">{label}</span>
-                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full ${w} ${color} rounded-full`} />
-                          </div>
+                        { label: 'Chantiers actifs', val: '12', color: '#3b82f6' },
+                        { label: 'Avancement moy.', val: '74%', color: '#22c55e' },
+                        { label: 'Alertes HSE', val: '3', color: '#ef4444' },
+                      ].map((k,i) => (
+                        <div key={i} className="rounded-xl p-3" style={{ background: '#1E293B' }}>
+                          <div className="text-xs mb-1" style={{ color:'#64748b' }}>{k.label}</div>
+                          <div className="text-2xl font-black" style={{ color:k.color }}>{k.val}</div>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Team + activity row */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white rounded-2xl p-3 border border-gray-100">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">Équipe présente</p>
-                      <div className="flex -space-x-2">
-                        {["bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500"].map((c, i) => (
-                          <div key={i} className={`w-7 h-7 rounded-full ${c} border-2 border-white flex items-center justify-center text-white text-xs font-bold`}>
-                            {["K", "A", "M", "+"][i]}
+                    {/* Progress bars */}
+                    <div className="rounded-xl p-4" style={{ background:'#1E293B' }}>
+                      <div className="text-xs font-semibold mb-3" style={{ color:'#64748b' }}>AVANCEMENT CHANTIERS</div>
+                      <div className="space-y-2.5">
+                        {[
+                          { name:'Résidence Les Acacias', pct:82, color:'#22c55e' },
+                          { name:'Immeuble Plateau',     pct:55, color:'#F59E0B' },
+                          { name:'Villa Nord',           pct:30, color:'#3b82f6' },
+                        ].map((c,i) => (
+                          <div key={i}>
+                            <div className="flex justify-between text-xs mb-1" style={{ color:'#94a3b8' }}>
+                              <span>{c.name}</span><span className="font-bold">{c.pct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full" style={{ background:'#334155' }}>
+                              <div className="h-full rounded-full" style={{ width:`${c.pct}%`, background:c.color }} />
+                            </div>
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1.5">14 ouvriers</p>
                     </div>
-                    <div className="bg-white rounded-2xl p-3 border border-gray-100">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">Sécurité HSE</p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full w-11/12 bg-emerald-500 rounded-full" />
+                    {/* Team row */}
+                    <div className="rounded-xl p-3 flex items-center justify-between" style={{ background:'#1E293B' }}>
+                      <div>
+                        <div className="text-xs mb-1" style={{ color:'#64748b' }}>ÉQUIPE PRÉSENTE</div>
+                        <div className="flex -space-x-2">
+                          {['#3b82f6','#22c55e','#F59E0B','#a855f7'].map((c,i) => (
+                            <div key={i} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-white text-xs font-bold"
+                              style={{ background:c, borderColor:'#1E293B' }}>
+                              {['K','A','M','D'][i]}
+                            </div>
+                          ))}
                         </div>
-                        <span className="text-xs font-bold text-emerald-600">94%</span>
                       </div>
-                      <p className="text-xs text-emerald-600 mt-1.5 font-medium">Conforme</p>
+                      <div className="text-right">
+                        <div className="text-xs" style={{ color:'#64748b' }}>SÉCURITÉ HSE</div>
+                        <div className="text-xl font-black" style={{ color:'#22c55e' }}>94%</div>
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Floating badge — rapport */}
+                <div className="absolute -bottom-5 -left-8 rounded-2xl border px-4 py-3 flex items-center gap-3 shadow-xl"
+                  style={{ background:'#1E293B', borderColor:'rgba(255,255,255,.1)' }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background:'rgba(34,197,94,.15)' }}>
+                    <span style={{ color:'#22c55e', fontSize:16 }}>✓</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Rapport PDF généré</p>
+                    <p className="text-xs" style={{ color:'#64748b' }}>il y a 3 minutes</p>
+                  </div>
+                </div>
+
+                {/* Floating badge — alerte */}
+                <div className="absolute -top-5 -right-6 rounded-2xl border px-4 py-3 flex items-center gap-3 shadow-xl"
+                  style={{ background:'#1E293B', borderColor:'rgba(255,255,255,.1)' }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background:'rgba(245,158,11,.15)' }}>
+                    <span style={{ color:'#F59E0B', fontSize:16 }}>⚡</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Alerte budget</p>
+                    <p className="text-xs" style={{ color:'#64748b' }}>Chantier A — 90%</p>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Floating badge — rapport validé */}
-            <div className="absolute -bottom-4 -left-6 bg-white rounded-2xl border border-gray-100 shadow-xl px-4 py-3 flex items-center gap-3 animate-none">
-              <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-emerald-600 text-base">✓</span>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-900">Rapport PDF généré</p>
-                <p className="text-xs text-gray-400">il y a 3 minutes</p>
-              </div>
-            </div>
-
-            {/* Floating badge — alerte */}
-            <div className="absolute -top-4 -right-4 bg-white rounded-2xl border border-gray-100 shadow-xl px-4 py-3 flex items-center gap-3">
-              <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-amber-600 text-base">⚡</span>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-900">Alerte budget</p>
-                <p className="text-xs text-gray-400">Chantier A — 90%</p>
-              </div>
-            </div>
           </div>
-
         </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 opacity-50">
+        <ChevronDown className="w-5 h-5 text-white animate-bounce" />
       </div>
     </section>
   );

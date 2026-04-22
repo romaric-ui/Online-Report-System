@@ -1,87 +1,127 @@
-"use client";
-import { Star } from "lucide-react";
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { Star } from 'lucide-react';
 
-const testimonials = [
+const TESTIMONIALS = [
   {
-    name: "Koffi A.",
-    role: "Chef de chantier",
-    city: "Cotonou",
-    content:
-      "SGTEC a révolutionné notre suivi de chantier. On gagne 2 heures par jour sur les rapports.",
-    initials: "KA",
-    color: "bg-indigo-600",
+    name: 'Koffi A.',
+    role: 'Chef de chantier',
+    city: 'Cotonou',
+    content: "SGTEC a révolutionné notre suivi de chantier. On gagne 2 heures par jour sur les rapports. Je ne pourrais plus m'en passer.",
+    initials: 'KA',
+    color: '#3b82f6',
   },
   {
-    name: "Amina D.",
-    role: "Conductrice de travaux",
-    city: "Lomé",
-    content:
-      "Enfin un outil adapté au BTP africain. Simple, efficace, et ça marche même avec une connexion lente.",
-    initials: "AD",
-    color: "bg-emerald-600",
+    name: 'Amina D.',
+    role: 'Conductrice de travaux',
+    city: 'Lomé',
+    content: "Enfin un outil adapté au BTP africain. Simple, efficace, et ça marche même avec une connexion lente. Mes équipes adorent.",
+    initials: 'AD',
+    color: '#22c55e',
   },
   {
-    name: "Marc T.",
-    role: "Directeur BTP",
-    city: "Abidjan",
-    content:
-      "Le dashboard me donne une vue claire sur tous mes chantiers. Je recommande vivement.",
-    initials: "MT",
-    color: "bg-purple-600",
+    name: 'Marc T.',
+    role: 'Directeur BTP',
+    city: 'Abidjan',
+    content: "Le dashboard me donne une vue claire sur tous mes chantiers simultanément. La gestion des budgets est devenue un jeu d'enfant.",
+    initials: 'MT',
+    color: '#a855f7',
   },
 ];
 
-export default function LandingTestimonials() {
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
+
+function TestimonialCard({ t, index }) {
+  const [ref, visible] = useInView(0.1);
+  const dir = index % 2 === 0 ? -40 : 40;
   return (
-    <section className="py-24 bg-gray-50">
+    <div
+      ref={ref}
+      className="rounded-2xl p-8 flex flex-col gap-5 border transition-all duration-300"
+      style={{
+        background: '#1E293B',
+        borderColor: 'rgba(255,255,255,.07)',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateX(0)' : `translateX(${dir}px)`,
+        transition: `opacity .7s ease ${index * 100}ms, transform .7s ease ${index * 100}ms`,
+      }}
+    >
+      {/* Stars */}
+      <div className="flex gap-1">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+        ))}
+      </div>
+
+      {/* Quote mark */}
+      <div className="text-5xl font-black leading-none -mb-2" style={{ color: t.color, opacity: .3 }}>"</div>
+
+      {/* Content */}
+      <p className="text-sm leading-relaxed flex-1" style={{ color: '#cbd5e1' }}>
+        {t.content}
+      </p>
+
+      {/* Author */}
+      <div className="flex items-center gap-3 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,.07)' }}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+          style={{ background: t.color }}>
+          {t.initials}
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white">{t.name}</p>
+          <p className="text-xs" style={{ color: '#64748b' }}>{t.role} · {t.city}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LandingTestimonials() {
+  const [headerRef, headerVisible] = useInView(0.2);
+
+  return (
+    <section style={{ background: '#0F172A', padding: '96px 0' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-widest">
+        <div
+          ref={headerRef}
+          className="text-center mb-16"
+          style={{
+            opacity: headerVisible ? 1 : 0,
+            transform: headerVisible ? 'translateY(0)' : 'translateY(24px)',
+            transition: 'opacity .7s ease, transform .7s ease',
+          }}
+        >
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#F59E0B' }}>
             Témoignages
           </span>
-          <h2 className="mt-3 text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-            Ils nous font <span className="text-indigo-600">confiance</span>
+          <h2 className="mt-3 text-4xl md:text-5xl font-black tracking-tight text-white">
+            Ils nous font <span style={{ color: '#F59E0B' }}>confiance</span>
           </h2>
-          <p className="mt-5 text-lg text-gray-500 max-w-xl mx-auto">
+          <div className="mt-4 mx-auto w-16 h-1.5 rounded-full" style={{ background: '#F59E0B' }} />
+          <p className="mt-6 text-lg max-w-xl mx-auto" style={{ color: '#64748b' }}>
             Des professionnels du BTP qui ont digitalisé leur gestion de chantier avec SGTEC.
           </p>
         </div>
 
         {/* Cards */}
         <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((t, index) => (
-            <div
-              key={index}
-              className="group bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col gap-5"
-            >
-              {/* Stars */}
-              <div className="flex gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-
-              {/* Quote */}
-              <p className="text-gray-700 leading-relaxed text-[15px] italic flex-1">
-                "{t.content}"
-              </p>
-
-              {/* Author */}
-              <div className="flex items-center gap-3 pt-5 border-t border-gray-100">
-                <div
-                  className={`w-11 h-11 rounded-full ${t.color} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
-                >
-                  {t.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                  <p className="text-xs text-gray-400">
-                    {t.role} · {t.city}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {TESTIMONIALS.map((t, i) => (
+            <TestimonialCard key={i} t={t} index={i} />
           ))}
         </div>
       </div>

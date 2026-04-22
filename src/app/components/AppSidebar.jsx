@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Building2, Users, Wrench,
   UserPlus, LogOut, Settings, CreditCard, Plus,
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 const isActive = (pathname, href) => {
   const exactMatch = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement'];
@@ -43,14 +44,14 @@ export default function AppSidebar({ onNavigate }) {
     { label: 'Ouvriers',            icon: Users,           href: '/equipes' },
     { label: 'Matériel',            icon: Wrench,          href: '/materiel' },
     { label: 'Mon équipe',          icon: UserPlus,        href: '/dashboard-projet/equipe' },
-    { label: 'Gérer l\'abonnement', icon: CreditCard,      href: '/abonnement' },
+    { label: "Gérer l'abonnement",  icon: CreditCard,      href: '/abonnement' },
   ];
 
   const userLinks = [
-    { label: 'Mes projets',  icon: LayoutDashboard, href: '/dashboard-projet' },
-    { label: 'Mes chantiers',icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
-    { label: 'Ouvriers',     icon: Users,           href: '/equipes' },
-    { label: 'Matériel',     icon: Wrench,          href: '/materiel' },
+    { label: 'Mes projets',   icon: LayoutDashboard, href: '/dashboard-projet' },
+    { label: 'Mes chantiers', icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
+    { label: 'Ouvriers',      icon: Users,           href: '/equipes' },
+    { label: 'Matériel',      icon: Wrench,          href: '/materiel' },
   ];
 
   const links = isAdmin ? adminLinks : userLinks;
@@ -61,9 +62,18 @@ export default function AppSidebar({ onNavigate }) {
   };
 
   return (
-    <aside className="w-[250px] h-screen bg-white border-r border-gray-200 flex flex-col">
+    <aside
+      className="w-[250px] h-screen flex flex-col"
+      style={{
+        background: 'var(--bg-surface)',
+        boxShadow: '4px 0 16px var(--shadow-dark)',
+      }}
+    >
       {/* Profil utilisateur */}
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-2">
+      <div
+        className="p-4 flex items-center justify-between gap-2"
+        style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+      >
         <button
           type="button"
           onClick={goToProfil}
@@ -80,18 +90,23 @@ export default function AppSidebar({ onNavigate }) {
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
-            <p className="text-xs text-gray-500 truncate">{displayEmail}</p>
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{displayName}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>{displayEmail}</p>
           </div>
         </button>
-        <a
-          href="/profil"
-          className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition shrink-0"
-          title="Paramètres du profil"
-          onClick={onNavigate}
-        >
-          <Settings className="w-4 h-4" />
-        </a>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
+          <a
+            href="/profil"
+            className="p-1.5 rounded-lg transition hover:opacity-70 shrink-0"
+            style={{ color: 'var(--color-text-muted)' }}
+            title="Paramètres du profil"
+            onClick={onNavigate}
+          >
+            <Settings className="w-4 h-4" />
+          </a>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -99,25 +114,35 @@ export default function AppSidebar({ onNavigate }) {
         {links.map((link) => {
           const active = isActive(pathname, link.href);
           return (
-            <div key={`${link.href}-${link.label}`} className="group/nav relative mb-0.5">
+            <div key={`${link.href}-${link.label}`} className="group/nav relative mb-1">
               <a
                 href={link.href}
                 onClick={onNavigate}
-                className={`flex items-center gap-3 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors border-l-4 ${
-                  active
-                    ? 'bg-indigo-50 text-indigo-600 border-indigo-600'
-                    : 'text-gray-700 border-transparent hover:bg-gray-50'
-                }`}
+                className="flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200"
+                style={active ? {
+                  background: 'var(--bg-base)',
+                  color: 'var(--color-primary)',
+                  boxShadow: 'var(--shadow-neu-pressed)',
+                } : {
+                  color: 'var(--color-text-secondary)',
+                }}
               >
                 <link.icon
-                  className={`w-5 h-5 shrink-0 ${active ? 'text-indigo-600' : 'text-gray-400'}`}
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
                 />
                 <span className="flex-1">{link.label}</span>
                 {link.addHref && (
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (onNavigate) onNavigate(); router.push(link.addHref); }}
-                    className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center opacity-0 group-hover/nav:opacity-100 transition-opacity hover:bg-indigo-200"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (onNavigate) onNavigate();
+                      router.push(link.addHref);
+                    }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover/nav:opacity-100 transition-opacity"
+                    style={{ background: 'var(--color-primary)', color: 'white' }}
                     title="Nouveau chantier"
                   >
                     <Plus className="w-3 h-3" />
@@ -130,11 +155,12 @@ export default function AppSidebar({ onNavigate }) {
       </nav>
 
       {/* Déconnexion */}
-      <div className="p-3 border-t border-gray-100">
+      <div className="p-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: '/' })}
-          className="flex items-center gap-3 py-3 px-4 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition w-full"
+          className="flex items-center gap-3 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 w-full hover:opacity-80"
+          style={{ color: 'var(--color-danger)' }}
         >
           <LogOut className="w-5 h-5 shrink-0" />
           Se déconnecter

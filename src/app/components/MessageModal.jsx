@@ -100,35 +100,25 @@ export default function MessageModal({ isOpen, onClose }) {
         <div className="p-6">
           {success ? (
             <div className="text-center py-12">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="w-10 h-10 text-green-600" />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                <Send className="w-10 h-10" style={{ color: 'var(--color-success)' }} />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Message envoyé !</h3>
-              <p className="text-slate-600">
-                L'administrateur vous répondra bientôt par email.
-              </p>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>Message envoyé !</h3>
+              <p style={{ color: 'var(--color-text-muted)' }}>L'administrateur vous répondra bientôt par email.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3">
-                  <div className="bg-red-100 p-2 rounded-lg">
-                    <X className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-red-800">Erreur</p>
-                    <p className="text-red-600 text-sm mt-1">{error}</p>
-                  </div>
+                <div className="rounded-xl p-4 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  {error}
                 </div>
               )}
 
               {/* Sujet */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Sujet <span className="text-red-500">*</span>
-                </label>
+                <label className="input-neu-label">Sujet <span style={{ color: 'var(--color-danger)' }}>*</span></label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                   <input
                     type="text"
                     value={sujet}
@@ -136,69 +126,47 @@ export default function MessageModal({ isOpen, onClose }) {
                     placeholder="Quel est le sujet de votre message ?"
                     maxLength={200}
                     disabled={loading}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="input-neu disabled:opacity-50"
+                    style={{ paddingLeft: 44 }}
                   />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {sujet.length}/200 caractères
-                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{sujet.length}/200 caractères</p>
               </div>
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Message <span className="text-red-500">*</span>
-                </label>
+                <label className="input-neu-label">Message <span style={{ color: 'var(--color-danger)' }}>*</span></label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Décrivez votre demande en détail..."
                   rows={8}
                   disabled={loading}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="textarea-neu disabled:opacity-50"
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  {message.length} caractères
-                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{message.length} caractères</p>
               </div>
 
               {/* Info utilisateur */}
               {session?.user && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-                  <p className="text-sm text-indigo-800">
+                <div className="rounded-xl p-4" style={{ background: 'rgba(79,70,229,0.06)', border: '1px solid rgba(79,70,229,0.15)' }}>
+                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                     <span className="font-semibold">Envoyé par :</span> {session.user.email}
                   </p>
-                  <p className="text-xs text-indigo-600 mt-1">
-                    Nous vous répondrons à cette adresse email
-                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Nous vous répondrons à cette adresse email</p>
                 </div>
               )}
 
               {/* Buttons */}
-              <div className="flex items-center space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={loading}
-                  className="flex-1 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+              <div className="flex items-center gap-3 pt-2">
+                <button type="button" onClick={handleClose} disabled={loading} className="btn btn-soft flex-1 disabled:opacity-50">
                   Annuler
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading || !sujet.trim() || !message.trim()}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
+                <button type="submit" disabled={loading || !sujet.trim() || !message.trim()} className="btn btn-primary flex-1 disabled:opacity-50">
                   {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Envoi en cours...</span>
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" /><span>Envoi en cours...</span></>
                   ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Envoyer le message</span>
-                    </>
+                    <><Send className="w-4 h-4" /><span>Envoyer le message</span></>
                   )}
                 </button>
               </div>

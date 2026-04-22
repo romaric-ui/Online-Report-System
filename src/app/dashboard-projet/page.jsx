@@ -188,7 +188,7 @@ export default function DashboardProjetPage() {
         .anim-pulse-dot { animation: pulse-dot 1.5s ease infinite; }
       `}</style>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* ── En-tête ── */}
         <div className="anim-fade flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
@@ -392,7 +392,7 @@ export default function DashboardProjetPage() {
         </div>
 
         {/* ── Section 3+4 — Alertes + Activité (2 colonnes) ── */}
-        <div className="grid gap-6 xl:grid-cols-2 mb-6">
+        <div className="grid gap-6 grid-cols-1 xl:grid-cols-2 mb-6">
 
           {/* Alertes */}
           <div className="anim-fade bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ animationDelay: '0.35s' }}>

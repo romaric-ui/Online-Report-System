@@ -16,23 +16,20 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError('');
     setMessage('');
-
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setMessage('Un code de réinitialisation vous a été envoyé par email. Vérifiez votre boîte de réception.');
         setEmail('');
       } else {
         setError(data.error || 'Une erreur est survenue');
       }
-    } catch (err) {
+    } catch {
       setError('Erreur de connexion au serveur');
     } finally {
       setLoading(false);
@@ -40,71 +37,36 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Mot de passe oublié ?
-          </h2>
-          <Link
-            href="/"
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </Link>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Mot de passe oublié ?</h2>
+          <Link href="/" className="text-2xl transition hover:opacity-60" style={{ color: 'var(--color-text-muted)' }}>×</Link>
         </div>
 
         {message && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          <div className="rounded-xl p-4 mb-5 text-sm font-medium" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', border: '1px solid rgba(16,185,129,0.2)' }}>
             {message}
           </div>
         )}
-
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="rounded-xl p-4 mb-5 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Adresse email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="votre@email.com"
-            />
+            <label className="input-neu-label">Adresse email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input-neu" placeholder="votre@email.com" />
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Envoi en cours...
-              </>
-            ) : (
-              'Envoyer le code de réinitialisation'
-            )}
+          <button type="submit" disabled={loading} className="btn btn-primary w-full">
+            {loading ? 'Envoi en cours...' : 'Envoyer le code de réinitialisation'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
+        <div className="mt-5 text-center">
+          <Link href="/" className="text-sm transition hover:opacity-70" style={{ color: 'var(--color-primary)' }}>
             ← Retour à la connexion
           </Link>
         </div>

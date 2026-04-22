@@ -119,22 +119,17 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-neu-raised)' }}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
             {isLoginMode ? 'Connexion' : 'Inscription'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
+          <button onClick={onClose} className="text-2xl transition hover:opacity-60" style={{ color: 'var(--color-text-muted)' }}>×</button>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="rounded-xl p-4 mb-4 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
             {error}
           </div>
         )}
@@ -143,107 +138,41 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           {!isLoginMode && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prénom
-                </label>
-                <input
-                  type="text"
-                  name="prenom"
-                  value={formData.prenom}
-                  onChange={handleChange}
-                  required={!isLoginMode}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Votre prénom"
-                />
+                <label className="input-neu-label">Prénom</label>
+                <input type="text" name="prenom" value={formData.prenom} onChange={handleChange} required={!isLoginMode} className="input-neu" placeholder="Votre prénom" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  name="nom"
-                  value={formData.nom}
-                  onChange={handleChange}
-                  required={!isLoginMode}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Votre nom"
-                />
+                <label className="input-neu-label">Nom</label>
+                <input type="text" name="nom" value={formData.nom} onChange={handleChange} required={!isLoginMode} className="input-neu" placeholder="Votre nom" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone (optionnel)
-                </label>
-                <input
-                  type="tel"
-                  name="telephone"
-                  value={formData.telephone}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="+33 6 12 34 56 78"
-                />
+                <label className="input-neu-label">Téléphone (optionnel)</label>
+                <input type="tel" name="telephone" value={formData.telephone} onChange={handleChange} className="input-neu" placeholder="+33 6 12 34 56 78" />
               </div>
             </>
           )}
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="votre@email.com"
-            />
+            <label className="input-neu-label">Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="input-neu" placeholder="votre@email.com" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mot de passe
-            </label>
+            <label className="input-neu-label">Mot de passe</label>
             <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                minLength="6"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Mot de passe (min. 6 caractères)"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-              >
+              <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} required minLength="6" className="input-neu" style={{ paddingRight: 44 }} placeholder="Mot de passe (min. 6 caractères)" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
                 {showPassword ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" /></svg>
                 ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 )}
               </button>
             </div>
             {isLoginMode && (
               <div className="mt-2 text-right">
-                <a
-                  href="/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onClose();
-                    window.location.href = '/forgot-password';
-                  }}
-                >
+                <a href="/forgot-password" className="text-sm transition hover:opacity-70" style={{ color: 'var(--color-primary)' }}
+                  onClick={(e) => { e.preventDefault(); onClose(); window.location.href = '/forgot-password'; }}>
                   Mot de passe oublié ?
                 </a>
               </div>
@@ -252,55 +181,27 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
 
           {!isLoginMode && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirmer le mot de passe
-              </label>
+              <label className="input-neu-label">Confirmer le mot de passe</label>
               <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required={!isLoginMode}
-                  minLength="6"
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Confirmer le mot de passe"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                >
+                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required={!isLoginMode} minLength="6" className="input-neu" style={{ paddingRight: 44 }} placeholder="Confirmer le mot de passe" />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 transition hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>
                   {showConfirmPassword ? (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                    </svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" /></svg>
                   ) : (
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                   )}
                 </button>
               </div>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Chargement...' : (isLoginMode ? 'Se connecter' : 'S\'inscrire')}
+          <button type="submit" disabled={loading} className="btn btn-primary w-full">
+            {loading ? 'Chargement...' : (isLoginMode ? 'Se connecter' : "S'inscrire")}
           </button>
         </form>
 
-        {/* Séparateur */}
-        <div className="mt-6 mb-4 text-center text-gray-500 text-sm">
-          ou
-        </div>
+        <div className="mt-6 mb-4 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>ou</div>
 
-        {/* Bouton Google */}
         <GoogleSignInButton />
 
         <div className="mt-6 text-center">
@@ -310,26 +211,17 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
               setError('');
               setShowPassword(false);
               setShowConfirmPassword(false);
-              setFormData({
-                nom: '',
-                prenom: '',
-                email: '',
-                telephone: '',
-                password: '',
-                confirmPassword: ''
-              });
+              setFormData({ nom: '', prenom: '', email: '', telephone: '', password: '', confirmPassword: '' });
             }}
-            className="text-blue-600 hover:text-blue-800 text-sm"
+            className="text-sm transition hover:opacity-70"
+            style={{ color: 'var(--color-primary)' }}
           >
-            {isLoginMode 
-              ? "Pas de compte ? S'inscrire" 
-              : "Déjà un compte ? Se connecter"
-            }
+            {isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
           </button>
         </div>
 
         <div className="mt-4 text-center text-sm">
-          <a href="/inscription" className="text-blue-600 hover:text-blue-800">
+          <a href="/inscription" className="transition hover:opacity-70" style={{ color: 'var(--color-primary)' }}>
             Créer un compte entreprise
           </a>
         </div>
