@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDbConnection } from '../../../../../lib/database.js';
+import { connectDB } from '../../../../../lib/database.js';
 
 export async function POST(request) {
   try {
@@ -12,16 +12,14 @@ export async function POST(request) {
       );
     }
 
-    const connection = await getDbConnection();
+    const db = await connectDB();
 
-    // Vérifier l'OTP
-    const [otpRecords] = await connection.execute(
+    const [otpRecords] = await db.query(
       'SELECT * FROM otp_verification WHERE email = ? AND otp_code = ? AND expires_at > NOW()',
       [email, otp]
     );
 
     if (otpRecords.length === 0) {
-      await connection.end();
       return NextResponse.json(
         { error: 'Code invalide ou expiré' },
         { status: 400 }
@@ -30,25 +28,22 @@ export async function POST(request) {
 
     const otpRecord = otpRecords[0];
 
-    // Activer le compte utilisateur
-    await connection.execute(
-      'UPDATE Utilisateur SET email_verified = TRUE WHERE id_utilisateur = ?',
+    await db.query(
+      'UPDATE Utilisateur SET email_verifie = 1 WHERE id_utilisateur = ?',
       [otpRecord.user_id]
     );
 
-    // Supprimer l'OTP utilisé
-    await connection.execute(
+    await db.query(
       'DELETE FROM otp_verification WHERE id = ?',
       [otpRecord.id]
     );
-
-    await connection.end();
 
     return NextResponse.json({
       success: true,
       message: 'Email vérifié avec succès',
       userId: otpRecord.user_id,
     });
+
   } catch (error) {
     console.error('❌ Erreur vérification OTP:', error);
     return NextResponse.json(

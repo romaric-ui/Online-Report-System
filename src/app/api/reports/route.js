@@ -35,30 +35,39 @@ async function handleGET() {
 
 async function handlePOST(request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    throw new AuthenticationError('Non authentifié');
-  }
+  if (!session) throw new AuthenticationError('Non authentifié');
 
   const body = await request.json();
   const {
-    numero_affaire,
-    numero_rapport,
-    nom_chantier,
-    adresse_chantier,
-    date_visite,
-    phase,
-    equipe_presente,
-    materiel_utilise,
-    objectifs_limites,
-    deroulement,
-    investigation,
-    autres_points,
-    conclusion,
-    photo_couverture,
+    numero_affaire, numero_rapport, nom_chantier, adresse_chantier,
+    date_visite, phase, equipe_presente, materiel_utilise,
+    objectifs_limites, deroulement, investigation, autres_points,
+    conclusion, photo_couverture,
   } = body;
 
   if (!numero_affaire || !numero_rapport || !nom_chantier) {
     throw new ValidationError('Champs obligatoires manquants');
+  }
+
+  // Vérifier le compteur pour les comptes particuliers (sans entreprise)
+  if (!session.user.entrepriseId) {
+    const [rows] = await reportRepo.raw(
+      `SELECT nb_rapports_inspection, abonnement_particulier, abonnement_particulier_expire_at
+       FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1`,
+      [session.user.id]
+    );
+    const userInfo = rows[0];
+    const isAbonne = userInfo?.abonnement_particulier === 'pro'
+      && userInfo?.abonnement_particulier_expire_at
+      && new Date(userInfo.abonnement_particulier_expire_at) > new Date();
+
+    if (!isAbonne && (userInfo?.nb_rapports_inspection || 0) >= 1) {
+      return new Response(JSON.stringify({
+        success: false,
+        paywall: true,
+        message: 'Limite gratuite atteinte. Abonnez-vous pour créer plus de rapports.',
+      }), { status: 402, headers: { 'Content-Type': 'application/json' } });
+    }
   }
 
   const report = await reportRepo.create({
@@ -79,6 +88,15 @@ async function handlePOST(request) {
     photo_couverture: photo_couverture || null,
     statut: 'en_attente',
   });
+
+  // Incrémenter le compteur pour les comptes particuliers
+  if (!session.user.entrepriseId) {
+    await reportRepo.raw(
+      `UPDATE Utilisateur SET nb_rapports_inspection = nb_rapports_inspection + 1
+       WHERE id_utilisateur = ?`,
+      [session.user.id]
+    );
+  }
 
   return createdResponse({ message: 'Rapport créé avec succès', id_rapport: report.id_rapport });
 }

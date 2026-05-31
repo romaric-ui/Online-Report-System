@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, Wrench,
   UserPlus, LogOut, Settings, CreditCard, Plus,
@@ -9,7 +10,7 @@ import {
 import ThemeToggle from './ThemeToggle';
 
 const isActive = (pathname, href) => {
-  const exactMatch = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement'];
+  const exactMatch = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement', '/parametres'];
   if (exactMatch.includes(href)) return pathname === href;
   return pathname === href || pathname.startsWith(href + '/');
 };
@@ -18,9 +19,7 @@ export default function AppSidebar({ onNavigate }) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-
   const isAdmin = session?.user?.roleEntreprise === 1;
-
   const prenom = session?.user?.prenom || session?.user?.name?.split(' ')[0] || '';
   const nom = session?.user?.nom || session?.user?.name?.split(' ').slice(1).join(' ') || '';
   const displayName = `${prenom} ${nom}`.trim() || 'Utilisateur';
@@ -39,12 +38,13 @@ export default function AppSidebar({ onNavigate }) {
   const photoUrl = avatarOverride || session?.user?.photoUrl || null;
 
   const adminLinks = [
-    { label: 'Mes projets',         icon: LayoutDashboard, href: '/dashboard-projet' },
-    { label: 'Mes chantiers',       icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
-    { label: 'Ouvriers',            icon: Users,           href: '/equipes' },
-    { label: 'Matériel',            icon: Wrench,          href: '/materiel' },
-    { label: 'Mon équipe',          icon: UserPlus,        href: '/dashboard-projet/equipe' },
-    { label: "Gérer l'abonnement",  icon: CreditCard,      href: '/abonnement' },
+    { label: 'Mes projets',        icon: LayoutDashboard, href: '/dashboard-projet' },
+    { label: 'Mes chantiers',      icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
+    { label: 'Ouvriers',           icon: Users,           href: '/equipes' },
+    { label: 'Matériel',           icon: Wrench,          href: '/materiel' },
+    { label: 'Mon équipe',         icon: UserPlus,        href: '/dashboard-projet/equipe' },
+    { label: "Gérer l'abonnement", icon: CreditCard,      href: '/abonnement' },
+    { label: 'Paramètres',         icon: Settings,        href: '/parametres' },
   ];
 
   const userLinks = [
@@ -69,7 +69,6 @@ export default function AppSidebar({ onNavigate }) {
         boxShadow: '4px 0 16px var(--shadow-dark)',
       }}
     >
-      {/* Profil utilisateur */}
       <div
         className="p-4 flex items-center justify-between gap-2"
         style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
@@ -97,25 +96,15 @@ export default function AppSidebar({ onNavigate }) {
 
         <div className="flex items-center gap-1 shrink-0">
           <ThemeToggle />
-          <a
-            href="/profil"
-            className="p-1.5 rounded-lg transition hover:opacity-70 shrink-0"
-            style={{ color: 'var(--color-text-muted)' }}
-            title="Paramètres du profil"
-            onClick={onNavigate}
-          >
-            <Settings className="w-4 h-4" />
-          </a>
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-3 overflow-y-auto">
         {links.map((link) => {
           const active = isActive(pathname, link.href);
           return (
             <div key={`${link.href}-${link.label}`} className="group/nav relative mb-1">
-              <a
+              <Link
                 href={link.href}
                 onClick={onNavigate}
                 className="flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200"
@@ -148,13 +137,12 @@ export default function AppSidebar({ onNavigate }) {
                     <Plus className="w-3 h-3" />
                   </button>
                 )}
-              </a>
+              </Link>
             </div>
           );
         })}
       </nav>
 
-      {/* Déconnexion */}
       <div className="p-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <button
           type="button"

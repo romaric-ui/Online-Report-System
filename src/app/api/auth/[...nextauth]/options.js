@@ -15,18 +15,14 @@ export const authOptions = {
         try {
           const user = await userRepo.findByEmail(credentials.email);
 
-          if (!user) {
-            return null;
-          }
+          if (!user) return null;
 
           if (user.statut === 'bloque') {
             throw new Error('ACCOUNT_BLOCKED');
           }
 
           const isValid = await bcrypt.compare(credentials.password, user.mot_de_passe);
-          if (!isValid) {
-            return null;
-          }
+          if (!isValid) return null;
 
           const normalizedRole = user.id_role === 1 ? 'admin' : 'user';
 
@@ -37,9 +33,7 @@ export const authOptions = {
             role: normalizedRole
           };
         } catch (error) {
-          if (error.message === 'ACCOUNT_BLOCKED') {
-            throw error;
-          }
+          if (error.message === 'ACCOUNT_BLOCKED') throw error;
           return null;
         }
       }
@@ -66,23 +60,21 @@ export const authOptions = {
             if (existingUser.statut === 'bloque') {
               return '/api/auth/signin?error=ACCOUNT_BLOCKED';
             }
-
             if (existingUser.id_role === 1) {
               return false;
             }
-
             if (!existingUser.provider_id) {
               await userRepo.raw(
                 'UPDATE Utilisateur SET provider_id = ?, provider = ? WHERE email = ?',
                 [user.id, 'google', user.email]
               );
             }
-
             return true;
           }
 
           await userRepo.createGoogleUser(profile);
           return true;
+
         } catch (error) {
           console.error('Erreur lors de la connexion Google:', error);
           return false;
@@ -90,6 +82,7 @@ export const authOptions = {
       }
       return true;
     },
+
     async jwt({ token, user }) {
       if (user) {
         try {
@@ -112,6 +105,7 @@ export const authOptions = {
       }
       return token;
     },
+
     async session({ session, token }) {
       if (token) {
         session.user.id = token.userId;
@@ -123,17 +117,22 @@ export const authOptions = {
         session.user.entrepriseId = token.entrepriseId;
         session.user.roleEntreprise = token.roleEntreprise;
         session.user.photoUrl = token.photoUrl || null;
+        session.user.needsOnboarding = !token.entrepriseId && token.isGoogleUser;
       }
       return session;
     }
   },
+
   pages: {
     signIn: '/',
+    newUser: '/bienvenue',
   },
+
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
   },
+
   secret: process.env.NEXTAUTH_SECRET,
 };

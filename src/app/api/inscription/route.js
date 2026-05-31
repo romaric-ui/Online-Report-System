@@ -103,7 +103,7 @@ async function handlePOST(request) {
 
     const [adminResult] = await connection.query(
       `INSERT INTO Utilisateur
-       (nom, prenom, email, mot_de_passe, provider, provider_id, id_role, id_role_entreprise, statut, email_verified, id_entreprise)
+       (nom, prenom, email, mot_de_passe, provider, provider_id, id_role, id_role_entreprise, statut, email_verifie, id_entreprise)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nomValidation.value,
