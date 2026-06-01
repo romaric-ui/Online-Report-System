@@ -233,7 +233,7 @@ async function handleGET(request) {
        FROM IncidentSecurite i
        JOIN Chantier c ON i.id_chantier = c.id_chantier
        WHERE c.id_entreprise = ? AND i.statut != 'clos'
-       ORDER BY FIELD(i.gravite,'tres_grave','grave','moyen','benin'),
+       ORDER BY FIELD(i.gravite,'tres_grave','grave','moyen','mineur'),
                 i.created_at DESC LIMIT 5`,
       [eid]
     ),

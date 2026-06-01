@@ -25,14 +25,14 @@ const TYPE_INCIDENT_LABELS = {
 };
 
 const GRAVITE_CLASSES = {
-  benin:      'bg-emerald-100 text-emerald-700',
+  mineur:     'bg-emerald-100 text-emerald-700',
   moyen:      'bg-yellow-100 text-yellow-700',
   grave:      'bg-orange-100 text-orange-700',
   tres_grave: 'bg-red-100 text-red-700',
 };
 
 const GRAVITE_LABELS = {
-  benin:      'Bénin',
+  mineur:     'Mineur',
   moyen:      'Moyen',
   grave:      'Grave',
   tres_grave: 'Très grave',

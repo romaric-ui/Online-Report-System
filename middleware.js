@@ -48,6 +48,7 @@ export async function middleware(request) {
     || pathname.startsWith('/api/')
     || pathname.startsWith('/_next/')
     || pathname.startsWith('/uploads/')
+    || pathname.startsWith('/demo')
     || pathname.includes('.');
 
   if (isPublic) return response;

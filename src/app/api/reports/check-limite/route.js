@@ -1,8 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/options';
-import { successResponse, errorResponse } from '../../../../lib/api-response.js';
-import { AuthenticationError } from '../../../../lib/errors/index.js';
-import db from '../../../../lib/database.js';
+import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
+import { AuthenticationError } from '../../../../../lib/errors/index.js';
+import { connectDB } from '../../../../../lib/database.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try { return await handler(request, context); }
@@ -17,6 +17,7 @@ async function handleGET(request) {
     return successResponse({ limite: false, paywall: false });
   }
 
+  const db = await connectDB();
   const [rows] = await db.query(
     `SELECT nb_rapports_inspection, abonnement_particulier, abonnement_particulier_expire_at
      FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1`,

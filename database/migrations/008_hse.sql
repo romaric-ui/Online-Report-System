@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS IncidentSecurite (
   id_incident     INT PRIMARY KEY AUTO_INCREMENT,
   id_chantier     INT NOT NULL,
   type_incident   ENUM('accident','presqu_accident','situation_dangereuse') NOT NULL,
-  gravite         ENUM('benin','moyen','grave','tres_grave') NOT NULL,
+  gravite         ENUM('Mineur','Moyen','Grave','Très Grave') NOT NULL,
   date_incident   DATETIME NOT NULL,
   lieu            TEXT,
   description     TEXT NOT NULL,
