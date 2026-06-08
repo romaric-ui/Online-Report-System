@@ -224,7 +224,7 @@ export default function LandingHero({ onGetStarted }) {
                       className="text-xs font-semibold"
                       style={{ color: "#64748b" }}
                     >
-                      SGTEC · Dashboard
+                      PROJECTRA · Dashboard
                     </span>
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
