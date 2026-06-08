@@ -6,11 +6,12 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, Wrench,
   UserPlus, LogOut, Settings, CreditCard, Plus,
+  FileText, Eye, Zap,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const isActive = (pathname, href) => {
-  const exactMatch = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement', '/parametres'];
+  const exactMatch = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement', '/parametres', '/dashboard'];
   if (exactMatch.includes(href)) return pathname === href;
   return pathname === href || pathname.startsWith(href + '/');
 };
@@ -20,6 +21,7 @@ export default function AppSidebar({ onNavigate }) {
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = session?.user?.roleEntreprise === 1;
+  const isParticulier = !session?.user?.entrepriseId;
   const prenom = session?.user?.prenom || session?.user?.name?.split(' ')[0] || '';
   const nom = session?.user?.nom || session?.user?.name?.split(' ').slice(1).join(' ') || '';
   const displayName = `${prenom} ${nom}`.trim() || 'Utilisateur';
@@ -37,6 +39,7 @@ export default function AppSidebar({ onNavigate }) {
 
   const photoUrl = avatarOverride || session?.user?.photoUrl || null;
 
+  // Liens compte entreprise admin
   const adminLinks = [
     { label: 'Mes projets',        icon: LayoutDashboard, href: '/dashboard-projet' },
     { label: 'Mes chantiers',      icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
@@ -47,6 +50,7 @@ export default function AppSidebar({ onNavigate }) {
     { label: 'Paramètres',         icon: Settings,        href: '/parametres' },
   ];
 
+  // Liens compte entreprise non-admin
   const userLinks = [
     { label: 'Mes projets',   icon: LayoutDashboard, href: '/dashboard-projet' },
     { label: 'Mes chantiers', icon: Building2,       href: '/chantiers', addHref: '/chantiers/nouveau' },
@@ -54,7 +58,15 @@ export default function AppSidebar({ onNavigate }) {
     { label: 'Matériel',      icon: Wrench,          href: '/materiel' },
   ];
 
-  const links = isAdmin ? adminLinks : userLinks;
+  // Liens compte particulier
+  const particulierLinks = [
+    { label: 'Mes rapports',       icon: FileText,        href: '/dashboard' },
+    { label: 'Nouvelle inspection', icon: Plus,           href: '/reports/new' },
+    { label: 'Voir la démo',       icon: Eye,             href: '/demo' },
+    { label: 'Paramètres',         icon: Settings,        href: '/parametres' },
+  ];
+
+  const links = isParticulier ? particulierLinks : isAdmin ? adminLinks : userLinks;
 
   const goToProfil = () => {
     if (onNavigate) onNavigate();
@@ -69,6 +81,7 @@ export default function AppSidebar({ onNavigate }) {
         boxShadow: '4px 0 16px var(--shadow-dark)',
       }}
     >
+      {/* Profil */}
       <div
         className="p-4 flex items-center justify-between gap-2"
         style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
@@ -90,15 +103,17 @@ export default function AppSidebar({ onNavigate }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{displayName}</p>
-            <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>{displayEmail}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
+              {isParticulier ? 'Compte particulier' : displayEmail}
+            </p>
           </div>
         </button>
-
         <div className="flex items-center gap-1 shrink-0">
           <ThemeToggle />
         </div>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 p-3 overflow-y-auto">
         {links.map((link) => {
           const active = isActive(pathname, link.href);
@@ -141,8 +156,28 @@ export default function AppSidebar({ onNavigate }) {
             </div>
           );
         })}
+
+        {/* CTA upgrade pour particuliers */}
+        {isParticulier && (
+          <div className="mt-4 p-3 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <p className="text-xs font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
+              Passez au Pro
+            </p>
+            <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              Rapports illimités + personnalisation
+            </p>
+            <button
+              onClick={() => router.push('/abonnement-particulier')}
+              className="w-full py-1.5 rounded-lg text-xs font-semibold text-white flex items-center justify-center gap-1"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+            >
+              <Zap className="w-3 h-3" /> 9€/mois
+            </button>
+          </div>
+        )}
       </nav>
 
+      {/* Déconnexion */}
       <div className="p-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <button
           type="button"

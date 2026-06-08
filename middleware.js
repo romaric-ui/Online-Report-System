@@ -12,10 +12,21 @@ const publicRoutes = [
   '/admin-login',
 ];
 
+// Routes accessibles aux comptes particuliers (sans entreprise)
+const particulierRoutes = [
+  '/dashboard',
+  '/reports',
+  '/parametres',
+  '/profil',
+  '/demo',
+  '/bienvenue',
+  '/abonnement-particulier',
+];
+
 export async function middleware(request) {
   const response = NextResponse.next();
 
-  // Headers de sécurité
+  // Headers sécurité
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
@@ -42,28 +53,35 @@ export async function middleware(request) {
 
   const { pathname } = request.nextUrl;
 
-  // Routes publiques → pas de vérification
+  // Routes publiques
   const isPublic = publicRoutes.some(route => pathname === route)
     || pathname.startsWith('/invitation/')
     || pathname.startsWith('/api/')
     || pathname.startsWith('/_next/')
     || pathname.startsWith('/uploads/')
     || pathname.startsWith('/demo')
+    || pathname.startsWith('/upgrade')
     || pathname.includes('.');
+    
 
   if (isPublic) return response;
 
   // Vérifier la session
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
-  // Pas connecté → retour à l'accueil
+  // Pas connecté → accueil
   if (!token) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // Connecté via Google sans entreprise → bienvenue
-  if (!token.entrepriseId && pathname !== '/bienvenue' && !pathname.startsWith('/dashboard') && !pathname.startsWith('/reports')) {
-    return NextResponse.redirect(new URL('/bienvenue', request.url));
+  // Compte particulier (sans entreprise)
+  if (!token.entrepriseId) {
+    const isAllowed = particulierRoutes.some(route =>
+      pathname === route || pathname.startsWith(route + '/')
+    );
+    if (!isAllowed) {
+      return NextResponse.redirect(new URL('/upgrade', request.url));
+    }
   }
 
   return response;

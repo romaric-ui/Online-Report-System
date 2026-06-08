@@ -26,7 +26,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import AppLayout from "../../components/AppLayout";
-import { FileText } from 'lucide-react';
+ 
 
 const STATUS_LABELS = {
   planifie: "Planifié",
@@ -142,28 +142,88 @@ export default function ChantierDetailPage({ params: paramsPromise }) {
 
   return (
     <AppLayout>
-      {/* Tabs horizontaux */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 md:top-0 z-20">
-        <div className="overflow-x-auto">
-          <div className="flex min-w-max px-4">
-            {tabs.map((tab) => (
+       {/* Tabs — groupes avec dropdown */}
+<div
+  className="bg-white border-b border-gray-100 sticky top-0 z-20"
+  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+>
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="flex items-center gap-1">
+      {[
+        {
+          label: 'Chantier', icon: LayoutDashboard,
+          items: [
+            { label: "Vue d'ensemble", icon: LayoutDashboard, href: `/chantiers/${id}` },
+            { label: 'Journal', icon: BookOpen, href: `/chantiers/${id}/journal` },
+            { label: 'Photos', icon: Camera, href: `/chantiers/${id}/photos` },
+          ]
+        },
+        {
+          label: 'Équipe', icon: Users,
+          items: [
+            { label: 'Équipe', icon: Users, href: `/chantiers/${id}/equipe` },
+            { label: 'Pointage', icon: Clock, href: `/chantiers/${id}/pointage` },
+          ]
+        },
+        {
+          label: 'Ressources', icon: Wrench,
+          items: [
+            { label: 'Matériel', icon: Wrench, href: `/chantiers/${id}/materiel` },
+            { label: 'Budget', icon: Wallet, href: `/chantiers/${id}/budget` },
+          ]
+        },
+        {
+          label: 'Planification', icon: BarChart3,
+          items: [
+            { label: 'Tâches', icon: CheckSquare, href: `/chantiers/${id}/taches` },
+            { label: 'Planning', icon: BarChart3, href: `/chantiers/${id}/planning` },
+          ]
+        },
+        {
+          label: 'Sécurité & Docs', icon: ShieldCheck,
+          items: [
+            { label: 'Sécurité', icon: ShieldCheck, href: `/chantiers/${id}/securite` },
+            { label: 'Documents', icon: FolderOpen, href: `/chantiers/${id}/documents` },
+            { label: 'Discussion', icon: MessageCircle, href: `/chantiers/${id}/chat` },
+          ]
+        },
+      ].map((group) => (
+        <div key={group.label} className="relative group">
+          <button
+            className="flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors border-b-2 border-transparent hover:border-indigo-600"
+          >
+            <group.icon className="w-4 h-4" />
+            {group.label}
+            <svg className="w-3 h-3 ml-0.5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {/* Dropdown */}
+          <div className="absolute top-full left-0 mt-0 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            {group.items.map((item) => (
               <a
-                key={tab.href}
-                href={tab.href}
-                className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  tab.active
-                    ? "border-indigo-600 text-indigo-600"
-                    : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
-                }`}
+              
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 first:rounded-t-xl last:rounded-b-xl transition-colors"
               >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <item.icon className="w-4 h-4" />
+                {item.label}
               </a>
             ))}
           </div>
         </div>
-      </div>
+      ))}
 
+      {/* Rapport auto — seul, pas de dropdown */}
+      <a href={`/chantiers/${id}/rapport-auto`} className="flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors border-b-2 border-transparent hover:border-indigo-600">
+        <FileText className="w-4 h-4" />
+        Rapport auto
+      </a>
+            
+    </div>
+  </div>
+</div>
       {/* Contenu */}
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
         {loading ? (

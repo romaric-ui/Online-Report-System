@@ -2,22 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const countries = [
-  "Bénin",
-  "Togo",
-  "Côte d'Ivoire",
-  "Sénégal",
-  "Burkina Faso",
-  "Niger",
-  "Mali",
-  "Guinée",
-  "Ghana",
-  "Nigeria",
-  "Cameroun",
-  "Gabon",
-  "Congo",
-];
+import { PAYS_LIST } from "../../../../lib/countries";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -26,7 +11,7 @@ export default function InscriptionPage() {
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     entrepriseNom: "",
-    entreprisePays: "Bénin",
+    entreprisePays: "",
     entrepriseTelephone: "",
     entrepriseEmailContact: "",
     adminNom: "",
@@ -244,9 +229,10 @@ export default function InscriptionPage() {
                       onChange={handleChange}
                       className="select-neu"
                     >
-                      {countries.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      <option value="">-- Sélectionner un pays --</option>
+                      {PAYS_LIST.map(({ code, nom }) => (
+                        <option key={code} value={nom}>
+                          {nom}
                         </option>
                       ))}
                     </select>
