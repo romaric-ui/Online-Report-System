@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# Forcer HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Proxy vers Node.js Next.js (port 3000)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ https://projectra.com/$1 [P,L,QSA]
+
+ProxyPassReverse /https://projectra.com/

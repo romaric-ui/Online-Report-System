@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/options';
-import { successResponse, errorResponse } from '../../../../lib/api-response.js';
-import { requireTenant } from '../../../../lib/tenant.js';
-import db from '../../../../lib/database.js';
-import { AuthenticationError, ValidationError } from '../../../../lib/errors/index.js';
+import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
+import { requireTenant } from '../../../../../lib/tenant.js';
+import { connectDB } from '../../../../../lib/database.js';
+import { AuthenticationError, ValidationError } from '../../../../../lib/errors/index.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -39,6 +39,7 @@ async function handlePOST(request) {
   await writeFile(join(uploadDir, filename), buffer);
 
   const logo_url = `/uploads/logos/${filename}`;
+  const db = await connectDB();
   await db.query(`UPDATE entreprise SET logo_url = ? WHERE id_entreprise = ?`, [logo_url, entrepriseId]);
 
   return successResponse({ logo_url });

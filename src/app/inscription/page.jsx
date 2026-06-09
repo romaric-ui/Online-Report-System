@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PAYS_LIST } from "../../../../lib/countries";
+import { PAYS_LIST } from "../../../lib/countries";
 
 export default function InscriptionPage() {
   const router = useRouter();

@@ -148,18 +148,7 @@ export default function LandingFooter() {
             © {currentYear} SGTEC — L'œil du bâtiment. Tous droits réservés.
           </p>
           <div className="flex items-center gap-4">
-            <p className="text-xs" style={{ color: '#334155' }}>
-              Développé par{' '}
-              <a
-                href="https://github.com/romaric-ui"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors duration-200 hover:text-white"
-                style={{ color: '#64748b' }}
-              >
-                Romaric Adekou
-              </a>
-            </p>
+
             <a
               href="/admin-login"
               className="text-xs transition-colors duration-200 hover:text-white"
