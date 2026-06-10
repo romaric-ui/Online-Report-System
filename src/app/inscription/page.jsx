@@ -9,6 +9,7 @@ export default function InscriptionPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [otpFailedContext, setOtpFailedContext] = useState(null); // ✅ NEW : pour fallback UX
   const [formData, setFormData] = useState({
     entrepriseNom: "",
     entreprisePays: "",
@@ -71,11 +72,24 @@ export default function InscriptionPage() {
     setStep(1);
   };
 
+  /**
+   * ✅ FIX SÉCURITÉ : transition vers /verify-otp via sessionStorage
+   * - Le mot de passe n'apparaît PLUS dans l'URL (historique, logs, Referer)
+   * - sessionStorage est consommé immédiatement par verify-otp/page.jsx
+   * - Effacé automatiquement à la fermeture de l'onglet
+   */
+  const goToVerifyOtp = (email, userId, password) => {
+    sessionStorage.setItem('otp_pwd', password);
+    router.push(`/verify-otp?email=${encodeURIComponent(email)}&userId=${userId}`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setOtpFailedContext(null);
     if (!validateStepTwo()) return;
     setLoading(true);
+
     try {
       const response = await fetch("/api/inscription", {
         method: "POST",
@@ -106,19 +120,55 @@ export default function InscriptionPage() {
 
       const userId = data.data?.admin?.id_utilisateur;
       const email = formData.adminEmail;
+
       const otpRes = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, userId }),
       });
+
       if (!otpRes.ok) {
+        // ✅ NEW : on stocke le contexte pour permettre une retry / navigation manuelle
+        setOtpFailedContext({ email, userId, password: formData.adminPassword });
         setError(
-          "Compte créé mais erreur lors de l'envoi du code de vérification.",
+          "Compte créé mais erreur lors de l'envoi du code. Vous pouvez réessayer ou aller saisir le code manuellement.",
         );
         return;
       }
-      router.push(
-        `/verify-otp?email=${encodeURIComponent(email)}&userId=${userId}&pwd=${encodeURIComponent(formData.adminPassword)}`,
+
+      // ✅ FIX : plus de pwd dans l'URL
+      goToVerifyOtp(email, userId, formData.adminPassword);
+    } catch {
+      setError("Erreur réseau, veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * ✅ NEW : retry envoi OTP après échec
+   */
+  const handleRetryOtp = async () => {
+    if (!otpFailedContext) return;
+    setError("");
+    setLoading(true);
+    try {
+      const otpRes = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: otpFailedContext.email,
+          userId: otpFailedContext.userId,
+        }),
+      });
+      if (!otpRes.ok) {
+        setError("Échec à nouveau. Réessaie dans quelques instants.");
+        return;
+      }
+      goToVerifyOtp(
+        otpFailedContext.email,
+        otpFailedContext.userId,
+        otpFailedContext.password,
       );
     } catch {
       setError("Erreur réseau, veuillez réessayer.");
@@ -202,6 +252,16 @@ export default function InscriptionPage() {
                   }}
                 >
                   {error}
+                  {otpFailedContext && (
+                    <button
+                      type="button"
+                      onClick={handleRetryOtp}
+                      disabled={loading}
+                      className="mt-3 btn btn-soft w-full"
+                    >
+                      {loading ? "Envoi..." : "Renvoyer le code de vérification"}
+                    </button>
+                  )}
                 </div>
               )}
 

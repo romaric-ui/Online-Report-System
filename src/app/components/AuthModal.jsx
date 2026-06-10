@@ -1,10 +1,10 @@
 // Composant de connexion/inscription
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import GoogleSignInButton from "./GoogleSignInButton";
 
-export default function AuthModal({ isOpen, onClose, onLogin }) {
+export default function AuthModal({ isOpen, onClose, onLogin, initialError = null }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [formData, setFormData] = useState({
     nom: "",
@@ -16,17 +16,58 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (initialError === "EMAIL_NOT_VERIFIED") {
+      setEmailNotVerified(true);
+      setError(
+        'Votre email n\'est pas encore vérifié. Saisissez votre mot de passe puis cliquez sur "Renvoyer le code".'
+      );
+    } else if (initialError === "ACCOUNT_BLOCKED") {
+      setError("Votre compte a été bloqué. Veuillez contacter le service client.");
+    }
+  }, [initialError]);
+
+  const handleResendOtp = async () => {
+    if (!formData.email) {
+      setError("Veuillez saisir votre email avant de demander un nouveau code.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      if (formData.password) {
+        sessionStorage.setItem("otp_pwd", formData.password);
+      }
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      if (res.ok) {
+        window.location.href = `/verify-otp?email=${encodeURIComponent(formData.email)}`;
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setError(data?.error || "Impossible d'envoyer le code. Réessayez plus tard.");
+    } catch {
+      setError("Erreur réseau lors de l'envoi du code.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setEmailNotVerified(false);
 
     try {
       if (!isLoginMode) {
-        // Inscription
         if (formData.password !== formData.confirmPassword) {
           setError("Les mots de passe ne correspondent pas");
           setLoading(false);
@@ -50,7 +91,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
         if (!response.ok) {
           if (response.status === 409) {
             setError(
-              "Un compte existe déjà avec cet email. Connectez-vous ou utilisez un autre email.",
+              "Un compte existe déjà avec cet email. Connectez-vous ou utilisez un autre email."
             );
             setLoading(false);
             return;
@@ -58,14 +99,12 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           throw new Error(data.error || "Erreur lors de l'inscription");
         }
 
-        // Rediriger vers la page de vérification OTP
         if (data.requiresVerification) {
           const name = `${formData.prenom} ${formData.nom}`;
           window.location.href = `/verify-email?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(name)}`;
           return;
         }
 
-        // Si pas de vérification requise, connexion automatique avec NextAuth
         const result = await signIn("credentials", {
           email: formData.email,
           password: formData.password,
@@ -74,12 +113,11 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
 
         if (result?.ok) {
           onClose();
-          window.location.reload(); // Rafraîchir pour charger la session
+          window.location.reload();
         } else {
           throw new Error("Erreur lors de la connexion automatique");
         }
       } else {
-        // Connexion avec NextAuth
         const result = await signIn("credentials", {
           email: formData.email,
           password: formData.password,
@@ -87,6 +125,14 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
         });
 
         if (!result?.ok) {
+          if (result?.error === "EMAIL_NOT_VERIFIED") {
+            setEmailNotVerified(true);
+            setError(
+              "Votre email n'est pas encore vérifié. Cliquez ci-dessous pour recevoir un nouveau code."
+            );
+            setLoading(false);
+            return;
+          }
           if (result?.error === "ACCOUNT_BLOCKED") {
             throw new Error("ACCOUNT_BLOCKED");
           }
@@ -95,7 +141,6 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
 
         onClose();
 
-        // Seul l'admin est redirigé automatiquement
         const sessionResponse = await fetch("/api/auth/session");
         const sessionData = await sessionResponse.json();
 
@@ -105,11 +150,9 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           window.location.href = "/dashboard-projet";
         }
       }
-    } catch (error) {
-      if (error.message === "ACCOUNT_BLOCKED") {
-        setError(
-          "Votre compte a été bloqué. Veuillez contacter le service client.",
-        );
+    } catch (err) {
+      if (err.message === "ACCOUNT_BLOCKED") {
+        setError("Votre compte a été bloqué. Veuillez contacter le service client.");
       } else {
         setError("Une erreur est survenue. Veuillez réessayer.");
       }
@@ -119,10 +162,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   if (!isOpen) return null;
@@ -139,6 +179,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           boxShadow: "var(--shadow-neu-raised)",
         }}
       >
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2
             className="text-2xl font-bold"
@@ -155,19 +196,37 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           </button>
         </div>
 
+        {/* Bloc erreur / avertissement */}
         {error && (
           <div
             className="rounded-xl p-4 mb-4 text-sm font-medium"
             style={{
-              background: "rgba(239,68,68,0.1)",
-              color: "var(--color-danger)",
-              border: "1px solid rgba(239,68,68,0.2)",
+              background: emailNotVerified
+                ? "rgba(251,191,36,0.1)"
+                : "rgba(239,68,68,0.1)",
+              color: emailNotVerified
+                ? "var(--color-warning, #d97706)"
+                : "var(--color-danger)",
+              border: emailNotVerified
+                ? "1px solid rgba(251,191,36,0.3)"
+                : "1px solid rgba(239,68,68,0.2)",
             }}
           >
             {error}
+            {emailNotVerified && (
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={loading}
+                className="mt-3 btn btn-primary w-full"
+              >
+                {loading ? "Envoi du code..." : "Renvoyer le code de vérification"}
+              </button>
+            )}
           </div>
         )}
 
+        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLoginMode && (
             <>
@@ -222,6 +281,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             />
           </div>
 
+          {/* Mot de passe */}
           <div>
             <label className="input-neu-label">Mot de passe</label>
             <div className="relative">
@@ -243,38 +303,13 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
                 style={{ color: "var(--color-text-muted)" }}
               >
                 {showPassword ? (
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                    />
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                   </svg>
                 ) : (
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 )}
               </button>
@@ -297,11 +332,10 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             )}
           </div>
 
+          {/* Confirmation mot de passe (inscription) */}
           {!isLoginMode && (
             <div>
-              <label className="input-neu-label">
-                Confirmer le mot de passe
-              </label>
+              <label className="input-neu-label">Confirmer le mot de passe</label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
@@ -321,38 +355,13 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   {showConfirmPassword ? (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                      />
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                     </svg>
                   ) : (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
                 </button>
@@ -365,11 +374,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             disabled={loading}
             className="btn btn-primary w-full"
           >
-            {loading
-              ? "Chargement..."
-              : isLoginMode
-                ? "Se connecter"
-                : "S'inscrire"}
+            {loading ? "Chargement..." : isLoginMode ? "Se connecter" : "S'inscrire"}
           </button>
         </form>
 
@@ -387,6 +392,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             onClick={() => {
               setIsLoginMode(!isLoginMode);
               setError("");
+              setEmailNotVerified(false);
               setShowPassword(false);
               setShowConfirmPassword(false);
               setFormData({
@@ -401,9 +407,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
             className="text-sm transition hover:opacity-70"
             style={{ color: "var(--color-primary)" }}
           >
-            {isLoginMode
-              ? "Pas de compte ? S'inscrire"
-              : "Déjà un compte ? Se connecter"}
+            {isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
           </button>
         </div>
 

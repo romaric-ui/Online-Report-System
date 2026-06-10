@@ -23,8 +23,8 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [toast, setToast] = useState(null);
+  const [authError, setAuthError] = useState(null); // ✅ NEW
 
-  // Rediriger les utilisateurs connectés vers leur dashboard
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       if (session.user.role === 'admin') {
@@ -39,12 +39,32 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
     if (params.get('admin') === 'login') {
       setShowAuthModal(true);
     }
+
     if (params.get('verified') === '1') {
       setShowAuthModal(true);
-      setToast({ message: 'Compte vérifié ! Vous pouvez maintenant vous connecter.', type: 'success' });
+      setToast({
+        message: 'Compte vérifié ! Vous pouvez maintenant vous connecter.',
+        type: 'success'
+      });
+    }
+
+    // ✅ NEW : intercepter l'erreur NextAuth EMAIL_NOT_VERIFIED
+    if (params.get('error') === 'EMAIL_NOT_VERIFIED') {
+      setAuthError('EMAIL_NOT_VERIFIED');
+      setShowAuthModal(true);
+      // Nettoyer l'URL sans recharger la page
+      window.history.replaceState({}, '', '/');
+    }
+
+    // ✅ NEW : intercepter ACCOUNT_BLOCKED
+    if (params.get('error') === 'ACCOUNT_BLOCKED') {
+      setAuthError('ACCOUNT_BLOCKED');
+      setShowAuthModal(true);
+      window.history.replaceState({}, '', '/');
     }
   }, []);
 
@@ -68,6 +88,7 @@ export default function Home() {
 
   const handleLogin = () => {
     setShowAuthModal(false);
+    setAuthError(null); // ✅ NEW : reset erreur après login réussi
     if (pendingAction) setPendingAction(null);
   };
 
@@ -97,7 +118,6 @@ export default function Home() {
     }
   }, [status, session, getDashboardUrl]);
 
-  // Spinner pendant le chargement de la session
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -106,7 +126,6 @@ export default function Home() {
     );
   }
 
-  // Ne rien afficher pendant la redirection
   if (status === 'authenticated') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -118,22 +137,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
-      <LandingHero
-        onGetStarted={handleGetStarted}
-        isAuthenticated={false}
-      />
+      <LandingHero onGetStarted={handleGetStarted} isAuthenticated={false} />
       <LandingFeatures />
       <LandingFeatureShowcase />
       <LandingTestimonials />
-      <LandingPricing
-        onGetStarted={() => setShowAuthModal(true)}
-        isAuthenticated={false}
-      />
+      <LandingPricing onGetStarted={() => setShowAuthModal(true)} isAuthenticated={false} />
       <LandingFAQ />
-      <LandingCTA
-        onGetStarted={handleGetStarted}
-        isAuthenticated={false}
-      />
+      <LandingCTA onGetStarted={handleGetStarted} isAuthenticated={false} />
       <LandingFooter />
 
       <AuthModal
@@ -141,8 +151,10 @@ export default function Home() {
         onClose={() => {
           setShowAuthModal(false);
           setPendingAction(null);
+          setAuthError(null); // ✅ NEW
         }}
         onLogin={handleLogin}
+        initialError={authError} // ✅ NEW : prop pour afficher l'erreur dans le modal
       />
 
       {toast && (
