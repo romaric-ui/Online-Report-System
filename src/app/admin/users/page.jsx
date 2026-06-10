@@ -561,7 +561,8 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {currentUsers.map((user) => (
+                {currentUsers.map((user) => (
+   
                     <tr key={user.id} className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all duration-200">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-bold text-slate-900">#{user.id}</span>

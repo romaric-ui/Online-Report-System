@@ -24,6 +24,12 @@ export const authOptions = {
           const isValid = await bcrypt.compare(credentials.password, user.mot_de_passe);
           if (!isValid) return null;
 
+          // ✅ NEW: bloquer si email non vérifié (uniquement pour login credentials,
+          // Google a déjà validé l'email côté provider donc createGoogleUser pose email_verifie=1)
+          if (Number(user.email_verifie) !== 1) {
+            throw new Error('EMAIL_NOT_VERIFIED');
+          }
+
           const normalizedRole = user.id_role === 1 ? 'admin' : 'user';
 
           return {
@@ -33,7 +39,9 @@ export const authOptions = {
             role: normalizedRole
           };
         } catch (error) {
+          // Erreurs metier remontees telles quelles vers NextAuth
           if (error.message === 'ACCOUNT_BLOCKED') throw error;
+          if (error.message === 'EMAIL_NOT_VERIFIED') throw error;
           return null;
         }
       }
@@ -65,7 +73,7 @@ export const authOptions = {
             }
             if (!existingUser.provider_id) {
               await userRepo.raw(
-                'UPDATE Utilisateur SET provider_id = ?, provider = ? WHERE email = ?',
+                'UPDATE Utilisateur SET provider_id = ?, provider = ?, email_verifie = 1 WHERE email = ?',
                 [user.id, 'google', user.email]
               );
             }
