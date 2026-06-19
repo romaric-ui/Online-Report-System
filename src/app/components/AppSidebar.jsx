@@ -9,6 +9,7 @@ import {
   FileText, Eye, Zap,
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { /* ...tes icônes existantes... */ FileSpreadsheet } from 'lucide-react';
 
 const isActive = (pathname, href) => {
   const exactRoutes = ['/dashboard-projet', '/dashboard-projet/equipe', '/abonnement', '/parametres', '/dashboard'];
@@ -25,6 +26,8 @@ const ADMIN_LINKS = [
   { label: 'Mon équipe',          icon: UserPlus,        href: '/dashboard-projet/equipe', color: '#A855F7', bg: 'rgba(168,85,247,0.10)' },
   { label: "Gérer l'abonnement",  icon: CreditCard,      href: '/abonnement',              color: '#EC4899', bg: 'rgba(236,72,153,0.10)' },
   { label: 'Paramètres',          icon: Settings,        href: '/parametres',              color: '#6B7280', bg: 'rgba(107,114,128,0.10)' },
+  { label: 'Export', href: '/export', icon: FileSpreadsheet }
+ 
 ];
 
 const USER_LINKS = [
