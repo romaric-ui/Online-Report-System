@@ -4,6 +4,8 @@ import { reportRepo } from '../../../../lib/repositories/report.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../lib/api-response.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../lib/errors/index.js';
 
+const LIMITE_GRATUIT = 1; // 1 rapport gratuit pour le plan particulier gratuit
+
 const apiHandler = (handler) => async (request, context) => {
   try {
     return await handler(request, context);
@@ -12,21 +14,57 @@ const apiHandler = (handler) => async (request, context) => {
   }
 };
 
-async function handleGET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    throw new AuthenticationError('Non authentifié');
+/**
+ * Vérifie si un utilisateur particulier (sans entreprise) peut créer un rapport.
+ * Approche COUNT dynamique : source de vérité = table Rapport.
+ * Pas de colonne nb_rapports_inspection → pas de désynchro possible.
+ */
+async function checkLimiteParticulier(userId) {
+  // Récupérer le plan et la date d'expiration
+  const userRows = await reportRepo.raw(
+    `SELECT abonnement_particulier, abonnement_particulier_expire_at
+     FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1`,
+    [userId]
+  );
+
+  if (!userRows.length) return { bloque: true, raison: 'Utilisateur introuvable' };
+
+  const user = userRows[0];
+  const isAbonne = user.abonnement_particulier === 'pro'
+    && user.abonnement_particulier_expire_at
+    && new Date(user.abonnement_particulier_expire_at) > new Date();
+
+  // Abonné pro → pas de limite
+  if (isAbonne) return { bloque: false };
+
+  // Compter les rapports existants (COUNT depuis la table = toujours exact)
+  const countRows = await reportRepo.raw(
+    `SELECT COUNT(*) AS total FROM Rapport WHERE id_utilisateur = ?`,
+    [userId]
+  );
+  const total = Number(countRows[0]?.total ?? 0);
+
+  if (total >= LIMITE_GRATUIT) {
+    return {
+      bloque: true,
+      paywall: true,
+      message: 'Limite gratuite atteinte. Abonnez-vous pour créer plus de rapports.',
+    };
   }
 
+  return { bloque: false };
+}
+
+async function handleGET() {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new AuthenticationError('Non authentifié');
+
   const reports = await reportRepo.raw(
-    `SELECT 
-      r.*,
-      u.nom AS createur_nom,
-      u.prenom AS createur_prenom
-    FROM Rapport r
-    JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
-    WHERE r.id_utilisateur = ?
-    ORDER BY r.date_creation DESC`,
+    `SELECT r.*, u.nom AS createur_nom, u.prenom AS createur_prenom
+     FROM Rapport r
+     JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
+     WHERE r.id_utilisateur = ?
+     ORDER BY r.date_creation DESC`,
     [session.user.id]
   );
 
@@ -49,24 +87,14 @@ async function handlePOST(request) {
     throw new ValidationError('Champs obligatoires manquants');
   }
 
-  // Vérifier le compteur pour les comptes particuliers (sans entreprise)
+  // Vérifier la limite pour les comptes particuliers (sans entreprise)
   if (!session.user.entrepriseId) {
-    const [rows] = await reportRepo.raw(
-      `SELECT nb_rapports_inspection, abonnement_particulier, abonnement_particulier_expire_at
-       FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1`,
-      [session.user.id]
-    );
-    const userInfo = rows[0];
-    const isAbonne = userInfo?.abonnement_particulier === 'pro'
-      && userInfo?.abonnement_particulier_expire_at
-      && new Date(userInfo.abonnement_particulier_expire_at) > new Date();
-
-    if (!isAbonne && (userInfo?.nb_rapports_inspection || 0) >= 1) {
-      return new Response(JSON.stringify({
-        success: false,
-        paywall: true,
-        message: 'Limite gratuite atteinte. Abonnez-vous pour créer plus de rapports.',
-      }), { status: 402, headers: { 'Content-Type': 'application/json' } });
+    const limite = await checkLimiteParticulier(session.user.id);
+    if (limite.bloque) {
+      return new Response(
+        JSON.stringify({ success: false, paywall: limite.paywall ?? false, message: limite.message ?? 'Accès refusé' }),
+        { status: 402, headers: { 'Content-Type': 'application/json' } }
+      );
     }
   }
 
@@ -89,30 +117,19 @@ async function handlePOST(request) {
     statut: 'en_attente',
   });
 
-  // Incrémenter le compteur pour les comptes particuliers
-  if (!session.user.entrepriseId) {
-    await reportRepo.raw(
-      `UPDATE Utilisateur SET nb_rapports_inspection = nb_rapports_inspection + 1
-       WHERE id_utilisateur = ?`,
-      [session.user.id]
-    );
-  }
+  // ✅ Plus d'UPDATE nb_rapports_inspection — COUNT dynamique fait foi
 
   return createdResponse({ message: 'Rapport créé avec succès', id_rapport: report.id_rapport });
 }
 
 async function handlePUT(request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    throw new AuthenticationError('Non authentifié');
-  }
+  if (!session) throw new AuthenticationError('Non authentifié');
 
   const body = await request.json();
   const { id_rapport, ...updateData } = body;
 
-  if (!id_rapport) {
-    throw new ValidationError('ID rapport manquant');
-  }
+  if (!id_rapport) throw new ValidationError('ID rapport manquant');
 
   const report = await reportRepo.findById(id_rapport);
   if (report.id_utilisateur !== parseInt(session.user.id, 10)) {
@@ -130,9 +147,7 @@ async function handlePUT(request) {
     (key) => updateData[key] !== undefined && ALLOWED_COLUMNS.has(key)
   );
 
-  if (fields.length === 0) {
-    throw new ValidationError('Aucune donnée valide à mettre à jour');
-  }
+  if (fields.length === 0) throw new ValidationError('Aucune donnée valide à mettre à jour');
 
   const sanitizedData = {};
   fields.forEach((field) => {
@@ -148,16 +163,12 @@ async function handlePUT(request) {
 
 async function handleDELETE(request) {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    throw new AuthenticationError('Non authentifié');
-  }
+  if (!session) throw new AuthenticationError('Non authentifié');
 
   const { searchParams } = new URL(request.url);
   const id_rapport = searchParams.get('id');
 
-  if (!id_rapport) {
-    throw new ValidationError('ID rapport manquant');
-  }
+  if (!id_rapport) throw new ValidationError('ID rapport manquant');
 
   const report = await reportRepo.findById(id_rapport);
   if (report.id_utilisateur !== parseInt(session.user.id, 10)) {
@@ -165,6 +176,8 @@ async function handleDELETE(request) {
   }
 
   await reportRepo.delete(id_rapport);
+
+  // ✅ Plus de décrémentation nb_rapports_inspection — COUNT dynamique fait foi
 
   return successResponse({ message: 'Rapport supprimé avec succès' });
 }

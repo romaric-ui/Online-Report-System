@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/options';
+import { reportRepo } from '../../../../../lib/repositories/report.repository.js';
 import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
 import { AuthenticationError } from '../../../../../lib/errors/index.js';
 import { connectDB } from '../../../../../lib/database.js';
@@ -17,15 +18,19 @@ async function handleGET(request) {
     return successResponse({ limite: false, paywall: false });
   }
 
+  // Infos abonnement (sans le compteur stocké)
   const db = await connectDB();
   const [rows] = await db.query(
-    `SELECT nb_rapports_inspection, abonnement_particulier, abonnement_particulier_expire_at
+    `SELECT abonnement_particulier, abonnement_particulier_expire_at
      FROM Utilisateur WHERE id_utilisateur = ? LIMIT 1`,
     [session.user.id]
   );
 
   const userInfo = rows[0];
-  const nbRapports = userInfo?.nb_rapports_inspection || 0;
+
+  // COUNT(*) live — toujours synchronisé, même après suppression
+  const nbRapports = await reportRepo.countByUser(session.user.id);
+
   const isAbonne = userInfo?.abonnement_particulier === 'pro'
     && userInfo?.abonnement_particulier_expire_at
     && new Date(userInfo.abonnement_particulier_expire_at) > new Date();
