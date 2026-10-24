@@ -54,5 +54,4 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 
 ### Points ouverts
 - La marque n'est pas tranchée : logo PROJECTRA (`public/logo_projectra.png`, fond blanc, affiché dans une pastille blanche) contre SGTEC dans le reste du site.
-- `public/videos/chantier.mp4` porte un filigrane iStock ; elle n'est plus affichée sur la landing.
 - Les photos de `public/images/` sont des captures d'écran provisoires (basse définition, droits non vérifiés, filigrane rogné sur 164750) : à remplacer avant la mise en ligne.

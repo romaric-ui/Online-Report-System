@@ -112,7 +112,6 @@ lib/security.js          ← Validation, sanitisation
 lib/security-config.js   ← Config rate limiting, patterns
 lib/email-service.js     ← Nodemailer + templates HTML
 lib/notifications.js     ← createNotification()
-lib/otp-store.js         ← Ancien stockage OTP en mémoire (plus utilisé)
 lib/auth-codes.js        ← Codes à 6 chiffres : génération, envoi, 5 essais max
 lib/auth-redirect.js     ← Page d'arrivée après connexion (homeUrlFor)
 ```

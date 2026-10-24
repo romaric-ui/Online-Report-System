@@ -108,8 +108,7 @@ lib/
 ├── security.js                       ← Validation email, password, noms, sanitisation
 ├── security-config.js                ← Config rate limiting, patterns, limites
 ├── email-service.js                  ← Nodemailer + templates HTML (OTP, reset)
-├── notifications.js                  ← createNotification() simple
-└── otp-store.js                      ← Stockage temporaire des codes OTP
+└── notifications.js                  ← createNotification() simple
 ```
 
 #### Autres fichiers
@@ -451,7 +450,6 @@ LIB (6 fichiers — modifier en Sprint 1 uniquement) :
   lib/security-config.js
   lib/email-service.js
   lib/notifications.js
-  lib/otp-store.js
 
 AUTRES (ne pas toucher) :
   middleware.js
