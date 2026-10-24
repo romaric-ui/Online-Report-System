@@ -5,17 +5,15 @@ import { Reveal } from './LandingKit';
 export default function LandingCTA({ onGetStarted, isAuthenticated }) {
   return (
     <section className="relative overflow-hidden bg-nuit">
-      {/* Rappel de la vidéo d'ouverture, très assombrie */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
+      {/* Photo de fond assombrie : ses fentes de lumière ambrée font écho au bouton */}
+      <img
+        src={encodeURI("/images/Capture d'écran 2026-10-24 164739.png")}
+        alt=""
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover opacity-30 motion-reduce:hidden"
-      >
-        <source src="/videos/chantier.mp4" type="video/mp4" />
-      </video>
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover object-[center_35%] opacity-40"
+      />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#0B0F13_0%,rgba(11,15,19,.7)_50%,#0B0F13_100%)]" />
 
       <Reveal className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-32 md:py-44">

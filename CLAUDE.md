@@ -42,7 +42,7 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 - **À éviter :** dégradés violets, ombres partout (séparer avec des bordures fines), polices par défaut (Arial, Inter), couleurs arc-en-ciel par élément.
 - Un seul élément signature par écran :
   - Sidebar : la bande « balisage de chantier » (classe `.sb-hazard`) qui marque la page active. L'orange n'apparaît que sur l'élément actif.
-  - Landing : la vidéo plein cadre et les repères de chapitre « 0X / 06 » (composants `Eyebrow` / `SectionHeading` de `LandingKit.jsx`). Si on ajoute ou retire une section, mettre à jour `CHAPTERS`.
+  - Landing : le hero plein écran en 4 sections (`LandingHero.jsx`, repères « 0X / 04 », fondu enchaîné et zoom lent via `.lh-media` / `.lh-copy`) et les repères de chapitre « 0X / 06 » des sections suivantes, de la galerie (01) à la FAQ (06) (composants `Eyebrow` / `SectionHeading` de `LandingKit.jsx`). Si on ajoute ou retire une section, mettre à jour `CHAPTERS`.
 - Texte sur un bouton orange : toujours sombre (`text-nuit` / `sb-on-accent`), comme la signalétique de chantier. Jamais de blanc sur orange (contraste insuffisant).
 - Séparer avec des bordures fines (`border-white/[0.09]` sur fond sombre, `border-ardoise-900/10` sur fond clair) plutôt qu'avec des ombres. La trame `gap-px` sur un fond de bordure sert aux grilles.
 - Accessibilité :
@@ -54,4 +54,5 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 
 ### Points ouverts
 - La marque n'est pas tranchée : logo PROJECTRA (`public/logo_projectra.png`, fond blanc, affiché dans une pastille blanche) contre SGTEC dans le reste du site.
-- `public/videos/chantier.mp4` porte un filigrane iStock : la remplacer ou acheter la licence avant la mise en ligne.
+- `public/videos/chantier.mp4` porte un filigrane iStock ; elle n'est plus affichée sur la landing.
+- Les photos de `public/images/` sont des captures d'écran provisoires (basse définition, droits non vérifiés, filigrane rogné sur 164750) : à remplacer avant la mise en ligne.

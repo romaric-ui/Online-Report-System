@@ -7,6 +7,7 @@ import Header from "./components/Header";
 import AuthModal from "./components/AuthModal";
 import Toast from "./components/Toast";
 import LandingHero from "./components/LandingHero";
+import LandingGallery from "./components/LandingGallery";
 import LandingFeatures from "./components/LandingFeatures";
 import LandingFeatureShowcase from "./components/LandingFeatureShowcase";
 import LandingPricing from "./components/LandingPricing";
@@ -139,6 +140,7 @@ export default function Home() {
     <div className="min-h-screen bg-nuit">
       <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
       <LandingHero onGetStarted={handleGetStarted} isAuthenticated={false} />
+      <LandingGallery />
       <LandingFeatures />
       <LandingFeatureShowcase />
       <LandingTestimonials />

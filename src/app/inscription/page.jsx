@@ -188,10 +188,19 @@ export default function InscriptionPage() {
       >
         <div className="md:flex">
           {/* Left panel */}
-          <div
-            className="w-full md:w-1/2 p-10 text-white"
-            style={{ background: "linear-gradient(145deg, #4F46E5, #6366F1)" }}
-          >
+          <div className="relative w-full md:w-1/2 p-10 text-white bg-nuit overflow-hidden">
+            {/* Photo d'ambiance assombrie pour la lisibilité du texte */}
+            <img
+              src={encodeURI("/images/Capture d'écran 2026-10-24 164818.png")}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,15,19,.85)_0%,rgba(11,15,19,.55)_55%,rgba(11,15,19,.8)_100%)]"
+            />
+            <div className="relative">
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-3">
                 Créer un compte entreprise
@@ -233,6 +242,7 @@ export default function InscriptionPage() {
                   administrateur.
                 </p>
               </div>
+            </div>
             </div>
           </div>
 
