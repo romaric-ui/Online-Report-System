@@ -410,9 +410,45 @@ html {
 }
 .lk-reveal.is-visible { opacity: 1; transform: none; }
 
+/* Hero plein écran : fondu enchaîné et zoom lent entre les sections */
+.lh-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.12);
+  /* Le zoom ne se réinitialise qu'une fois l'image disparue */
+  transition: opacity 1.2s cubic-bezier(.4,0,.2,1), transform 0s linear 1.2s;
+}
+.lh-media.is-active {
+  z-index: 1;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 1.2s cubic-bezier(.4,0,.2,1), transform 8s cubic-bezier(.2,.7,.2,1);
+}
+
+/* Texte : s'estompe vite, réapparaît après le début du fondu */
+.lh-copy {
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  transition: opacity .4s ease, transform .4s ease;
+}
+.lh-copy.is-active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity .7s cubic-bezier(.2,.7,.2,1) .35s, transform .7s cubic-bezier(.2,.7,.2,1) .35s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lk-rise { animation: none; }
   .lk-reveal { opacity: 1; transform: none; transition: none; }
+  .lh-media, .lh-media.is-active,
+  .lh-copy, .lh-copy.is-active { transform: none; transition: none; }
   html { scroll-behavior: auto; }
 }
 

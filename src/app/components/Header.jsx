@@ -17,8 +17,17 @@ import NotificationCenter from "./NotificationCenter";
 
 const pillLink =
   "lk-focus inline-flex items-center gap-2 h-9 px-4 rounded-full text-[15px] font-medium text-craie-2 hover:text-craie hover:bg-white/10 transition-colors";
+const pillLinkActive =
+  "lk-focus inline-flex items-center gap-2 h-9 px-4 rounded-full text-[15px] font-medium text-orange-vif bg-white/10 transition-colors";
 const mobileLink =
   "lk-focus flex items-center gap-3 w-full h-12 px-4 rounded-xl text-base font-medium text-craie-2 hover:text-craie hover:bg-white/[0.06] transition-colors";
+
+const navLinks = [
+  { label: "Comment ça marche", anchor: "how-it-works" },
+  { label: "Fonctionnalités", anchor: "features" },
+  { label: "Tarifs", anchor: "pricing" },
+  { label: "FAQ", anchor: "faq" },
+];
 
 export default function Header({ user, onLogout, onShowAuth }) {
   const { data: session } = useSession();
@@ -59,17 +68,31 @@ export default function Header({ user, onLogout, onShowAuth }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Section de la landing au milieu de l'écran : lien actif du menu
+  const [activeAnchor, setActiveAnchor] = useState(null);
+  useEffect(() => {
+    if (isLoggedIn) return;
+    const sections = navLinks
+      .map((l) => document.getElementById(l.anchor))
+      .filter(Boolean);
+    if (!sections.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveAnchor(e.target.id);
+          else setActiveAnchor((cur) => (cur === e.target.id ? null : cur));
+        });
+      },
+      { rootMargin: "-50% 0px -50% 0px" }
+    );
+    sections.forEach((s) => obs.observe(s));
+    return () => obs.disconnect();
+  }, [isLoggedIn]);
+
   const scrollTo = (id) => {
     setOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const navLinks = [
-    { label: "Comment ça marche", anchor: "how-it-works" },
-    { label: "Fonctionnalités", anchor: "features" },
-    { label: "Tarifs", anchor: "pricing" },
-    { label: "FAQ", anchor: "faq" },
-  ];
 
   const dashboardHref =
     session?.user?.role === "admin" ? "/dashboard-projet" : "/dashboard";
@@ -92,7 +115,7 @@ export default function Header({ user, onLogout, onShowAuth }) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
-        <div className="flex items-center justify-between h-[76px] gap-4">
+        <div className="relative flex items-center justify-between h-[76px] gap-4">
           {/* Logo */}
           <a
             href={
@@ -116,7 +139,7 @@ export default function Header({ user, onLogout, onShowAuth }) {
           {/* Navigation desktop : pilule centrale */}
           <nav
             aria-label="Navigation principale"
-            className="hidden md:flex items-center gap-0.5 p-1 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-md"
+            className="hidden md:flex lg:absolute lg:left-1/2 lg:-translate-x-1/2 items-center gap-0.5 p-1 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-md"
           >
             {isLoggedIn
               ? appLinks.map(({ label, href, icon: Icon }) => (
@@ -130,7 +153,8 @@ export default function Header({ user, onLogout, onShowAuth }) {
                     key={link.anchor}
                     type="button"
                     onClick={() => scrollTo(link.anchor)}
-                    className={pillLink}
+                    aria-current={activeAnchor === link.anchor ? "location" : undefined}
+                    className={activeAnchor === link.anchor ? pillLinkActive : pillLink}
                   >
                     {link.label}
                   </button>
