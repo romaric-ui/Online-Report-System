@@ -2,6 +2,22 @@
 
 Application Next.js 15 (App Router) + Tailwind 3 de gestion de chantier BTP, utilisée par des conducteurs de travaux sur ordinateur et tablette.
 
+## Environnement et conventions
+
+- **Base de données** : MySQL local sous WAMP, base `onlinereports` (`localhost`, `root`). Ignorer la configuration Aiven de `lib/database.js`.
+- **Migrations** : fichiers numérotés dans `database/migrations/` (dernière : `015_auth_tentatives.sql`), à reporter aussi dans `database/schema.sql`. Ne jamais les exécuter soi-même : donner le SQL, l'utilisateur le lance dans phpMyAdmin.
+- **Git** : un seul commit par lot de travail, message en français, **sans ligne `Co-Authored-By` ni aucune mention de Claude**. Ne pas pousser sans demande explicite.
+- **Échanges** : répondre directement aux questions ; limiter les commandes à valider quand l'information est déjà connue.
+
+## Authentification
+
+- **Connexion** : NextAuth (`src/app/api/auth/[...nextauth]/options.js`), credentials + Google, session JWT. Il n'y a pas d'autre route de connexion.
+- **Codes à 6 chiffres** (vérification d'email, mot de passe oublié) : tout passe par `lib/auth-codes.js` (génération `crypto`, 5 essais max par code, colonne `tentatives`). Un code est toujours lié au compte qui porte l'email : ne jamais accepter un `userId` venu du client.
+- **Limites de tentatives** : `rateLimitCheck(clé, max, fenêtre)` et `getClientIp()` dans `lib/security.js`, réglages dans `lib/security-config.js`. Compteurs en mémoire, valables pour un seul serveur Node.
+- **Redirection après connexion** : `homeUrlFor()` dans `lib/auth-redirect.js`, seule règle à utiliser.
+- **Session** : le jeton relit le compte en base au plus une fois par minute. Un compte bloqué perd son identité de session, et le middleware le déconnecte. Le middleware réserve aussi `/admin/*` aux admins.
+- **Limite connue** : le mot de passe passe par `sessionStorage` (`otp_pwd`) pour la connexion automatique après vérification d'email. À remplacer un jour par un jeton à usage unique.
+
 ## Système de design
 
 Direction : sobre, professionnel, dense mais lisible. Palette BTP : gris ardoise + orange sécurité.
@@ -54,4 +70,5 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 
 ### Points ouverts
 - La marque n'est pas tranchée : logo PROJECTRA (`public/logo_projectra.png`, fond blanc, affiché dans une pastille blanche) contre SGTEC dans le reste du site.
+- Landing, dans l'ordre : `LandingHero` (4 sections plein écran, chacune avec sa composition), `LandingGallery`, `LandingFeatures`, `LandingFeatureShowcase`, `LandingTestimonials`, `LandingPricing`, `LandingFAQ`, `LandingCTA`. Les fichiers de `public/images/` gardent leur nom d'origine (« Capture d'écran … ») : les référencer avec `encodeURI`.
 - Les photos de `public/images/` sont des captures d'écran provisoires (basse définition, droits non vérifiés, filigrane rogné sur 164750) : à remplacer avant la mise en ligne.
