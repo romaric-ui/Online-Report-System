@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import GoogleSignInButton from "./GoogleSignInButton";
+import { homeUrlFor } from "../../../lib/auth-redirect";
+
+// Messages des erreurs renvoyées par NextAuth (result.error)
+const LOGIN_ERRORS = {
+  CredentialsSignin: "Email ou mot de passe incorrect.",
+  ACCOUNT_BLOCKED: "Votre compte a été bloqué. Veuillez contacter le service client.",
+  RATE_LIMITED: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
+};
 
 export default function AuthModal({ isOpen, onClose, onLogin, initialError = null }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -96,7 +104,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, initialError = nul
             setLoading(false);
             return;
           }
-          throw new Error(data.error || "Erreur lors de l'inscription");
+          setError(data.error || "Erreur lors de l'inscription");
+          return;
         }
 
         if (data.requiresVerification) {
@@ -133,29 +142,18 @@ export default function AuthModal({ isOpen, onClose, onLogin, initialError = nul
             setLoading(false);
             return;
           }
-          if (result?.error === "ACCOUNT_BLOCKED") {
-            throw new Error("ACCOUNT_BLOCKED");
-          }
-          throw new Error(result?.error || "Email ou mot de passe incorrect");
+          setError(LOGIN_ERRORS[result?.error] || "Une erreur est survenue. Veuillez réessayer.");
+          return;
         }
 
         onClose();
 
         const sessionResponse = await fetch("/api/auth/session");
         const sessionData = await sessionResponse.json();
-
-        if (sessionData?.user?.role === "admin") {
-          window.location.href = "/admin/dashboard";
-        } else {
-          window.location.href = "/dashboard-projet";
-        }
+        window.location.href = homeUrlFor(sessionData?.user);
       }
-    } catch (err) {
-      if (err.message === "ACCOUNT_BLOCKED") {
-        setError("Votre compte a été bloqué. Veuillez contacter le service client.");
-      } else {
-        setError("Une erreur est survenue. Veuillez réessayer.");
-      }
+    } catch {
+      setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -291,10 +289,10 @@ export default function AuthModal({ isOpen, onClose, onLogin, initialError = nul
                 value={formData.password}
                 onChange={handleChange}
                 required
-                minLength="6"
+                minLength={isLoginMode ? undefined : 8}
                 className="input-neu"
                 style={{ paddingRight: 44 }}
-                placeholder="Mot de passe (min. 6 caractères)"
+                placeholder={isLoginMode ? "Mot de passe" : "Mot de passe (min. 8 caractères)"}
               />
               <button
                 type="button"
@@ -343,7 +341,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, initialError = nul
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required={!isLoginMode}
-                  minLength="6"
+                  minLength={8}
                   className="input-neu"
                   style={{ paddingRight: 44 }}
                   placeholder="Confirmer le mot de passe"

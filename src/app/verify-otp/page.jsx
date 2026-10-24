@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, ArrowLeft, RefreshCw } from "lucide-react";
+import { homeUrlFor } from "../../../lib/auth-redirect";
 
 function VerifyOTPContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Seul l'email compte : le serveur retrouve le compte lui-même
   const email = searchParams.get("email");
-  const userId = searchParams.get("userId");
 
   // ✅ FIX SÉCURITÉ : mot de passe lu depuis sessionStorage, jamais depuis l'URL
   // Il doit être stocké par la page d'inscription AVANT la redirection :
@@ -30,10 +31,10 @@ function VerifyOTPContent() {
   const inputRefs = useRef([]);
 
   useEffect(() => {
-    if (!email || !userId) {
+    if (!email) {
       router.push("/");
     }
-  }, [email, userId, router]);
+  }, [email, router]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -113,7 +114,8 @@ function VerifyOTPContent() {
           });
 
           if (result?.ok) {
-            router.push("/dashboard-projet");
+            const session = await fetch("/api/auth/session").then((r) => r.json());
+            router.push(homeUrlFor(session?.user));
           } else {
             // Auto-login échoué (cas rare) → rediriger vers login avec succès
             router.push("/?verified=1");
@@ -142,7 +144,7 @@ function VerifyOTPContent() {
       const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, userId }),
+        body: JSON.stringify({ email }),
       });
 
       if (response.ok) {
@@ -150,7 +152,8 @@ function VerifyOTPContent() {
         setOtp(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       } else {
-        setError("Erreur lors de l'envoi du code");
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Erreur lors de l'envoi du code");
       }
     } catch {
       setError("Erreur lors de l'envoi du code");

@@ -1,30 +1,43 @@
 import { NextResponse } from 'next/server';
-import { sendOTPEmail } from '../../../../../lib/email-service.js';
-import { connectDB } from '../../../../../lib/database.js';
+import { userRepo } from '../../../../../lib/repositories/user.repository.js';
+import { issueVerificationCode } from '../../../../../lib/auth-codes.js';
+import { validateEmail, rateLimitCheck, getClientIp } from '../../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
 
+// Renvoie un code de vérification d'email.
+// Seul l'email est lu : le code est lié au compte qui porte cet email, jamais à
+// un identifiant fourni par le client.
 export async function POST(request) {
   try {
-    const { email, userId } = await request.json();
+    const { email } = await request.json();
 
-    if (!email || !userId) {
-      return NextResponse.json(
-        { error: 'Email et ID utilisateur requis' },
-        { status: 400 }
-      );
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      return NextResponse.json({ error: emailValidation.error }, { status: 400 });
+    }
+    const cleanEmail = emailValidation.value;
+
+    const { codeSend } = SECURITY_CONFIG.rateLimits;
+    const ip = getClientIp(request.headers);
+    const byEmail = rateLimitCheck(`code-send:${cleanEmail}`, codeSend.maxAttempts, codeSend.windowMs);
+    const byIp = rateLimitCheck(`code-send-ip:${ip}`, codeSend.maxAttemptsPerIp, codeSend.windowMs);
+    if (!byEmail.allowed || !byIp.allowed) {
+      return NextResponse.json({ error: SECURITY_MESSAGES.rateLimitExceeded }, { status: 429 });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const user = await userRepo.findByEmail(cleanEmail);
 
-    const db = await connectDB();
-    await db.query('DELETE FROM otp_verification WHERE user_id = ?', [userId]);
-    await db.query(
-      'INSERT INTO otp_verification (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)',
-      [userId, email, otp, expiresAt]
-    );
+    // Même réponse si le compte n'existe pas, est déjà vérifié ou est bloqué :
+    // la route ne doit pas révéler quels emails sont inscrits.
+    const ok = NextResponse.json({
+      success: true,
+      message: 'Si un compte en attente de vérification existe, un code a été envoyé.',
+    });
+    if (!user || Number(user.email_verifie) === 1 || user.statut === 'bloque') {
+      return ok;
+    }
 
-    const emailResult = await sendOTPEmail(email, otp, email);
-
+    const emailResult = await issueVerificationCode(user);
     if (!emailResult.success) {
       console.error('❌ Erreur envoi OTP:', emailResult.error);
       return NextResponse.json(
@@ -33,10 +46,7 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Code OTP envoyé par email',
-    });
+    return ok;
 
   } catch (error) {
     console.error('❌ Erreur envoi OTP:', error);

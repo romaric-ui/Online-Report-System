@@ -1,8 +1,9 @@
 "use client";
 import "./globals.css";
 import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { homeUrlFor } from "../../lib/auth-redirect";
 import Header from "./components/Header";
 import AuthModal from "./components/AuthModal";
 import Toast from "./components/Toast";
@@ -27,14 +28,14 @@ export default function Home() {
   const [authError, setAuthError] = useState(null); // ✅ NEW
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      if (session.user.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (session.user.roleEntreprise === 1) {
-        router.push('/dashboard-projet');
-      } else {
-        router.push('/dashboard');
-      }
+    if (status !== 'authenticated') return;
+    // Compte bloqué depuis la connexion : on déconnecte et on affiche le message
+    if (session?.blocked) {
+      signOut({ callbackUrl: '/?error=ACCOUNT_BLOCKED' });
+      return;
+    }
+    if (session?.user) {
+      router.push(homeUrlFor(session.user));
     }
   }, [status, session, router]);
 
@@ -77,7 +78,7 @@ export default function Home() {
         email: session.user.email,
         nom: session.user.name || session.user.nom,
         prenom: session.user.prenom || '',
-        isGoogle: session.user.isGoogle || true,
+        isGoogle: !!session.user.isGoogleUser,
         isAuthenticated: true
       };
       setUser(userData);
@@ -98,11 +99,7 @@ export default function Home() {
     setPendingAction(null);
   };
 
-  const getDashboardUrl = useCallback(() => {
-    if (session?.user?.role === 'admin') return '/admin/dashboard';
-    if (session?.user?.roleEntreprise === 1) return '/dashboard-projet';
-    return '/dashboard';
-  }, [session]);
+  const getDashboardUrl = useCallback(() => homeUrlFor(session?.user), [session]);
 
   const handleGetStarted = useCallback(() => {
     if (status === 'authenticated' && session?.user) {

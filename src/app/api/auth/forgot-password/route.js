@@ -1,13 +1,20 @@
 // API pour demander la réinitialisation du mot de passe
 import nodemailer from 'nodemailer';
-import crypto from 'crypto';
 import { connectDB } from '../../../../../lib/database.js';
-import { validateEmail } from '../../../../../lib/security.js';
+import { validateEmail, rateLimitCheck, getClientIp } from '../../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
+import { generateCode, CODE_TTL_MS } from '../../../../../lib/auth-codes.js';
+
+// Réponse identique que le compte existe ou non : la route ne révèle pas les emails inscrits
+const GENERIC_SUCCESS = {
+  success: true,
+  message: 'Si cet email existe, un code de réinitialisation a été envoyé'
+};
 
 export async function POST(request) {
   try {
     const { email } = await request.json();
-    
+
     // Validation de l'email
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
@@ -16,48 +23,35 @@ export async function POST(request) {
         error: 'Format d\'email invalide'
       }, { status: 400 });
     }
-    
+
     const cleanEmail = emailValidation.value;
+
+    const { codeSend } = SECURITY_CONFIG.rateLimits;
+    const ip = getClientIp(request.headers);
+    const byEmail = rateLimitCheck(`reset-send:${cleanEmail}`, codeSend.maxAttempts, codeSend.windowMs);
+    const byIp = rateLimitCheck(`reset-send-ip:${ip}`, codeSend.maxAttemptsPerIp, codeSend.windowMs);
+    if (!byEmail.allowed || !byIp.allowed) {
+      return Response.json({ success: false, error: SECURITY_MESSAGES.rateLimitExceeded }, { status: 429 });
+    }
+
     const db = await connectDB();
-    
+
     // Vérifier si l'utilisateur existe
     const [users] = await db.execute(
-      'SELECT id_utilisateur, nom, prenom FROM utilisateur WHERE email = ? LIMIT 1',
+      'SELECT id_utilisateur, nom, prenom FROM Utilisateur WHERE email = ? LIMIT 1',
       [cleanEmail]
     );
-    
-    // Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
+
     if (users.length === 0) {
-      // Retourner succès même si l'email n'existe pas
-      return Response.json({
-        success: true,
-        message: 'Si cet email existe, un lien de réinitialisation a été envoyé'
-      });
+      return Response.json(GENERIC_SUCCESS);
     }
-    
+
     const user = users[0];
-    
+
     // Générer un code de réinitialisation à 6 chiffres
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Expire dans 10 minutes
-    
-    // Créer la table si elle n'existe pas
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS PasswordReset (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        id_utilisateur INT NOT NULL,
-        code VARCHAR(6) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        expires_at DATETIME NOT NULL,
-        used BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id_utilisateur) ON DELETE CASCADE,
-        INDEX idx_code (code),
-        INDEX idx_email (email),
-        INDEX idx_expires (expires_at)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
-    
+    const resetCode = generateCode();
+    const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+
     // Supprimer les anciens codes pour cet utilisateur
     await db.execute(
       'DELETE FROM PasswordReset WHERE id_utilisateur = ?',
@@ -77,8 +71,10 @@ export async function POST(request) {
         user: process.env.EMAIL_USER || process.env.GMAIL_USER,
         pass: process.env.EMAIL_PASSWORD || process.env.GMAIL_APP_PASSWORD
       },
+      // Vérification TLS désactivée seulement en développement (antivirus ou proxy
+      // qui interceptent le TLS sous Windows) ; toujours active en production
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
       }
     });
     
@@ -157,13 +153,15 @@ export async function POST(request) {
       `
     };
     
-    // Envoyer l'email
-    await transporter.sendMail(mailOptions);
-    
-    return Response.json({
-      success: true,
-      message: 'Si cet email existe, un code de réinitialisation a été envoyé'
-    });
+    // Envoyer l'email. Un échec est journalisé sans changer la réponse,
+    // sinon il trahirait l'existence du compte.
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (mailError) {
+      console.error('Erreur envoi code de réinitialisation:', mailError.message);
+    }
+
+    return Response.json(GENERIC_SUCCESS);
     
   } catch (error) {
     console.error('Erreur mot de passe oublié:', error.message);

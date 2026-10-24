@@ -40,8 +40,7 @@ Port dev    : localhost:3000
 ### Routes API existantes (20 fichiers — NE PAS SUPPRIMER)
 
 ```
-src/app/api/auth/[...nextauth]/route.js     ← NextAuth config
-src/app/api/auth/login/route.js             ← Connexion credentials
+src/app/api/auth/[...nextauth]/route.js     ← NextAuth (connexion credentials + Google : logique dans options.js)
 src/app/api/auth/logout/                    ← Déconnexion
 src/app/api/auth/register/route.js          ← Inscription
 src/app/api/auth/send-otp/route.js          ← Envoi OTP email
@@ -113,7 +112,9 @@ lib/security.js          ← Validation, sanitisation
 lib/security-config.js   ← Config rate limiting, patterns
 lib/email-service.js     ← Nodemailer + templates HTML
 lib/notifications.js     ← createNotification()
-lib/otp-store.js         ← Stockage temporaire OTP
+lib/otp-store.js         ← Ancien stockage OTP en mémoire (plus utilisé)
+lib/auth-codes.js        ← Codes à 6 chiffres : génération, envoi, 5 essais max
+lib/auth-redirect.js     ← Page d'arrivée après connexion (homeUrlFor)
 ```
 
 ### Autres fichiers existants

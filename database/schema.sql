@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS otp_verification (
   email           VARCHAR(255)  NOT NULL,
   otp_code        VARCHAR(10)   NOT NULL,
   expires_at      DATETIME      NOT NULL,
+  tentatives      INT           NOT NULL DEFAULT 0,      -- essais ratés (5 max)
   created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES Utilisateur(id_utilisateur) ON DELETE CASCADE,
   INDEX idx_email_otp (email, otp_code),
@@ -105,6 +106,7 @@ CREATE TABLE IF NOT EXISTS PasswordReset (
   email           VARCHAR(255)  NOT NULL,
   expires_at      DATETIME      NOT NULL,
   used            TINYINT(1)    DEFAULT 0,
+  tentatives      INT           NOT NULL DEFAULT 0,      -- essais ratés (5 max)
   created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_utilisateur) REFERENCES Utilisateur(id_utilisateur) ON DELETE CASCADE,
   INDEX idx_code (code),

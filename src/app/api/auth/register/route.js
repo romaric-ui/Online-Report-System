@@ -5,13 +5,21 @@ import {
   validateEmail, 
   validatePassword, 
   validateName, 
-  validateRequestBody
+  validateRequestBody,
+  rateLimitCheck,
+  getClientIp
 } from '../../../../../lib/security.js';
-import { generateOTP } from '../../../../../lib/otp-store';
-import { sendOTPEmail } from '../../../../../lib/email-service';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
+import { issueVerificationCode } from '../../../../../lib/auth-codes.js';
 
 export async function POST(request) {
   try {
+    const { register } = SECURITY_CONFIG.rateLimits;
+    const ip = getClientIp(request.headers);
+    if (!rateLimitCheck(`register-ip:${ip}`, register.maxAttempts, register.windowMs).allowed) {
+      return Response.json({ error: SECURITY_MESSAGES.rateLimitExceeded }, { status: 429 });
+    }
+
     const body = await request.json();
     
     // Validation générale du body
@@ -90,18 +98,14 @@ export async function POST(request) {
       [cleanNom, cleanPrenom, cleanEmail, telephone || null, hashedPassword, 2]
     );
 
-    // Générer et stocker l'OTP en base de données
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Générer, stocker et envoyer le code de vérification
+    const emailResult = await issueVerificationCode({
+      id_utilisateur: result.insertId,
+      email: cleanEmail,
+      nom: cleanNom,
+      prenom: cleanPrenom,
+    });
 
-    await db.execute('DELETE FROM otp_verification WHERE user_id = ?', [result.insertId]);
-    await db.execute(
-      'INSERT INTO otp_verification (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)',
-      [result.insertId, cleanEmail, otp, expiresAt]
-    );
-
-    const emailResult = await sendOTPEmail(cleanEmail, otp, `${cleanPrenom} ${cleanNom}`);
-    
     if (!emailResult.success) {
       console.error('⚠️ Erreur envoi email OTP, mais compte créé');
     }

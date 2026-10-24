@@ -74,8 +74,23 @@ export async function middleware(request) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // Compte particulier (sans entreprise)
-  if (!token.entrepriseId) {
+  // Compte bloqué ou supprimé depuis la connexion → déconnexion
+  if (token.blocked) {
+    const res = NextResponse.redirect(new URL('/?error=ACCOUNT_BLOCKED', request.url));
+    res.cookies.delete('next-auth.session-token');
+    res.cookies.delete('__Secure-next-auth.session-token');
+    return res;
+  }
+
+  // Back-office réservé aux administrateurs de la plateforme
+  // (les API /api/admin vérifient aussi le rôle de leur côté)
+  if ((pathname === '/admin' || pathname.startsWith('/admin/')) && token.role !== 'admin') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // Compte particulier (sans entreprise). Les admins de la plateforme n'ont
+  // pas d'entreprise mais doivent pouvoir ouvrir le back-office.
+  if (!token.entrepriseId && token.role !== 'admin') {
     const isAllowed = particulierRoutes.some(route =>
       pathname === route || pathname.startsWith(route + '/')
     );

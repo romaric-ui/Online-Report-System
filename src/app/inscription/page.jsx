@@ -80,7 +80,7 @@ export default function InscriptionPage() {
    */
   const goToVerifyOtp = (email, userId, password) => {
     sessionStorage.setItem('otp_pwd', password);
-    router.push(`/verify-otp?email=${encodeURIComponent(email)}&userId=${userId}`);
+    router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
   };
 
   const handleSubmit = async (e) => {

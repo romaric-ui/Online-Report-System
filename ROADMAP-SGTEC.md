@@ -30,7 +30,6 @@ Port dev    : localhost:3000
 src/app/api/
 ├── auth/
 │   ├── [...nextauth]/route.js        ← Config NextAuth (credentials + Google)
-│   ├── login/route.js                ← Connexion classique
 │   ├── logout/                       ← Déconnexion
 │   ├── register/route.js             ← Inscription
 │   ├── send-otp/route.js             ← Envoi code OTP par email
@@ -386,7 +385,6 @@ Modifier uniquement quand la roadmap le demande explicitement.
 
 ROUTES AUTH (toucher seulement en 1.1 et 1.9) :
   src/app/api/auth/[...nextauth]/route.js
-  src/app/api/auth/login/route.js
   src/app/api/auth/logout/
   src/app/api/auth/register/route.js
   src/app/api/auth/send-otp/route.js

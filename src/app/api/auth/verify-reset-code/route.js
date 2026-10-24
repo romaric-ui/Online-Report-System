@@ -1,69 +1,55 @@
 // API pour vérifier le code de réinitialisation sans changer le mot de passe
-import { connectDB } from '../../../../../lib/database.js';
+import { userRepo } from '../../../../../lib/repositories/user.repository.js';
+import { checkResetCode } from '../../../../../lib/auth-codes.js';
+import { validateEmail, rateLimitCheck, getClientIp } from '../../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
 
 export async function POST(request) {
   try {
     const { email, code } = await request.json();
-    
+
     // Validations de base
-    if (!email || !code) {
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid || !code) {
       return Response.json({
         success: false,
         error: 'Email et code requis'
       }, { status: 400 });
     }
-    
-    if (code.length !== 6) {
+
+    if (String(code).length !== 6) {
       return Response.json({
         success: false,
         error: 'Le code doit contenir 6 chiffres'
       }, { status: 400 });
     }
-    
-    const db = await connectDB();
-    
-    // Vérifier le code
-    const [resetRequests] = await db.execute(
-      `SELECT pr.id, pr.id_utilisateur, pr.expires_at, pr.used
-       FROM PasswordReset pr
-       WHERE pr.code = ? AND pr.email = ? AND pr.used = FALSE
-       LIMIT 1`,
-      [code, email]
+
+    const { codeVerify } = SECURITY_CONFIG.rateLimits;
+    const ip = getClientIp(request.headers);
+    if (!rateLimitCheck(`code-verify-ip:${ip}`, codeVerify.maxAttemptsPerIp, codeVerify.windowMs).allowed) {
+      return Response.json({ success: false, error: SECURITY_MESSAGES.rateLimitExceeded }, { status: 429 });
+    }
+
+    // Vérifier le code (chaque échec compte, 5 essais max)
+    const result = await userRepo.transaction((conn) =>
+      checkResetCode(conn, emailValidation.value, code)
     );
-    
-    if (resetRequests.length === 0) {
-      return Response.json({
-        success: false,
-        error: 'Code invalide ou déjà utilisé'
-      }, { status: 400 });
+
+    if (!result.ok) {
+      return Response.json({ success: false, error: result.error }, { status: 400 });
     }
-    
-    const resetRequest = resetRequests[0];
-    
-    // Vérifier l'expiration
-    const now = new Date();
-    const expiresAt = new Date(resetRequest.expires_at);
-    
-    if (now > expiresAt) {
-      return Response.json({
-        success: false,
-        error: 'Le code de réinitialisation a expiré. Veuillez en demander un nouveau.'
-      }, { status: 400 });
-    }
-    
-    // Code valide !
+
     return Response.json({
       success: true,
       message: 'Code valide ! Vous pouvez maintenant créer un nouveau mot de passe.'
     });
-    
+
   } catch (error) {
     console.error('❌ Erreur vérification code:', error);
-    
+
     return Response.json({
       success: false,
-      error: 'Erreur lors de la vérification du code',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Erreur lors de la vérification du code'
     }, { status: 500 });
   }
 }

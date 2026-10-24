@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import { userRepo } from '../../../../lib/repositories/user.repository.js';
 import { createdResponse, errorResponse } from '../../../../lib/api-response.js';
 import { ValidationError, ConflictError } from '../../../../lib/errors/index.js';
-import { validateEmail, validatePassword, validateName } from '../../../../lib/security.js';
+import { validateEmail, validatePassword, validateName, rateLimitCheck, getClientIp } from '../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../lib/security-config.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -39,6 +40,12 @@ async function generateUniqueSlug(name) {
 }
 
 async function handlePOST(request) {
+  const { register } = SECURITY_CONFIG.rateLimits;
+  const ip = getClientIp(request.headers);
+  if (!rateLimitCheck(`register-ip:${ip}`, register.maxAttempts, register.windowMs).allowed) {
+    return Response.json({ error: { message: SECURITY_MESSAGES.rateLimitExceeded } }, { status: 429 });
+  }
+
   const body = await request.json();
   const entreprise = body.entreprise || {};
   const admin = body.admin || {};

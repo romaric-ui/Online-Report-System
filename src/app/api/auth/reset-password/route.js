@@ -1,92 +1,73 @@
 // API pour réinitialiser le mot de passe avec le code
 import bcrypt from 'bcryptjs';
-import { connectDB } from '../../../../../lib/database.js';
-import { validatePassword } from '../../../../../lib/security.js';
+import { userRepo } from '../../../../../lib/repositories/user.repository.js';
+import { checkResetCode } from '../../../../../lib/auth-codes.js';
+import { validateEmail, validatePassword, rateLimitCheck, getClientIp } from '../../../../../lib/security.js';
+import { SECURITY_CONFIG, SECURITY_MESSAGES } from '../../../../../lib/security-config.js';
 
 export async function POST(request) {
   try {
     const { email, code, newPassword } = await request.json();
-    
+
     // Validations de base
-    if (!email || !code || !newPassword) {
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid || !code || !newPassword) {
       return Response.json({
         success: false,
         error: 'Email, code et nouveau mot de passe requis'
       }, { status: 400 });
     }
-    
+
     // Valider le nouveau mot de passe
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
       return Response.json({
         success: false,
-        error: 'Mot de passe trop faible',
-        details: passwordValidation.errors
+        error: passwordValidation.error
       }, { status: 400 });
     }
-    
-    const db = await connectDB();
-    
-    // Vérifier le code
-    const [resetRequests] = await db.execute(
-      `SELECT pr.id, pr.id_utilisateur, pr.expires_at, pr.used, u.email
-       FROM PasswordReset pr
-       INNER JOIN utilisateur u ON pr.id_utilisateur = u.id_utilisateur
-       WHERE pr.code = ? AND pr.email = ? AND pr.used = FALSE
-       LIMIT 1`,
-      [code, email]
-    );
-    
-    if (resetRequests.length === 0) {
-      return Response.json({
-        success: false,
-        error: 'Code invalide ou déjà utilisé'
-      }, { status: 400 });
+
+    const { codeVerify } = SECURITY_CONFIG.rateLimits;
+    const ip = getClientIp(request.headers);
+    if (!rateLimitCheck(`code-verify-ip:${ip}`, codeVerify.maxAttemptsPerIp, codeVerify.windowMs).allowed) {
+      return Response.json({ success: false, error: SECURITY_MESSAGES.rateLimitExceeded }, { status: 429 });
     }
-    
-    const resetRequest = resetRequests[0];
-    
-    // Vérifier l'expiration
-    const now = new Date();
-    const expiresAt = new Date(resetRequest.expires_at);
-    
-    if (now > expiresAt) {
-      return Response.json({
-        success: false,
-        error: 'Le code de réinitialisation a expiré. Veuillez en demander un nouveau.'
-      }, { status: 400 });
+
+    // Hasher avant la transaction (bcrypt est lent, on ne garde pas le verrou)
+    const hashedPassword = await bcrypt.hash(passwordValidation.value, 12);
+
+    // Vérification du code (5 essais max), changement du mot de passe et
+    // consommation du code : une seule transaction
+    const result = await userRepo.transaction(async (conn) => {
+      const check = await checkResetCode(conn, emailValidation.value, code);
+      if (!check.ok) return check;
+
+      const { id, id_utilisateur } = check.reset;
+      await conn.query(
+        'UPDATE Utilisateur SET mot_de_passe = ? WHERE id_utilisateur = ?',
+        [hashedPassword, id_utilisateur]
+      );
+      await conn.query('UPDATE PasswordReset SET used = 1 WHERE id = ?', [id]);
+      await conn.query(
+        'DELETE FROM PasswordReset WHERE id_utilisateur = ? AND id != ?',
+        [id_utilisateur, id]
+      );
+      return { ok: true };
+    });
+
+    if (!result.ok) {
+      return Response.json({ success: false, error: result.error }, { status: 400 });
     }
-    
-    // Hasher le nouveau mot de passe
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    
-    // Mettre à jour le mot de passe de l'utilisateur
-    await db.execute(
-      'UPDATE utilisateur SET mot_de_passe = ? WHERE id_utilisateur = ?',
-      [hashedPassword, resetRequest.id_utilisateur]
-    );
-    
-    // Marquer le token comme utilisé
-    await db.execute(
-      'UPDATE PasswordReset SET used = TRUE WHERE id = ?',
-      [resetRequest.id]
-    );
-    
-    // Supprimer tous les autres tokens pour cet utilisateur
-    await db.execute(
-      'DELETE FROM PasswordReset WHERE id_utilisateur = ? AND id != ?',
-      [resetRequest.id_utilisateur, resetRequest.id]
-    );
-    
+
     return Response.json({
       success: true,
       message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.',
-      email: resetRequest.email
+      email: emailValidation.value
     });
-    
+
   } catch (error) {
     console.error('Erreur réinitialisation mot de passe:', error.message);
-    
+
     return Response.json({
       success: false,
       error: 'Erreur lors de la réinitialisation du mot de passe'
