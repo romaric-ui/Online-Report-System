@@ -58,7 +58,7 @@ export function SectionHeading({ index, label, title, intro, tone = 'dark', clas
         {title}
       </h2>
       {intro && (
-        <p className={`mt-5 text-lg leading-relaxed max-w-xl ${tone === 'dark' ? 'text-craie-2' : 'text-ardoise-500'}`}>
+        <p className={`mt-5 text-lg font-medium leading-relaxed max-w-xl ${tone === 'dark' ? 'text-craie-2' : 'text-ardoise-500'}`}>
           {intro}
         </p>
       )}

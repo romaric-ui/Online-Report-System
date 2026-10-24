@@ -23,7 +23,7 @@ export default function LandingCTA({ onGetStarted, isAuthenticated }) {
             : <>Digitalisez vos chantiers. <span className="text-craie-2">Dès aujourd&apos;hui.</span></>}
         </h2>
 
-        <p className="mt-7 max-w-xl text-lg sm:text-xl leading-relaxed text-craie-2">
+        <p className="mt-7 max-w-xl text-lg sm:text-xl font-medium leading-relaxed text-craie">
           {isAuthenticated
             ? 'Accédez à votre tableau de bord pour piloter vos projets en temps réel.'
             : 'Rejoignez les professionnels du BTP qui gagnent du temps chaque jour avec SGTEC.'}

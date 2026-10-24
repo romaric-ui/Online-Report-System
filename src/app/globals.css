@@ -430,6 +430,16 @@ html {
   transition: opacity 1.2s cubic-bezier(.4,0,.2,1), transform 8s cubic-bezier(.2,.7,.2,1);
 }
 
+/* Voile de lisibilité, orienté selon la composition de chaque section */
+.lh-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 1.2s cubic-bezier(.4,0,.2,1);
+}
+.lh-veil.is-active { opacity: 1; }
+
 /* Texte : s'estompe vite, réapparaît après le début du fondu */
 .lh-copy {
   opacity: 0;
@@ -449,6 +459,7 @@ html {
   .lk-reveal { opacity: 1; transform: none; transition: none; }
   .lh-media, .lh-media.is-active,
   .lh-copy, .lh-copy.is-active { transform: none; transition: none; }
+  .lh-veil { transition: none; }
   html { scroll-behavior: auto; }
 }
 
