@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ className = 'btn-soft w-10 h-10 p-0 rounded-full flex items-center justify-center shrink-0' }) {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="btn-soft w-10 h-10 p-0 rounded-full flex items-center justify-center shrink-0"
+      className={className}
       title={dark ? 'Passer en mode clair' : 'Passer en mode nuit'}
     >
       {dark

@@ -5,6 +5,7 @@ import { chantierRepo } from '../../../../../../lib/repositories/chantier.reposi
 import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
 import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
 import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
+import { resolveLotId } from '../../../../../../lib/import-taches-service.js';
 
 const apiHandler = (handler) => async (request, context) => {
   try {
@@ -69,8 +70,10 @@ async function handlePOST(request, { params }) {
     statut,
     priorite,
     id_lot,
+    lot,
     assignee_a,
     pourcentage,
+    duree_jours,
   } = body;
 
   if (!nom) {
@@ -83,10 +86,11 @@ async function handlePOST(request, { params }) {
 
   const tache = await tacheRepo.create({
     id_chantier: chantierId,
-    id_lot: id_lot ? parseInt(id_lot, 10) : null,
+    id_lot: id_lot ? parseInt(id_lot, 10) : await resolveLotId(chantierId, lot),
     nom,
     description: description || null,
     pourcentage: pourcentage !== undefined ? pourcentage : 0,
+    duree_jours: duree_jours ? parseInt(duree_jours, 10) || null : null,
     date_debut: date_debut || null,
     date_fin_prevue: date_fin_prevue || null,
     statut: statut || 'a_faire',
@@ -122,7 +126,7 @@ async function handlePUT(request, { params }) {
 
   const updatableFields = [
     'nom', 'description', 'date_debut', 'date_fin_prevue', 'date_fin_reelle',
-    'statut', 'priorite', 'id_lot', 'assignee_a', 'pourcentage'
+    'statut', 'priorite', 'id_lot', 'assignee_a', 'pourcentage', 'duree_jours'
   ];
 
   const sanitizedData = {};
@@ -131,6 +135,11 @@ async function handlePUT(request, { params }) {
       sanitizedData[key] = body[key] === '' ? null : body[key];
     }
   });
+
+  // Lot fourni par son nom (formulaire) : résoudre en id_lot
+  if (body.id_lot === undefined && body.lot !== undefined) {
+    sanitizedData.id_lot = await resolveLotId(chantierId, body.lot);
+  }
 
   if (Object.keys(sanitizedData).length === 0) {
     throw new ValidationError('Aucune donnée valide à mettre à jour');
@@ -151,6 +160,33 @@ async function handlePUT(request, { params }) {
   return successResponse({ message: 'Tâche modifiée avec succès' });
 }
 
+async function handleDELETE(request, { params }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new AuthenticationError('Non authentifié');
+  }
+
+  const entrepriseId = requireTenant(session);
+  requireRole(session, [1, 2]); // admin entreprise + chef de chantier
+  const chantierId = await parseChantierId(params);
+  await verifyChantierEntreprise(chantierId, entrepriseId);
+
+  const { id_tache } = await request.json();
+  if (!id_tache) {
+    throw new ValidationError('ID tâche manquant');
+  }
+
+  const tache = await tacheRepo.findById(id_tache);
+  if (parseInt(tache.id_chantier, 10) !== chantierId) {
+    throw new AuthorizationError('Non autorisé pour cette tâche');
+  }
+
+  // tacheRepo.delete recalcule la progression dans la même transaction
+  await tacheRepo.delete(id_tache);
+  return successResponse({ message: 'Tâche supprimée avec succès' });
+}
+
 export const GET = apiHandler(handleGET);
 export const POST = apiHandler(handlePOST);
 export const PUT = apiHandler(handlePUT);
+export const DELETE = apiHandler(handleDELETE);

@@ -1,57 +1,41 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import MessageModal from './MessageModal';
+import { SectionHeading } from './LandingKit';
 
 const FAQS = [
   {
-    q: "Comment fonctionne l'essai gratuit ?",
-    a: "Vous avez 7 jours pour tester SGTEC. Carte bancaire requise à l'inscription, mais vous ne serez débité qu'après la période d'essai.",
+    q: "Comment fonctionne l'essai gratuit ?",
+    a: "Vous avez 7 jours pour tester SGTEC. Une carte bancaire est demandée à l'inscription, mais vous n'êtes débité qu'à la fin de la période d'essai.",
   },
   {
-    q: "L'application fonctionne-t-elle hors connexion ?",
-    a: "Une version hors-ligne est en cours de développement. Actuellement, une connexion internet est nécessaire.",
+    q: "L'application fonctionne-t-elle hors connexion ?",
+    a: "Une version hors ligne est en cours de développement. Pour l'instant, une connexion internet est nécessaire.",
   },
   {
-    q: "Comment inviter mon équipe ?",
-    a: "Depuis votre tableau de bord, envoyez des invitations par email. Vos collaborateurs créent leur compte et rejoignent votre espace entreprise automatiquement.",
+    q: "Comment inviter mon équipe ?",
+    a: "Depuis votre tableau de bord, envoyez des invitations par email. Vos collaborateurs créent leur compte et rejoignent automatiquement votre espace entreprise.",
   },
   {
-    q: "Mes données sont-elles sécurisées ?",
-    a: "Oui. Chiffrement des mots de passe, sessions sécurisées JWT, et isolation complète des données entre entreprises.",
+    q: "Mes données sont-elles sécurisées ?",
+    a: "Oui. Les mots de passe sont chiffrés, les sessions sont sécurisées et les données de chaque entreprise sont complètement isolées.",
   },
   {
-    q: "Puis-je exporter mes rapports ?",
-    a: "Oui, tous les rapports sont exportables en PDF professionnel avec votre logo et une mise en page personnalisable.",
+    q: "Puis-je exporter mes rapports ?",
+    a: "Oui, tous les rapports s'exportent en PDF, avec votre logo et une mise en page personnalisable.",
   },
   {
-    q: "Comment fonctionne le pointage ?",
-    a: "Le chef de chantier pointe les ouvriers chaque jour depuis l'application. Les heures et présences sont calculées automatiquement.",
+    q: "Comment fonctionne le pointage ?",
+    a: "Le chef de chantier pointe les ouvriers chaque jour depuis l'application. Les heures et les présences sont calculées automatiquement.",
   },
 ];
 
-function useInView(threshold = 0.15) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setVisible(true); },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return [ref, visible];
-}
-
 export default function LandingFAQ() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [openIndex, setOpenIndex] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
-  const [headerRef, headerVisible] = useInView(0.2);
 
   const toggle = (i) => setOpenIndex(openIndex === i ? null : i);
 
@@ -65,90 +49,76 @@ export default function LandingFAQ() {
   };
 
   return (
-    <section id="faq" className="py-24" style={{ background: '#F8FAFC' }}>
+    <section id="faq" className="bg-beton py-28 md:py-36 scroll-mt-20">
       <style>{`
-        .faq-body {
-          display: grid;
-          grid-template-rows: 0fr;
-          transition: grid-template-rows .35s ease;
-        }
+        .faq-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
         .faq-body.open { grid-template-rows: 1fr; }
         .faq-inner { overflow: hidden; }
+        @media (prefers-reduced-motion: reduce) { .faq-body { transition: none; } }
       `}</style>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div
-          ref={headerRef}
-          className="text-center mb-14"
-          style={{
-            opacity: headerVisible ? 1 : 0,
-            transform: headerVisible ? 'translateY(0)' : 'translateY(24px)',
-            transition: 'opacity .7s ease, transform .7s ease',
-          }}
-        >
-          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#F59E0B' }}>FAQ</span>
-          <h2 className="mt-3 text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
-            Questions fréquentes
-          </h2>
-          <div className="mt-4 mx-auto w-16 h-1.5 rounded-full" style={{ background: '#F59E0B' }} />
-          <p className="mt-6 text-lg text-gray-500">
-            Tout ce que vous devez savoir avant de vous lancer.
-          </p>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 lg:gap-20">
+        <div className="lg:sticky lg:top-28 self-start">
+          <SectionHeading
+            tone="light"
+            index={6}
+            label="Questions fréquentes"
+            title="Avant de vous lancer."
+          />
+          <div className="mt-10 rounded-3xl bg-white border border-ardoise-900/10 p-8">
+            <p className="text-lg font-semibold text-ardoise-900">Une autre question ?</p>
+            <p className="mt-1 text-base text-ardoise-500">Notre équipe vous répond en moins de 24 h.</p>
+            <button
+              type="button"
+              onClick={handleContact}
+              className="lk-focus mt-6 inline-flex items-center h-12 px-6 rounded-full bg-ardoise-900 text-white text-[15px] font-semibold hover:bg-ardoise-700 transition-colors"
+            >
+              Envoyez-nous un message
+            </button>
+          </div>
         </div>
 
-        {/* Accordion */}
-        <div className="space-y-3">
-          {FAQS.map((item, i) => (
-            <div
-              key={i}
-              className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
-                openIndex === i ? 'border-yellow-300 bg-white shadow-lg' : 'border-gray-200 bg-white hover:border-yellow-200 hover:shadow-sm'
-              }`}
-            >
-              <button
-                onClick={() => toggle(i)}
-                className="w-full px-6 py-5 text-left flex items-center justify-between gap-4"
-              >
-                <span className={`font-semibold text-sm leading-snug ${openIndex === i ? 'text-gray-900' : 'text-gray-800'}`}>
-                  {item.q}
-                </span>
+        {/* Accordéon */}
+        <ul className="border-t border-ardoise-900/15">
+          {FAQS.map((item, i) => {
+            const open = openIndex === i;
+            return (
+              <li key={item.q} className="border-b border-ardoise-900/15">
+                <h3>
+                  <button
+                    type="button"
+                    onClick={() => toggle(i)}
+                    aria-expanded={open}
+                    aria-controls={`faq-panel-${i}`}
+                    id={`faq-button-${i}`}
+                    className="lk-focus w-full py-7 text-left flex items-center justify-between gap-6 group"
+                  >
+                    <span className="text-lg sm:text-xl font-semibold leading-snug text-ardoise-900">
+                      {item.q.replace(/ \?$/, ' ?')}
+                    </span>
+                    <span
+                      className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${
+                        open ? 'bg-ardoise-900 border-ardoise-900 text-white' : 'border-ardoise-900/15 text-ardoise-700 group-hover:border-ardoise-900/40'
+                      }`}
+                    >
+                      <Plus className={`w-4 h-4 transition-transform duration-300 motion-reduce:transition-none ${open ? 'rotate-45' : ''}`} />
+                    </span>
+                  </button>
+                </h3>
                 <div
-                  className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-colors duration-200"
-                  style={{
-                    background: openIndex === i ? '#F59E0B' : '#f1f5f9',
-                  }}
+                  id={`faq-panel-${i}`}
+                  role="region"
+                  aria-labelledby={`faq-button-${i}`}
+                  className={`faq-body ${open ? 'open' : ''}`}
                 >
-                  {openIndex === i
-                    ? <Minus className="w-3.5 h-3.5 text-white" />
-                    : <Plus className="w-3.5 h-3.5 text-gray-500" />}
-                </div>
-              </button>
-
-              <div className={`faq-body ${openIndex === i ? 'open' : ''}`}>
-                <div className="faq-inner">
-                  <div className="px-6 pb-5">
-                    <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                  <div className="faq-inner">
+                    <p className="pb-7 pr-16 text-base leading-relaxed text-ardoise-500">{item.a}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Contact CTA */}
-        <div className="mt-12 text-center rounded-3xl p-8 border"
-          style={{ background: 'white', borderColor: '#e2e8f0' }}>
-          <p className="text-base font-bold text-gray-900 mb-1">Vous avez une autre question ?</p>
-          <p className="text-sm text-gray-400 mb-5">Notre équipe vous répond en moins de 24 h.</p>
-          <button
-            onClick={handleContact}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
-            style={{ background: '#F59E0B', color: '#0F172A' }}
-          >
-            Envoyez-nous un message
-          </button>
-        </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       <MessageModal isOpen={showMessageModal} onClose={() => setShowMessageModal(false)} />

@@ -40,7 +40,8 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    if (params.get('admin') === 'login') {
+    // ?login=true : lien « Envoyez-nous un message » de la FAQ pour un visiteur non connecté
+    if (params.get('admin') === 'login' || params.get('login') === 'true') {
       setShowAuthModal(true);
     }
 
@@ -120,22 +121,22 @@ export default function Home() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-nuit">
+        <div className="w-10 h-10 border-4 border-orange-vif border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (status === 'authenticated') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-nuit">
+        <div className="w-10 h-10 border-4 border-orange-vif border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-nuit">
       <Header user={user} onLogout={handleLogout} onShowAuth={() => setShowAuthModal(true)} />
       <LandingHero onGetStarted={handleGetStarted} isAuthenticated={false} />
       <LandingFeatures />

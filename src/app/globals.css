@@ -24,7 +24,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-barlow), 'Segoe UI', system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Design system - couleurs et utilitaires simples */
@@ -311,6 +314,106 @@ html {
   --shadow-neu-flat: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
   --shadow-neu-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
   --shadow-neu-raised: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOKENS BTP — ardoise + orange sécurité (sidebar & navigation)
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* Palette */
+  --ardoise-950: #12171C;
+  --ardoise-900: #1C2329;
+  --ardoise-700: #3A4651;
+  --ardoise-500: #5C6873;
+  --ardoise-400: #808B95;
+  --ardoise-100: #E3E7EA;
+  --ardoise-50:  #F4F6F7;
+  --orange-securite: #EF5B0C;
+
+  /* Typographie */
+  --font-display: var(--font-barlow-condensed), 'Arial Narrow', Arial, sans-serif;
+  --font-ui: var(--font-barlow), 'Segoe UI', system-ui, sans-serif;
+  --font-data: var(--font-plex-mono), ui-monospace, Consolas, monospace;
+
+  /* Espacements (grille 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-sm: 4px;
+  --sb-width: 250px;
+  --sb-item-h: 40px;
+
+  /* Rôles sidebar — clair */
+  --sb-bg: var(--ardoise-50);
+  --sb-border: var(--ardoise-100);
+  --sb-text: var(--ardoise-900);
+  --sb-muted: var(--ardoise-500);
+  --sb-faint: var(--ardoise-400);
+  --sb-hover: #E9ECEE;
+  --sb-active: #FFFFFF;
+  --sb-accent: var(--orange-securite);
+  --sb-on-accent: var(--ardoise-950);
+  --sb-stripe-alt: var(--ardoise-900);
+  --sb-avatar: var(--ardoise-900);
+  --sb-danger: #B42318;
+  --sb-danger-bg: #FBEAE8;
+}
+
+[data-theme="dark"] {
+  --sb-bg: #14191E;
+  --sb-border: #262E35;
+  --sb-text: #E4E8EB;
+  --sb-muted: #9AA4AD;
+  --sb-faint: #6E7881;
+  --sb-hover: #1B2127;
+  --sb-active: #222A31;
+  --sb-accent: #FF7426;
+  --sb-on-accent: var(--ardoise-950);
+  --sb-stripe-alt: var(--ardoise-700);
+  --sb-avatar: var(--ardoise-700);
+  --sb-danger: #FF8A80;
+  --sb-danger-bg: #2A1A1A;
+}
+
+/* Balisage chantier : repère de la page active */
+.sb-hazard {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--sb-accent) 0 4px,
+    var(--sb-stripe-alt) 4px 8px
+  );
+}
+
+/* ═══ LANDING — mouvements et focus ═══ */
+
+/* Focus clavier visible, orange sécurité */
+.lk-focus:focus-visible {
+  outline: 2px solid #FF7426;
+  outline-offset: 3px;
+}
+
+/* Entrée de la hero au chargement */
+@keyframes lk-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lk-rise { animation: lk-rise .8s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Apparition au scroll */
+.lk-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);
+}
+.lk-reveal.is-visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lk-rise { animation: none; }
+  .lk-reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
 }
 
 /* ═══ BOUTONS ═══ */

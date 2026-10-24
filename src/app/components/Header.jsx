@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import NotificationCenter from "./NotificationCenter";
 
+const pillLink =
+  "lk-focus inline-flex items-center gap-2 h-9 px-4 rounded-full text-[15px] font-medium text-craie-2 hover:text-craie hover:bg-white/10 transition-colors";
+const mobileLink =
+  "lk-focus flex items-center gap-3 w-full h-12 px-4 rounded-xl text-base font-medium text-craie-2 hover:text-craie hover:bg-white/[0.06] transition-colors";
+
 export default function Header({ user, onLogout, onShowAuth }) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
@@ -49,7 +54,8 @@ export default function Header({ user, onLogout, onShowAuth }) {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -61,19 +67,32 @@ export default function Header({ user, onLogout, onShowAuth }) {
   const navLinks = [
     { label: "Comment ça marche", anchor: "how-it-works" },
     { label: "Fonctionnalités", anchor: "features" },
+    { label: "Tarifs", anchor: "pricing" },
     { label: "FAQ", anchor: "faq" },
+  ];
+
+  const dashboardHref =
+    session?.user?.role === "admin" ? "/dashboard-projet" : "/dashboard";
+  const dashboardLabel =
+    session?.user?.role === "admin" ? "Mon projet" : "Mes rapports";
+
+  const appLinks = [
+    { label: dashboardLabel, href: dashboardHref, icon: LayoutDashboard },
+    { label: "Chantiers", href: "/chantiers", icon: MapPin },
+    { label: "Équipes", href: "/equipes", icon: Users },
+    { label: "Matériel", href: "/materiel", icon: Wrench },
   ];
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
-          : "bg-white/80 backdrop-blur-sm"
+      className={`sticky top-0 z-40 w-full transition-colors duration-300 ${
+        scrolled || open
+          ? "bg-nuit/[0.96] backdrop-blur-xl border-b border-white/[0.08]"
+          : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="flex items-center justify-between h-[76px] gap-4">
           {/* Logo */}
           <a
             href={
@@ -84,65 +103,38 @@ export default function Header({ user, onLogout, onShowAuth }) {
                   : "/dashboard"
                 : "/"
             }
-            className="flex items-center gap-2.5 group"
+            className="lk-focus shrink-0 rounded-xl bg-white p-1 hover:opacity-90 transition-opacity"
           >
+            {/* Le PNG a un fond blanc : on l'assume dans une pastille claire */}
             <img
               src="/logo_projectra.png"
               alt="PROJECTRA"
-              className="h-16 w-auto group-hover:opacity-90 transition-opacity"
+              className="h-10 w-auto rounded-lg"
             />
           </a>
 
-          {/* Navigation desktop */}
-          <nav className="hidden md:flex items-center gap-1">
-            {isLoggedIn ? (
-              <>
-                <a
-                  href={
-                    session?.user?.role === "admin"
-                      ? "/dashboard-projet"
-                      : "/dashboard"
-                  }
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  {session?.user?.role === "admin"
-                    ? "Mon projet"
-                    : "Mes rapports"}
-                </a>
-                <a
-                  href="/chantiers"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <MapPin className="w-4 h-4" />
-                  Chantiers
-                </a>
-                <a
-                  href="/equipes"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  Équipes
-                </a>
-                <a
-                  href="/materiel"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <Wrench className="w-4 h-4" />
-                  Matériel
-                </a>
-              </>
-            ) : (
-              navLinks.map((link) => (
-                <button
-                  key={link.anchor}
-                  onClick={() => scrollTo(link.anchor)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  {link.label}
-                </button>
-              ))
-            )}
+          {/* Navigation desktop : pilule centrale */}
+          <nav
+            aria-label="Navigation principale"
+            className="hidden md:flex items-center gap-0.5 p-1 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-md"
+          >
+            {isLoggedIn
+              ? appLinks.map(({ label, href, icon: Icon }) => (
+                  <a key={href} href={href} className={pillLink}>
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </a>
+                ))
+              : navLinks.map((link) => (
+                  <button
+                    key={link.anchor}
+                    type="button"
+                    onClick={() => scrollTo(link.anchor)}
+                    className={pillLink}
+                  >
+                    {link.label}
+                  </button>
+                ))}
           </nav>
 
           {/* Actions */}
@@ -152,86 +144,52 @@ export default function Header({ user, onLogout, onShowAuth }) {
             {isLoggedIn ? (
               <div className="relative" ref={userMenuRef}>
                 <button
+                  type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-gray-100 transition-all"
+                  aria-expanded={showUserMenu}
+                  className="lk-focus flex items-center gap-2 h-11 pl-1.5 pr-3 rounded-full border border-white/10 bg-white/[0.06] hover:bg-white/10 transition-colors"
                 >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                    style={{
-                      background: "linear-gradient(135deg, #F97316, #1E3A5F)",
-                    }}
-                  >
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center bg-orange-vif text-nuit text-sm font-semibold">
                     {initials}
-                  </div>
-                  <span className="hidden md:block text-sm font-medium text-gray-700">
+                  </span>
+                  <span className="hidden md:block text-[15px] font-medium text-craie">
                     {displayName}
                   </span>
                   <ChevronDown
-                    className={`hidden md:block w-4 h-4 text-gray-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
+                    className={`hidden md:block w-4 h-4 text-craie-2 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
-                    {/* Profil */}
-                    <div
-                      className="px-4 py-3 border-b border-gray-100"
-                      style={{
-                        background: "linear-gradient(135deg, #fff7ed, #eff6ff)",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #F97316, #1E3A5F)",
-                          }}
-                        >
-                          {initials}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {displayName} {displayLastName}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {displayEmail}
-                          </p>
-                        </div>
+                  <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-white/10 bg-nuit-2 z-50 overflow-hidden">
+                    <div className="px-4 py-4 border-b border-white/[0.08] flex items-center gap-3">
+                      <span className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-vif text-nuit text-sm font-semibold shrink-0">
+                        {initials}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-semibold text-craie truncate">
+                          {displayName} {displayLastName}
+                        </p>
+                        <p className="text-sm text-craie-2 truncate">{displayEmail}</p>
                       </div>
                     </div>
 
-                    {/* Liens dashboard */}
-                    <div className="py-1">
-                      <a
-                        href={
-                          session?.user?.role === "admin"
-                            ? "/dashboard-projet"
-                            : "/dashboard"
-                        }
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-gray-400" />
-                        <span>
-                          {session?.user?.role === "admin"
-                            ? "Mon projet"
-                            : "Mes rapports"}
-                        </span>
+                    <div className="p-1.5">
+                      <a href={dashboardHref} className={mobileLink}>
+                        <LayoutDashboard className="w-4 h-4" />
+                        {dashboardLabel}
                       </a>
                       {session?.user?.role === "admin" && (
-                        <a
-                          href="/dashboard"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <span>Mes rapports</span>
+                        <a href="/dashboard" className={mobileLink}>
+                          <FileText className="w-4 h-4" />
+                          Mes rapports
                         </a>
                       )}
                     </div>
 
-                    {/* Déconnexion */}
-                    <div className="border-t border-gray-100 py-1">
+                    <div className="border-t border-white/[0.08] p-1.5">
                       <button
+                        type="button"
                         onClick={() => {
                           setShowUserMenu(false);
                           if (session?.user) {
@@ -240,10 +198,10 @@ export default function Header({ user, onLogout, onShowAuth }) {
                             onLogout();
                           }
                         }}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                        className="lk-focus flex items-center gap-3 w-full h-12 px-4 rounded-xl text-base font-medium text-[#FF8A80] hover:bg-[#FF8A80]/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Se déconnecter</span>
+                        Se déconnecter
                       </button>
                     </div>
                   </div>
@@ -251,11 +209,9 @@ export default function Header({ user, onLogout, onShowAuth }) {
               </div>
             ) : (
               <button
+                type="button"
                 onClick={onShowAuth}
-                className="hidden sm:inline-flex items-center gap-2 px-5 py-2 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all hover:opacity-90"
-                style={{
-                  background: "linear-gradient(135deg, #F97316, #ea6500)",
-                }}
+                className="lk-focus hidden sm:inline-flex items-center gap-2 h-11 px-6 rounded-full bg-orange-vif text-nuit text-[15px] font-semibold hover:bg-[#FF8A47] transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Se connecter
@@ -264,9 +220,11 @@ export default function Header({ user, onLogout, onShowAuth }) {
 
             {/* Bouton mobile */}
             <button
-              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              type="button"
+              className="lk-focus md:hidden inline-flex items-center justify-center h-11 w-11 rounded-full border border-white/10 bg-white/[0.06] text-craie"
               onClick={() => setOpen((o) => !o)}
-              aria-label="Menu"
+              aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={open}
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -276,65 +234,34 @@ export default function Header({ user, onLogout, onShowAuth }) {
 
       {/* Menu mobile */}
       {open && (
-        <div className="md:hidden border-t border-gray-100 bg-white shadow-lg">
-          <nav className="px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-white/[0.08]">
+          <nav aria-label="Navigation mobile" className="px-5 py-4 space-y-1">
             {isLoggedIn ? (
-              <>
-                <a
-                  href={
-                    session?.user?.role === "admin"
-                      ? "/dashboard-projet"
-                      : "/dashboard"
-                  }
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <LayoutDashboard className="w-5 h-5" />
-                  {session?.user?.role === "admin"
-                    ? "Mon projet"
-                    : "Mes rapports"}
+              appLinks.map(({ label, href, icon: Icon }) => (
+                <a key={href} href={href} className={mobileLink}>
+                  <Icon className="w-5 h-5" />
+                  {label}
                 </a>
-                <a
-                  href="/chantiers"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <MapPin className="w-5 h-5" />
-                  Chantiers
-                </a>
-                <a
-                  href="/equipes"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <Users className="w-5 h-5" />
-                  Équipes
-                </a>
-                <a
-                  href="/materiel"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
-                >
-                  <Wrench className="w-5 h-5" />
-                  Matériel
-                </a>
-              </>
+              ))
             ) : (
               <>
                 {navLinks.map((link) => (
                   <button
                     key={link.anchor}
+                    type="button"
                     onClick={() => scrollTo(link.anchor)}
-                    className="flex items-center w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition-all"
+                    className={mobileLink}
                   >
                     {link.label}
                   </button>
                 ))}
                 <button
+                  type="button"
                   onClick={() => {
                     setOpen(false);
                     onShowAuth();
                   }}
-                  className="flex items-center justify-center gap-2 w-full mt-2 px-5 py-3 text-white rounded-lg font-semibold text-sm shadow-md"
-                  style={{
-                    background: "linear-gradient(135deg, #F97316, #ea6500)",
-                  }}
+                  className="lk-focus flex items-center justify-center gap-2 w-full h-12 mt-3 rounded-full bg-orange-vif text-nuit text-base font-semibold"
                 >
                   <LogIn className="w-4 h-4" />
                   Se connecter

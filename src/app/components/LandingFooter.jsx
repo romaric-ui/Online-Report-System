@@ -33,7 +33,7 @@ const socials = [
     label: 'LinkedIn',
     href: '#',
     icon: (
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/>
         <circle cx="4" cy="4" r="2"/>
       </svg>
@@ -43,7 +43,7 @@ const socials = [
     label: 'Twitter / X',
     href: '#',
     icon: (
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
       </svg>
     ),
@@ -52,67 +52,58 @@ const socials = [
     label: 'Facebook',
     href: '#',
     icon: (
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>
       </svg>
     ),
   },
 ];
 
+const linkClass = 'lk-focus rounded text-[15px] text-craie-2 hover:text-craie transition-colors';
+
 export default function LandingFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer style={{ background: '#0B1120', color: 'white' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
-
-          {/* Brand — 2 cols */}
+    <footer className="bg-[#080B0E] text-craie border-t border-white/[0.06]">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-20 pb-10">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12">
+          {/* Marque */}
           <div className="lg:col-span-2">
-            {/* Logo */}
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-sm"
-                style={{ background: '#F59E0B', color: '#0F172A' }}>
-                S
-              </div>
-              <span className="text-xl font-black tracking-tight text-white">SGTEC</span>
+            <div className="flex items-center gap-2.5">
+              <span aria-hidden="true" className="w-3 h-3 bg-orange-vif" />
+              <span className="font-display font-bold text-2xl uppercase tracking-[0.06em]">SGTEC</span>
             </div>
-            <p className="text-sm leading-relaxed mb-6 max-w-xs" style={{ color: '#64748b' }}>
-              La plateforme tout-en-un pour piloter vos chantiers BTP. Suivi, équipes, budget, planning et sécurité — depuis n'importe où.
+            <p className="mt-5 text-base leading-relaxed max-w-sm text-craie-2">
+              La plateforme pour piloter vos chantiers BTP : suivi, équipes, budget, planning et sécurité, où que vous soyez.
             </p>
 
-            {/* Contact */}
-            <div className="space-y-2.5 mb-6">
-              <a href="mailto:sgtec-gc@groupe-imo.com"
-                className="flex items-center gap-2.5 text-sm transition-colors duration-200 hover:text-white"
-                style={{ color: '#64748b' }}>
-                <Mail className="w-4 h-4 flex-shrink-0" style={{ color: '#F59E0B' }} />
-                sgtec-gc@groupe-imo.com
-              </a>
-              <a href="tel:+33619996734"
-                className="flex items-center gap-2.5 text-sm transition-colors duration-200 hover:text-white"
-                style={{ color: '#64748b' }}>
-                <Phone className="w-4 h-4 flex-shrink-0" style={{ color: '#F59E0B' }} />
-                +33 6 19 99 67 34
-              </a>
-              <div className="flex items-center gap-2.5 text-sm" style={{ color: '#64748b' }}>
-                <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: '#F59E0B' }} />
+            <ul className="mt-8 space-y-3">
+              <li>
+                <a href="mailto:sgtec-gc@groupe-imo.com" className={`${linkClass} inline-flex items-center gap-3`}>
+                  <Mail className="w-4 h-4 shrink-0 text-orange-vif" />
+                  sgtec-gc@groupe-imo.com
+                </a>
+              </li>
+              <li>
+                <a href="tel:+33619996734" className={`${linkClass} inline-flex items-center gap-3`}>
+                  <Phone className="w-4 h-4 shrink-0 text-orange-vif" />
+                  +33 6 19 99 67 34
+                </a>
+              </li>
+              <li className="flex items-center gap-3 text-[15px] text-craie-2">
+                <MapPin className="w-4 h-4 shrink-0 text-orange-vif" />
                 Cotonou, Bénin · Paris, France
-              </div>
-            </div>
+              </li>
+            </ul>
 
-            {/* Socials */}
-            <div className="flex items-center gap-3">
+            <div className="mt-8 flex items-center gap-2">
               {socials.map(({ label, href, icon }) => (
                 <a
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
-                  style={{ background: '#1E293B', color: '#64748b' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#F59E0B'; e.currentTarget.style.color = '#0F172A'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#1E293B'; e.currentTarget.style.color = '#64748b'; }}
+                  className="lk-focus w-10 h-10 rounded-full flex items-center justify-center border border-white/10 text-craie-2 hover:bg-orange-vif hover:border-orange-vif hover:text-nuit transition-colors"
                 >
                   {icon}
                 </a>
@@ -120,43 +111,28 @@ export default function LandingFooter() {
             </div>
           </div>
 
-          {/* Nav columns */}
+          {/* Colonnes */}
           {columns.map((col) => (
-            <div key={col.title}>
-              <h4 className="text-sm font-bold text-white mb-4">{col.title}</h4>
-              <ul className="space-y-2.5">
+            <nav key={col.title} aria-label={col.title}>
+              <h4 className="font-data text-[13px] uppercase tracking-[0.14em] text-craie-3">{col.title}</h4>
+              <ul className="mt-5 space-y-3">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm transition-colors duration-200 hover:text-white"
-                      style={{ color: '#64748b' }}
-                    >
-                      {link.label}
-                    </a>
+                    <a href={link.href} className={linkClass}>{link.label}</a>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 
-        {/* Bottom bar */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-3 pt-8"
-          style={{ borderTop: '1px solid rgba(255,255,255,.07)' }}>
-          <p className="text-sm" style={{ color: '#475569' }}>
-            © {currentYear} SGTEC — L'œil du bâtiment. Tous droits réservés.
+        <div className="mt-16 pt-8 flex flex-col md:flex-row justify-between md:items-center gap-4 border-t border-white/[0.08]">
+          <p className="text-sm text-craie-3">
+            © {currentYear} SGTEC — L&apos;œil du bâtiment. Tous droits réservés.
           </p>
-          <div className="flex items-center gap-4">
-
-            <a
-              href="/admin-login"
-              className="text-xs transition-colors duration-200 hover:text-white"
-              style={{ color: '#334155' }}
-            >
-              Vous êtes administrateur ?
-            </a>
-          </div>
+          <a href="/admin-login" className="lk-focus rounded text-sm text-craie-3 hover:text-craie transition-colors">
+            Vous êtes administrateur ?
+          </a>
         </div>
       </div>
     </footer>
