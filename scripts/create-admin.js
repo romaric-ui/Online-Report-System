@@ -1,6 +1,7 @@
 // scripts/create-admin.js
 // Script pour créer un utilisateur administrateur
-// Usage : node --experimental-modules scripts/create-admin.js
+// Usage : node scripts/create-admin.js
+// Lit ADMIN_PASSWORD (obligatoire, 12 caractères minimum) et ADMIN_EMAIL (facultatif) dans .env.local
 
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
@@ -17,6 +18,11 @@ const dbConfig = {
 };
 
 async function createAdmin() {
+  const motDePasse = process.env.ADMIN_PASSWORD;
+  if (!motDePasse || motDePasse.length < 12) {
+    throw new Error('Définissez ADMIN_PASSWORD (12 caractères minimum) dans .env.local avant de lancer le script.');
+  }
+
   let connection;
 
   try {
@@ -27,8 +33,8 @@ async function createAdmin() {
     const adminData = {
       nom: 'SGTEC',
       prenom: 'Administrateur',
-      email: 'admin@sgtec.com',
-      mot_de_passe: 'Admin@123', // Mot de passe par défaut
+      email: process.env.ADMIN_EMAIL || 'admin@sgtec.com',
+      mot_de_passe: motDePasse,
       id_role: 1 // Role Administrateur
     };
 
@@ -71,10 +77,8 @@ async function createAdmin() {
     console.log('\n📋 Informations de connexion :');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📧 Email      :', adminData.email);
-    console.log('🔑 Mot de passe :', adminData.mot_de_passe);
     console.log('🔗 URL Admin  :', 'http://localhost:3000/admin/users');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('\n⚠️  IMPORTANT : Changez ce mot de passe après la première connexion !');
 
   } catch (error) {
     console.error('❌ Erreur:', error.message);

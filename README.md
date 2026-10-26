@@ -153,11 +153,11 @@ mysql -u root -p onlinereports < database/migrations/011_invitations.sql
 ```
 
 ### 5. Créer le compte administrateur
+Renseigner d'abord `ADMIN_PASSWORD` (12 caractères minimum) dans `.env.local`, et `ADMIN_EMAIL` si l'adresse n'est pas `admin@sgtec.com`. Si le compte existe déjà, son mot de passe est remplacé.
+
 ```bash
 node scripts/create-admin.js
 ```
-
-Compte par défaut : `admin@sgtec.com` / `Admin@123`
 
 ### 6. Lancer l'application
 ```bash
