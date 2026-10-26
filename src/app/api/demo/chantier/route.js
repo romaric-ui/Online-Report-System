@@ -1,5 +1,3 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/options.js';
 import { successResponse, errorResponse } from '../../../../../lib/api-response.js';
 import { connectDB } from '../../../../../lib/database.js';
 
@@ -9,7 +7,7 @@ const apiHandler = (handler) => async (request, context) => {
   catch (error) { return errorResponse(error, request); }
 };
 
-async function handleGET(request) {
+async function handleGET() {
   const chantierId = process.env.DEMO_CHANTIER_ID || '7';
   const db = await connectDB();
 

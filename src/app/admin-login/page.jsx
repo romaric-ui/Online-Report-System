@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-2xl shadow-lg mb-5">
               <Shield className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1">Administration SGTEC</h1>
+            <h1 className="text-2xl font-bold text-white mb-1">Administration PROJECTRA</h1>
             <p className="text-sm text-gray-500">
               Accès réservé aux administrateurs de la plateforme
             </p>

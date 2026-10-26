@@ -40,7 +40,7 @@ async function handlePUT(request, { params }) {
   }
 
   const body = await request.json();
-  const { id_rapport, id_utilisateur, date_creation, ...updateData } = body;
+  const updateData = body;
 
   const safeFields = Object.keys(updateData).filter((key) => ALLOWED_COLUMNS.has(key));
   if (safeFields.length === 0) throw new ValidationError('Aucune donnée valide à mettre à jour');

@@ -8,7 +8,7 @@ import { SectionHeading } from './LandingKit';
 const FAQS = [
   {
     q: "Comment fonctionne l'essai gratuit ?",
-    a: "Vous avez 7 jours pour tester SGTEC. Une carte bancaire est demandée à l'inscription, mais vous n'êtes débité qu'à la fin de la période d'essai.",
+    a: "Vous avez 7 jours pour tester PROJECTRA. Une carte bancaire est demandée à l'inscription, mais vous n'êtes débité qu'à la fin de la période d'essai.",
   },
   {
     q: "L'application fonctionne-t-elle hors connexion ?",

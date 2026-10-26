@@ -1,10 +1,8 @@
 // API pour gérer l'upload des images de couverture
-import { NextRequest } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { saveImageCouverture, updateImageCouverture } from '../../../../../lib/database';
-import { validateReportData } from '../../../../../lib/security';
 
 // Configuration des types d'images acceptés (GIF supprimé)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];

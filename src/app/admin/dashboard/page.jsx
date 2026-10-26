@@ -130,7 +130,7 @@ export default function AdminDashboard() {
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
             </div>
             <div>
-              <h1 className="text-white font-bold text-xl tracking-tight">SGTEC</h1>
+              <h1 className="text-white font-bold text-xl tracking-tight">PROJECTRA</h1>
               <p className="text-slate-400 text-xs font-medium">Administration</p>
             </div>
           </div>

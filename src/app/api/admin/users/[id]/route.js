@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/options';
 import { userRepo } from '../../../../../../lib/repositories/user.repository.js';
 import { successResponse, errorResponse } from '../../../../../../lib/api-response.js';
-import { AuthenticationError, AuthorizationError, ValidationError, NotFoundError } from '../../../../../../lib/errors/index.js';
+import { AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 import { validateId } from '../../../../../../lib/security';
 
 const apiHandler = (handler) => async (request, context) => {

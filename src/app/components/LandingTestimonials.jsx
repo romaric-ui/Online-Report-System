@@ -6,7 +6,7 @@ const TESTIMONIALS = [
     name: 'Koffi A.',
     role: 'Chef de chantier',
     city: 'Cotonou',
-    content: "SGTEC a révolutionné notre suivi de chantier. On gagne 2 heures par jour sur les rapports. Je ne pourrais plus m'en passer.",
+    content: "PROJECTRA a révolutionné notre suivi de chantier. On gagne 2 heures par jour sur les rapports. Je ne pourrais plus m'en passer.",
     initials: 'KA',
   },
   {

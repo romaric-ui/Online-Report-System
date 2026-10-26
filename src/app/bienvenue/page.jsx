@@ -33,7 +33,7 @@ export default function BienvenuePage() {
       <div className="max-w-2xl w-full space-y-6">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-3">
-            Bienvenue sur SGTEC
+            Bienvenue sur PROJECTRA
           </h1>
           <p className="text-slate-500 text-lg">Que souhaitez-vous faire ?</p>
         </div>

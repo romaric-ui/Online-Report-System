@@ -147,7 +147,7 @@ function AbonnementInner() {
 
   const handleChoosePlan = async (plan) => {
     if (plan.cta === 'Nous contacter') {
-      window.location.href = 'mailto:contact@sgtec.com?subject=Plan Enterprise SGTEC';
+      window.location.href = 'mailto:contact@projectra.com?subject=Plan Enterprise PROJECTRA';
       return;
     }
     setCheckoutError('');

@@ -7,7 +7,7 @@ import { documentRepo } from '../../../../../../lib/repositories/document.reposi
 import { chantierRepo } from '../../../../../../lib/repositories/chantier.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../../../lib/api-response.js';
 import { requireTenant, requireRole } from '../../../../../../lib/tenant.js';
-import { AuthenticationError, AuthorizationError, ValidationError, NotFoundError } from '../../../../../../lib/errors/index.js';
+import { AuthenticationError, AuthorizationError, ValidationError } from '../../../../../../lib/errors/index.js';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 Mo
 
@@ -106,6 +106,10 @@ async function handlePOST(request, { params }) {
   const ext = path.extname(file.name).slice(1).toLowerCase();
   if (!ALLOWED_EXTENSIONS.has(ext)) {
     throw new ValidationError(`Format non accepté. Formats valides : ${[...ALLOWED_EXTENSIONS].join(', ')}`);
+  }
+  // Le navigateur peut envoyer un type vide (DWG) : on ne refuse qu'un type connu hors liste
+  if (file.type && !ALLOWED_MIME.has(file.type)) {
+    throw new ValidationError('Type de fichier non accepté');
   }
 
   // Créer le dossier de destination

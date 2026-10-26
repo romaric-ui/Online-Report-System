@@ -15,7 +15,7 @@ const apiHandler = (handler) => async (request, context) => {
   }
 };
 
-async function handlePOST(request) {
+async function handlePOST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 

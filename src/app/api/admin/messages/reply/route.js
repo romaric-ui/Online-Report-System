@@ -53,9 +53,9 @@ async function handlePOST(request) {
   }
 
   await transporter.sendMail({
-    from: `"Société de Gestion des Travaux et Encadrement de chantier - Support" <${process.env.EMAIL_USER}>`,
+    from: `"PROJECTRA - Support" <${process.env.EMAIL_USER}>`,
     to: userEmail,
-    subject: `Re: ${originalSubject || 'Votre message'} - Société de Gestion des Travaux et Encadrement de chantier`,
+    subject: `Re: ${originalSubject || 'Votre message'} - PROJECTRA`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -158,7 +158,7 @@ async function handlePOST(request) {
         <div class="container">
           <div class="header">
             <h1>📬 Réponse de l'Administrateur</h1>
-            <p>SGTEC - Système de Gestion Technique</p>
+            <p>PROJECTRA — Pilotez. Planifiez. Réalisez. Réussissez.</p>
           </div>
           <div class="content">
             <p class="greeting">Bonjour ${userName || 'Utilisateur'},</p>
@@ -180,14 +180,14 @@ async function handlePOST(request) {
               n'hésitez pas à nous contacter à nouveau.
             </p>
             <div class="signature">
-              <p><strong>L'équipe SGTEC</strong></p>
+              <p><strong>L'équipe PROJECTRA</strong></p>
               <p>Support Technique</p>
               <p style="font-size: 13px; color: #6c757d;">📧 ${process.env.EMAIL_USER}</p>
             </div>
           </div>
           <div class="footer">
-            <p><strong>SGTEC - Système de Gestion Technique</strong></p>
-            <p>© 2025 SGTEC. Tous droits réservés.</p>
+            <p><strong>PROJECTRA — Pilotez. Planifiez. Réalisez. Réussissez.</strong></p>
+            <p>© ${new Date().getFullYear()} PROJECTRA. Tous droits réservés.</p>
             <p style="font-size: 12px; margin-top: 15px;">Cet email a été envoyé en réponse à votre demande de support.</p>
           </div>
         </div>

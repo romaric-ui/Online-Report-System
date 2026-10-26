@@ -13,7 +13,7 @@ const apiHandler = (handler) => async (request, context) => {
   }
 };
 
-async function handleGET(request) {
+async function handleGET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 

@@ -34,7 +34,7 @@ export default function AppLayout({ children }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-gray-900">SGTEC</span>
+          <span className="font-bold text-gray-900">PROJECTRA</span>
         </div>
 
         <div className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-6 py-6">

@@ -103,7 +103,7 @@ export default function AppSidebar({ onNavigate }) {
       <div className="h-14 shrink-0 px-4 flex items-center justify-between border-b border-sb-border">
         <span className="flex items-center gap-2">
           <span aria-hidden="true" className="w-2.5 h-2.5 bg-sb-accent" />
-          <span className="font-display font-bold text-display-md uppercase tracking-[0.06em]">SGTEC</span>
+          <span className="font-display font-bold text-display-md uppercase tracking-[0.06em]">PROJECTRA</span>
         </span>
         <ThemeToggle
           className={`w-8 h-8 rounded-sb flex items-center justify-center shrink-0 border border-transparent hover:bg-sb-hover hover:border-sb-border transition-colors motion-reduce:transition-none ${focusRing}`}

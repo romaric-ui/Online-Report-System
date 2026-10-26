@@ -80,9 +80,9 @@ export async function POST(request) {
     
     // Options de l'email
     const mailOptions = {
-      from: `"Société de Gestion des Travaux et Encadrement de chantier - Support" <${process.env.EMAIL_USER || process.env.GMAIL_USER}>`,
+      from: `"PROJECTRA - Support" <${process.env.EMAIL_USER || process.env.GMAIL_USER}>`,
       to: cleanEmail,
-      subject: 'Code de réinitialisation de mot de passe - Société de Gestion des Travaux et Encadrement de chantier',
+      subject: 'Code de réinitialisation de mot de passe - PROJECTRA',
       html: `
         <!DOCTYPE html>
         <html>
@@ -103,11 +103,11 @@ export async function POST(request) {
           <div class="container">
             <div class="header">
               <h1>🔑 Réinitialisation de mot de passe</h1>
-              <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Société de Gestion des Travaux et Encadrement de chantier</p>
+              <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">PROJECTRA</p>
             </div>
             <div class="content">
               <p>Bonjour ${user.prenom} ${user.nom},</p>
-              <p>Vous avez demandé la réinitialisation de votre mot de passe sur la plateforme <strong>Société de Gestion des Travaux et Encadrement de chantier</strong>.</p>
+              <p>Vous avez demandé la réinitialisation de votre mot de passe sur la plateforme <strong>PROJECTRA</strong>.</p>
               
               <p>Utilisez le code de vérification ci-dessous pour réinitialiser votre mot de passe :</p>
               
@@ -125,18 +125,18 @@ export async function POST(request) {
                 🔒 <strong>Sécurité :</strong> Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe actuel reste inchangé.
               </div>
               
-              <p>Cordialement,<br><strong>L'équipe Société de Gestion des Travaux et Encadrement de chantier</strong><br>Support Technique</p>
+              <p>Cordialement,<br><strong>L'équipe PROJECTRA</strong><br>Support Technique</p>
             </div>
             <div class="footer">
               <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
-              <p>&copy; 2025 Société de Gestion des Travaux et Encadrement de chantier. Tous droits réservés.</p>
+              <p>&copy; ${new Date().getFullYear()} PROJECTRA. Tous droits réservés.</p>
             </div>
           </div>
         </body>
         </html>
       `,
       text: `
-        Réinitialisation de mot de passe - Société de Gestion des Travaux et Encadrement de chantier
+        Réinitialisation de mot de passe - PROJECTRA
         
         Bonjour ${user.prenom} ${user.nom},
         
@@ -149,7 +149,7 @@ export async function POST(request) {
         Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
         
         Cordialement,
-        L'équipe Société de Gestion des Travaux et Encadrement de chantier
+        L'équipe PROJECTRA
       `
     };
     
@@ -171,4 +171,4 @@ export async function POST(request) {
       error: 'Erreur lors de l\'envoi du lien de réinitialisation'
     }, { status: 500 });
   }
-}
+}

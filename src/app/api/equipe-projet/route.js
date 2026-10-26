@@ -15,7 +15,7 @@ const apiHandler = (handler) => async (request, context) => {
 };
 
 // GET — liste des membres de l'entreprise
-async function handleGET(request) {
+async function handleGET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
 

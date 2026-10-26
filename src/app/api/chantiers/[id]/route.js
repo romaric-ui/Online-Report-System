@@ -38,7 +38,7 @@ async function handleGET(request, { params }) {
 
   const entrepriseId = requireTenant(session);
   const chantierId = await parseChantierId(params);
-  const chantier = await verifyChantierEntreprise(chantierId, entrepriseId);
+  await verifyChantierEntreprise(chantierId, entrepriseId);
   const chantierWithStats = await chantierRepo.findWithStats(chantierId);
 
   return successResponse(chantierWithStats);

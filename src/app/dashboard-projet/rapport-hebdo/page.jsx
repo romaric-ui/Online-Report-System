@@ -51,7 +51,7 @@ async function genererPDFHebdo(data) {
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text(`Page ${i} / ${pages}`, W / 2, H - 6, { align: 'center' });
-      doc.text('SGTEC — Résumé hebdomadaire', 14, H - 6);
+      doc.text('PROJECTRA — Résumé hebdomadaire', 14, H - 6);
       doc.text(dateGen, W - 14, H - 6, { align: 'right' });
       doc.setTextColor(0);
     }

@@ -139,7 +139,7 @@ export default function CreateAdminPage() {
               <Shield className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-white font-bold text-xl">SGTEC</h1>
+              <h1 className="text-white font-bold text-xl">PROJECTRA</h1>
               <p className="text-slate-400 text-xs font-medium">Administration</p>
             </div>
           </div>

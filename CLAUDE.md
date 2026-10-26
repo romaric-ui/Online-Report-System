@@ -45,7 +45,7 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 
 ### Polices
 - **Barlow** (`font-ui`, police par défaut du `body`) : texte courant et titres. Titres en 600, interlignage serré (`leading-[0.95]` à `[1.08]`), approche négative (`tracking-[-0.02em]` à `[-0.035em]`).
-- **Barlow Condensed** (`font-display`) : réservée au logotype « SGTEC » et aux titres de groupes de la sidebar, en majuscules espacées.
+- **Barlow Condensed** (`font-display`) : réservée au logotype texte (aujourd'hui « SGTEC », à passer en « PROJECTRA ») et aux titres de groupes de la sidebar, en majuscules espacées.
 - **IBM Plex Mono** (`font-data`) : surtitres et métadonnées (repères « 02 / 06 », emails, petites étiquettes en majuscules).
 - Tailles : les échelles `text-xs` et `text-sm` ont été remontées à 13 px et 15 px pour la lisibilité. Ne pas descendre sous 12 px. Sidebar : `text-ui-xs` 12, `text-ui-sm` 14, `text-ui-base` 15.
 
@@ -69,6 +69,6 @@ Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) p
 - Rédaction : français, phrases à la casse normale, verbes d'action sur les boutons (« Démarrer gratuitement », « Envoyez-nous un message »). Espace insécable avant « ? », « ! », « : ».
 
 ### Points ouverts
-- La marque n'est pas tranchée : logo PROJECTRA (`public/logo_projectra.png`, fond blanc, affiché dans une pastille blanche) contre SGTEC dans le reste du site.
+- Marque : la plateforme s'appelle **PROJECTRA** (en majuscules ; logo `public/logo_projectra.png`, fond blanc, affiché dans une pastille blanche). Les mentions « SGTEC » et « Société de Gestion des Travaux… » restent à remplacer.
 - Landing, dans l'ordre : `LandingHero` (4 sections plein écran, chacune avec sa composition), `LandingGallery`, `LandingFeatures`, `LandingFeatureShowcase`, `LandingTestimonials`, `LandingPricing`, `LandingFAQ`, `LandingCTA`. Les fichiers de `public/images/` gardent leur nom d'origine (« Capture d'écran … ») : les référencer avec `encodeURI`.
 - Les photos de `public/images/` sont des captures d'écran provisoires (basse définition, droits non vérifiés, filigrane rogné sur 164750) : à remplacer avant la mise en ligne.

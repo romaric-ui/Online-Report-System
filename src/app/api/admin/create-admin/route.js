@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/options';
 import { userRepo } from '../../../../../lib/repositories/user.repository.js';
 import { successResponse, createdResponse, errorResponse } from '../../../../../lib/api-response.js';
-import { AuthenticationError, AuthorizationError, ValidationError, ConflictError } from '../../../../../lib/errors/index.js';
+import { AuthorizationError, ValidationError, ConflictError } from '../../../../../lib/errors/index.js';
 import { validateEmail, validatePassword, validateName } from '../../../../../lib/security';
 import bcrypt from 'bcryptjs';
 

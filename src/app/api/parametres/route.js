@@ -10,7 +10,7 @@ const apiHandler = (handler) => async (request, context) => {
   catch (error) { return errorResponse(error, request); }
 };
 
-async function handleGET(request) {
+async function handleGET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new AuthenticationError('Non authentifié');
   const entrepriseId = requireTenant(session);

@@ -119,7 +119,7 @@ async function handlePOST(request) {
         hashedPassword,
         'credentials',
         null,
-        2,           // id_role = 2 (Utilisateur) — réservé au super admin SGTEC d'avoir id_role = 1
+        2,           // id_role = 2 (Utilisateur) — réservé au super admin PROJECTRA d'avoir id_role = 1
         1,           // id_role_entreprise = 1 (Admin de son entreprise)
         'actif',
         0,           // email_verified = 0, vérifié après OTP

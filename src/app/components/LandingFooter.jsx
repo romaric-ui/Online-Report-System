@@ -72,7 +72,7 @@ export default function LandingFooter() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2.5">
               <span aria-hidden="true" className="w-3 h-3 bg-orange-vif" />
-              <span className="font-display font-bold text-2xl uppercase tracking-[0.06em]">SGTEC</span>
+              <span className="font-display font-bold text-2xl uppercase tracking-[0.06em]">PROJECTRA</span>
             </div>
             <p className="mt-5 text-base leading-relaxed max-w-sm text-craie-2">
               La plateforme pour piloter vos chantiers BTP : suivi, équipes, budget, planning et sécurité, où que vous soyez.
@@ -128,7 +128,7 @@ export default function LandingFooter() {
 
         <div className="mt-16 pt-8 flex flex-col md:flex-row justify-between md:items-center gap-4 border-t border-white/[0.08]">
           <p className="text-sm text-craie-3">
-            © {currentYear} SGTEC — L&apos;œil du bâtiment. Tous droits réservés.
+            © {currentYear} PROJECTRA. Tous droits réservés.
           </p>
           <a href="/admin-login" className="lk-focus rounded text-sm text-craie-3 hover:text-craie transition-colors">
             Vous êtes administrateur ?

@@ -26,7 +26,7 @@ export default function LandingCTA({ onGetStarted, isAuthenticated }) {
         <p className="mt-7 max-w-xl text-lg sm:text-xl font-medium leading-relaxed text-craie">
           {isAuthenticated
             ? 'Accédez à votre tableau de bord pour piloter vos projets en temps réel.'
-            : 'Rejoignez les professionnels du BTP qui gagnent du temps chaque jour avec SGTEC.'}
+            : 'Rejoignez les professionnels du BTP qui gagnent du temps chaque jour avec PROJECTRA.'}
         </p>
 
         <div className="mt-12 flex flex-col sm:flex-row sm:items-center gap-5">
