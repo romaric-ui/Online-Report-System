@@ -40,8 +40,17 @@ Direction : sobre, professionnel, dense mais lisible. Palette BTP : gris ardoise
 | `craie` / `craie-2` / `craie-3` | `#ECEFF1` / `#A7B0B8` / `#76818B` | Texte sur fond sombre (principal / secondaire / discret) |
 | `beton` / `beton-2` | `#E6E9EB` / `#F2F4F5` | Sections claires de la landing |
 | `sb-*` | variables CSS | Rôles de la sidebar, basculent clair/sombre automatiquement |
+| `app-*` | variables CSS | Rôles du contenu de l'app (`app-bg`, `app-surface`, `app-subtle`, `app-border`, `app-text`, `app-muted`, `app-faint`, `app-accent`, `app-on-accent`, `app-accent-soft`, `app-accent-text`, `app-danger`, `app-success`…), basculent clair/sombre |
+| `--st-*` | variables CSS | Couleurs de statut, utilisées par `StatutBadge.jsx` |
 
-Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) pour que les modificateurs d'opacité fonctionnent (`bg-nuit/90`, `bg-securite/10`). Seuls les rôles `sb-*` passent par des variables, car ils changent avec le thème.
+Les couleurs de marque sont en hex dans la config Tailwind (et non en `var()`) pour que les modificateurs d'opacité fonctionnent (`bg-nuit/90`, `bg-securite/10`). Seuls les rôles `sb-*` et `app-*` passent par des variables, car ils changent avec le thème : les modificateurs d'opacité (`bg-app-accent/10`) n'y fonctionnent pas, utiliser les variantes `-soft`.
+
+### Pages de l'app (hors landing)
+- Le mode sombre est choisi par l'utilisateur et doit fonctionner partout : n'utiliser que les rôles `app-*` (jamais `slate`, `gray`, `blue`, `bg-white`…).
+- Statuts de tâches et de chantiers : toujours `StatutBadge` (À faire / Planifié ardoise, En cours orange, En attente / En pause ambre, Terminé vert, En retard / Annulé rouge).
+- Boutons et champs : classes globales `btn btn-primary`, `btn btn-soft`, `btn-danger`, `input-neu`, `select-neu`, `textarea-neu`, `input-neu-label`, `card-neu` (noms hérités, désormais au style BTP).
+- Les anciennes variables `--bg-*`, `--color-*` et `--shadow-neu-*` sont raccordées aux rôles `app-*` dans `globals.css` ; à retirer quand plus aucune page ne les lit.
+- Contraste vérifié (AA, 4,5:1) pour tous les rôles texte et statuts, en clair et en sombre.
 
 ### Polices
 - **Barlow** (`font-ui`, police par défaut du `body`) : texte courant et titres. Titres en 600, interlignage serré (`leading-[0.95]` à `[1.08]`), approche négative (`tracking-[-0.02em]` à `[-0.035em]`).

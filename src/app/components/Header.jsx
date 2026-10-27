@@ -163,7 +163,7 @@ export default function Header({ user, onLogout, onShowAuth }) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {isLoggedIn && <NotificationCenter />}
+            {isLoggedIn && <NotificationCenter surFondSombre />}
 
             {isLoggedIn ? (
               <div className="relative" ref={userMenuRef}>

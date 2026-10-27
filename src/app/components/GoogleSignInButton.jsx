@@ -24,14 +24,15 @@ const GoogleSignInButton = ({ className = "" }) => {
   return (
     <div className="w-full">
       {error && (
-        <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+        <div role="alert" className="mb-3 p-3 bg-app-danger-soft text-app-danger rounded-lg text-sm">
           {error}
         </div>
       )}
       <button
+        type="button"
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className={`w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`w-full flex items-center justify-center gap-3 bg-white border border-[#DADCE0] hover:bg-[#F8FAFB] text-[#1F1F1F] font-medium py-3 px-6 rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
       <svg 
         width="20" 

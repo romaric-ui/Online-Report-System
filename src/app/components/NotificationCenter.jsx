@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 
-export default function NotificationCenter() {
+// surFondSombre : bouton aux couleurs de l'en-tête de la landing (fond nuit)
+export default function NotificationCenter({ surFondSombre = false }) {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -121,18 +122,6 @@ export default function NotificationCenter() {
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'message':
-        return 'bg-blue-100 text-blue-800';
-      case 'rapport':
-        return 'bg-green-100 text-green-800';
-      case 'systeme':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-purple-100 text-purple-800';
-    }
-  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -154,11 +143,15 @@ export default function NotificationCenter() {
       {/* Bouton cloche */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        aria-label={nonLuesCount > 0 ? `Notifications, ${nonLuesCount} non lue${nonLuesCount > 1 ? 's' : ''}` : 'Notifications'}
+        aria-expanded={isOpen}
+        className={surFondSombre
+          ? 'lk-focus relative w-11 h-11 flex items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-craie-2 hover:text-craie hover:bg-white/10 transition-colors'
+          : 'relative w-10 h-10 flex items-center justify-center text-app-muted hover:text-app-text hover:bg-app-hover rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-app-accent'}
       >
-        <Bell className="w-6 h-6" />
+        <Bell className="w-5 h-5" />
         {nonLuesCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+          <span className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 font-data text-[12px] leading-none font-medium text-app-on-accent bg-app-accent rounded-full">
             {nonLuesCount > 9 ? '9+' : nonLuesCount}
           </span>
         )}
@@ -174,64 +167,64 @@ export default function NotificationCenter() {
           />
 
           {/* Panneau */}
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl z-50 max-h-[600px] flex flex-col">
+          <div className="absolute right-0 mt-2 w-[min(24rem,calc(100vw-2rem))] bg-app-surface text-app-text border border-app-border rounded-xl z-50 max-h-[600px] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-app-border">
+              <h3 className="text-base font-semibold">
                 Notifications
                 {nonLuesCount > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    ({nonLuesCount} non lue{nonLuesCount > 1 ? 's' : ''})
+                  <span className="ml-2 font-data text-xs font-normal text-app-faint">
+                    {nonLuesCount} non lue{nonLuesCount > 1 ? 's' : ''}
                   </span>
                 )}
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                aria-label="Fermer les notifications"
+                className="p-1.5 rounded-lg text-app-faint hover:text-app-text hover:bg-app-hover"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Filtres et actions */}
-            <div className="flex items-center justify-between p-3 border-b bg-gray-50">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    filter === 'all'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  Toutes
-                </button>
-                <button
-                  onClick={() => setFilter('unread')}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    filter === 'unread'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  Non lues
-                </button>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-app-border bg-app-subtle">
+              <div className="flex gap-1" role="group" aria-label="Filtrer les notifications">
+                {[
+                  { value: 'all', label: 'Toutes' },
+                  { value: 'unread', label: 'Non lues' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => setFilter(value)}
+                    aria-pressed={filter === value}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      filter === value
+                        ? 'bg-app-surface text-app-text font-semibold border border-app-border'
+                        : 'text-app-muted border border-transparent hover:text-app-text'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 {nonLuesCount > 0 && (
                   <button
                     onClick={marquerToutesLues}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+                    className="p-1.5 rounded-md text-app-muted hover:text-app-text hover:bg-app-hover"
                     title="Tout marquer comme lu"
+                    aria-label="Tout marquer comme lu"
                   >
                     <CheckCheck className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   onClick={supprimerToutesLues}
-                  className="text-xs text-red-600 hover:text-red-800"
+                  className="p-1.5 rounded-md text-app-muted hover:text-app-danger hover:bg-app-danger-soft"
                   title="Supprimer les notifications lues"
+                  aria-label="Supprimer les notifications lues"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -241,53 +234,52 @@ export default function NotificationCenter() {
             {/* Liste des notifications */}
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="flex items-center justify-center p-8" role="status" aria-label="Chargement">
+                  <div className="animate-spin rounded-full h-7 w-7 border-2 border-app-border border-t-app-accent"></div>
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-8 text-gray-500">
-                  <Bell className="w-12 h-12 mb-2 opacity-50" />
+                <div className="flex flex-col items-center justify-center p-8 text-app-faint">
+                  <Bell className="w-10 h-10 mb-2" />
                   <p className="text-sm">Aucune notification</p>
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-app-border">
                   {notifications.map((notif) => (
                     <div
                       key={notif.id_notification}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${
-                        !notif.lu ? 'bg-blue-50' : ''
+                      className={`relative p-4 transition-colors hover:bg-app-hover ${
+                        !notif.lu ? 'bg-app-accent-soft' : ''
                       }`}
                     >
+                      {!notif.lu && (
+                        <span aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-[3px] bg-app-accent" />
+                      )}
                       <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-full ${getTypeColor(notif.type_notification)} flex items-center justify-center text-lg`}>
+                        <div aria-hidden="true" className="flex-shrink-0 w-9 h-9 rounded-lg bg-app-subtle border border-app-border flex items-center justify-center text-base">
                           {getTypeIcon(notif.type_notification)}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className={`text-sm font-medium text-gray-900 ${!notif.lu ? 'font-semibold' : ''}`}>
-                              {notif.titre}
-                            </h4>
-                            {!notif.lu && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full"></span>
-                            )}
-                          </div>
+                          <h4 className={`text-sm text-app-text ${!notif.lu ? 'font-semibold' : 'font-medium'}`}>
+                            {notif.titre}
+                            {!notif.lu && <span className="sr-only"> (non lue)</span>}
+                          </h4>
 
-                          <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                          <p className="mt-1 text-sm text-app-muted line-clamp-2">
                             {notif.contenu}
                           </p>
 
                           <div className="mt-2 flex items-center justify-between">
-                            <span className="text-xs text-gray-500">
+                            <span className="font-data text-xs text-app-faint">
                               {formatDate(notif.date_creation)}
                             </span>
 
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-1">
                               {notif.lien && (
                                 <a
                                   href={notif.lien}
                                   onClick={() => setIsOpen(false)}
-                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                  className="px-2 py-1 rounded-md text-xs font-semibold text-app-accent-text hover:bg-app-hover"
                                 >
                                   Voir
                                 </a>
@@ -295,16 +287,18 @@ export default function NotificationCenter() {
                               {!notif.lu && (
                                 <button
                                   onClick={() => marquerCommeLue(notif.id_notification)}
-                                  className="text-xs text-gray-600 hover:text-gray-900"
+                                  className="p-1 rounded-md text-app-muted hover:text-app-text hover:bg-app-hover"
                                   title="Marquer comme lu"
+                                  aria-label="Marquer comme lu"
                                 >
                                   <Check className="w-4 h-4" />
                                 </button>
                               )}
                               <button
                                 onClick={() => supprimerNotification(notif.id_notification)}
-                                className="text-xs text-red-600 hover:text-red-800"
+                                className="p-1 rounded-md text-app-muted hover:text-app-danger hover:bg-app-danger-soft"
                                 title="Supprimer"
+                                aria-label="Supprimer la notification"
                               >
                                 <X className="w-4 h-4" />
                               </button>

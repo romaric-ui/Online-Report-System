@@ -35,6 +35,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         }
         .modal-overlay { animation: modal-fade  0.18s ease both }
         .modal-panel   { animation: modal-slide 0.22s ease both }
+        @media (prefers-reduced-motion: reduce) {
+          .modal-overlay, .modal-panel { animation: none }
+        }
       `}</style>
 
       {/* Overlay */}
@@ -42,20 +45,24 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         className="modal-overlay fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
         onClick={onClose}
       >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-app-overlay" />
 
         {/* Panel */}
         <div
-          className={`modal-panel relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.md} bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[92dvh]`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={typeof title === 'string' ? title : undefined}
+          className={`modal-panel relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.md} bg-app-surface text-app-text rounded-t-2xl sm:rounded-2xl border border-app-border flex flex-col max-h-[92dvh]`}
           onClick={(e) => e.stopPropagation()}
         >
           {title && (
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
-              <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+            <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-app-border shrink-0">
+              <h2 className="text-lg font-semibold tracking-[-0.01em] text-app-text">{title}</h2>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full p-2 hover:bg-slate-100 transition text-slate-400 hover:text-slate-700"
+                aria-label="Fermer"
+                className="rounded-lg p-2 text-app-faint hover:bg-app-hover hover:text-app-text transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-app-accent"
               >
                 <X className="w-5 h-5" />
               </button>

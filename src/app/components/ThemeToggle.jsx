@@ -26,10 +26,11 @@ export default function ThemeToggle({ className = 'btn-soft w-10 h-10 p-0 rounde
       onClick={toggle}
       className={className}
       title={dark ? 'Passer en mode clair' : 'Passer en mode nuit'}
+      aria-label={dark ? 'Passer en mode clair' : 'Passer en mode nuit'}
     >
       {dark
-        ? <Sun className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
-        : <Moon className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+        ? <Sun className="w-4 h-4 text-app-accent" />
+        : <Moon className="w-4 h-4 text-app-muted" />
       }
     </button>
   );

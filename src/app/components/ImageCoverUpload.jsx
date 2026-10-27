@@ -58,11 +58,11 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
 
   return (
     <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Image de Couverture (Optionnel)
+      <label className="block text-sm font-semibold text-app-text mb-2">
+        Image de couverture <span className="font-normal text-app-faint">(facultatif)</span>
       </label>
-      
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+
+      <div className="border border-dashed border-app-border-strong bg-app-subtle rounded-xl p-6 text-center hover:border-app-faint transition-colors">
         {preview ? (
           <div className="space-y-4">
             {/* Aperçu de l'image */}
@@ -70,23 +70,23 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
               <img
                 src={preview}
                 alt="Aperçu de l'image de couverture"
-                className="max-w-full max-h-48 rounded-lg shadow-md"
+                className="max-w-full max-h-48 rounded-lg border border-app-border"
               />
             </div>
-            
+
             {/* Boutons d'action */}
-            <div className="flex justify-center space-x-3">
+            <div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={handleButtonClick}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                className="btn btn-soft"
               >
-                Changer l'image
+                Changer l&apos;image
               </button>
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                className="btn px-5 py-[11px] rounded-lg text-app-danger border border-app-border-strong bg-app-surface hover:bg-app-danger-soft"
               >
                 Supprimer
               </button>
@@ -97,7 +97,8 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
             {/* Zone de drop */}
             <div>
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                aria-hidden="true"
+                className="mx-auto h-12 w-12 text-app-faint"
                 stroke="currentColor"
                 fill="none"
                 viewBox="0 0 48 48"
@@ -109,18 +110,18 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
                   strokeLinejoin="round"
                 />
               </svg>
-              <p className="mt-2 text-sm text-gray-600">
-                Cliquez pour sélectionner une image ou glissez-la ici
+              <p className="mt-2 text-sm text-app-muted">
+                Choisissez une image pour la page de garde du rapport
               </p>
-              <p className="text-xs text-gray-500">
-                PNG, JPG, WebP jusqu'à 10MB
+              <p className="font-data text-xs text-app-faint mt-1">
+                PNG, JPG, WebP · 10 Mo max.
               </p>
             </div>
-            
+
             <button
               type="button"
               onClick={handleButtonClick}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              className="btn btn-soft"
             >
               Sélectionner une image
             </button>
@@ -130,7 +131,7 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
 
       {/* Message d'erreur */}
       {error && (
-        <div className="mt-2 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+        <div role="alert" className="mt-2 p-3 bg-app-danger-soft text-app-danger rounded-lg">
           <p className="text-sm">{error}</p>
         </div>
       )}
@@ -145,8 +146,8 @@ export default function ImageCoverUpload({ onImageSelect, currentImage = null })
       />
 
       {/* Informations supplémentaires */}
-      <div className="mt-3 text-xs text-gray-500">
-        <p>💡 Conseils :</p>
+      <div className="mt-3 text-xs text-app-muted">
+        <p className="font-semibold">Conseils&nbsp;:</p>
         <ul className="list-disc list-inside space-y-1 mt-1">
           <li>Utilisez une image haute résolution (au moins 800x600px)</li>
           <li>Format recommandé : JPG ou PNG</li>

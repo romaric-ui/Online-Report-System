@@ -34,15 +34,19 @@ export function ToastProvider({ children }) {
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`px-4 py-3 rounded shadow text-sm text-white flex items-start gap-2 animate-fade-in-down ${
-              t.type === 'success' ? 'bg-green-600' : t.type === 'error' ? 'bg-red-600' : 'bg-slate-700'
-            }`}
-            role="status"
+            className="flex items-stretch gap-3 overflow-hidden rounded-lg border border-app-border bg-app-surface text-app-text text-sm animate-fade-in-down"
+            role={t.type === 'error' ? 'alert' : 'status'}
           >
-            <span className="flex-1">{t.message}</span>
+            <span
+              aria-hidden="true"
+              className={`w-1 shrink-0 ${
+                t.type === 'success' ? 'bg-app-success' : t.type === 'error' ? 'bg-app-danger' : 'bg-app-faint'
+              }`}
+            />
+            <span className="flex-1 py-3">{t.message}</span>
             <button
               onClick={() => remove(t.id)}
-              className="text-white/80 hover:text-white text-xs mt-0.5"
+              className="self-start mt-2 mr-2 rounded px-1.5 text-base leading-6 text-app-faint hover:text-app-text hover:bg-app-hover"
               aria-label="Fermer"
             >×</button>
           </div>
@@ -51,6 +55,7 @@ export function ToastProvider({ children }) {
       <style jsx global>{`
         @keyframes fade-in-down { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0);} }
         .animate-fade-in-down { animation: fade-in-down .25s ease; }
+        @media (prefers-reduced-motion: reduce) { .animate-fade-in-down { animation: none; } }
       `}</style>
     </ToastContext.Provider>
   );
